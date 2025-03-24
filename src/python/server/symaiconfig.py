@@ -63,7 +63,7 @@ def create_config(cfg_file, host, port):
         config.set(SymAIConfig.HANDLER_FILE.value, SymAIConfig.BACKUP_COUNT.value, "5")
         config.set(SymAIConfig.HANDLER_FILE.value, SymAIConfig.LEVEL.value, "DEBUG")
         config.set(SymAIConfig.HANDLER_FILE.value, SymAIConfig.FORMATTER.value, "simpleFormatter")
-        config.set(SymAIConfig.HANDLER_FILE.value, SymAIConfig.ARGS.value , "('expression.log',)")
+        config.set(SymAIConfig.HANDLER_FILE.value, SymAIConfig.ARGS.value , "('/logdir/expression.log',)")
 
         with open(cfg_file, "w") as c_file:
             config.write(c_file)
