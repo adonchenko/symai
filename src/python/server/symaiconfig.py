@@ -4,7 +4,7 @@ from enum import Enum
 
 class SymAIConfig(Enum):
     EXPRESSION = "Expression"
-    HOST = "hosh"
+    HOST = "host"
     PORT = "port"
     LOGGERS = "loggers"
     KEYS = "keys"
