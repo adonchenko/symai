@@ -8,9 +8,15 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY ./expression.py /app/expression.py
 COPY ./symaiconfig.py /app/symaiconfig.py
+COPY ./symbolicexpressiongrammarvisitor.py /app/symbolicexpressiongrammarvisitor.py
+COPY ./ExpressionGrammar/ExpressionGrammarLexer.py /app/ExpressionGrammar/antlr4/ExpressionGrammarLexer.py
+COPY ./ExpressionGrammar/ExpressionGrammarListener.py /app/ExpressionGrammar/antlr4/ExpressionGrammarListener.py
+COPY ./ExpressionGrammar/ExpressionGrammarParser.py /app/ExpressionGrammar/antlr4/ExpressionGrammarParser.py
+COPY ./ExpressionGrammar/ExpressionGrammarVisitor.py /app/ExpressionGrammar/antlr4/ExpressionGrammarVisitor.py
+
 # Install any needed dependencies specified in requirements.txt
-RUN pip3 install sympy
-#RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install sympy antlr4-python3-runtime
+# RUN pip3 install --no-cache-dir -r requirements.txt
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
 # Run app.py when the container launches

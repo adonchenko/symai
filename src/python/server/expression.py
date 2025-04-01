@@ -8,6 +8,8 @@
          Server response: {"formula": "5"}
 /api/v1/shutdown GET request stops the server.
 """
+from antlr4.error.Errors import ParseCancellationException
+
 import symaiconfig
 import logging
 from logging import config
@@ -19,18 +21,39 @@ import re
 import threading
 from email.message import EmailMessage
 from http import HTTPStatus
-from http.server import HTTPServer, BaseHTTPRequestHandler, ThreadingHTTPServer
-from socketserver import ThreadingMixIn
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import signal
+
+from antlr4.CommonTokenStream import CommonTokenStream
+from antlr4.InputStream import InputStream
+from symbolicexpressiongrammarvisitor import *
+from ExpressionGrammar.antlr4.ExpressionGrammarLexer import ExpressionGrammarLexer
+from ExpressionGrammar.antlr4.ExpressionGrammarParser import ExpressionGrammarParser
 import sys
+from antlr4.error.ErrorListener import *
+
+class SymbolicExpressionGrammarErrorListener( ErrorListener ):
+
+    def __init__(self):
+        super(SymbolicExpressionGrammarErrorListener, self).__init__()
+
+    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+        raise Exception("Syntax error appeared on symbol '" + offendingSymbol + "' " + msg)
+
+    def reportAmbiguity(self, recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs):
+        raise Exception("Ambiguity error appeared during parsing")
+
+    def reportAttemptingFullContext(self, recognizer, dfa, startIndex, stopIndex, conflictingAlts, configs):
+        raise Exception("Error appeared during parsing")
+
+    def reportContextSensitivity(self, recognizer, dfa, startIndex, stopIndex, prediction, configs):
+        raise Exception("Oh no!!")
+
 
 def _parse_header(content_type):
     m = EmailMessage()
     m["content-type"] = content_type
     return m.get_content_type(), m["content-type"].params
-
-class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
-    pass
 
 class HTTPRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -62,15 +85,31 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                                       .replace("_d_o_t_", "__d__o__t__"))
                                       .replace(".", "_d_o_t_"))
                                       .strip(" "))
-                            formula = str(sympy.simplify(expr_n))
+
+                            lexer = ExpressionGrammarLexer(InputStream(expr_n))
+                            errorListener = SymbolicExpressionGrammarErrorListener()
+                            lexer.removeErrorListeners()
+                            lexer.addErrorListener(errorListener)
+                            stream = CommonTokenStream(lexer)
+                            parser = ExpressionGrammarParser(stream)
+                            parser.removeErrorListeners()
+                            parser.addErrorListener(errorListener)
+
+                            tree = parser.expression()
+                            visitor = SymbolicExpressionGrammarVisitor()
+                            formula = visitor.visit(tree)
+
+                            formula = str(sympy.simplify(formula))
                             formula = (((((" " + formula + " ")
+                                       .replace("&","&&")
+                                       .replace("|","||")
                                        .replace("_d_o_t_", "."))
                                        .replace("__d__o__t__", "_d_o_t_"))
                                        .replace(" not ", "!"))
                                        .replace(" _n_o_t_ ", " not ")).strip(" ")
                         except:
                             logger.error("error processing formula %s" % expr)
-                            self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR, "Bad request: error processing formula %s" % expr)
+                            self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR, "Bad request: error processing formula %s" % (expr))
                         else:
                             self.send_response(HTTPStatus.OK)
                             self.send_header("Content-Type", "application/json")
@@ -123,7 +162,7 @@ def main():
     logging.config.fileConfig(args.config)
     logger = logging.getLogger("expression")
     signal.signal(signal.SIGINT, signal_handler)
-    httpd = ThreadingHTTPServer((cfg.get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.HOST.value), int(cfg.get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.PORT.value))), HTTPRequestHandler)
+    httpd = ThreadingHTTPServer((str(cfg.get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.HOST.value)), int(cfg.get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.PORT.value))), HTTPRequestHandler)
     logger.info("HTTP Server Running On %s:%s ..........." % (cfg.get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.HOST.value), int(cfg.get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.PORT.value))))
     httpd.serve_forever()
 
