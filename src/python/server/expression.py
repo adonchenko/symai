@@ -135,11 +135,11 @@ def main():
     parser = argparse.ArgumentParser(description="HTTP Server")
     parser.add_argument( "-p", "--port", dest="port", default = 8080, required = false, type=int, help="Listening port for an expressions HTTP Server")
     parser.add_argument("-i", "--ip", dest = "ip", default = "localhost", required = false, help="Expressions HTTP Server IP")
-    parser.add_argument("-c", "--config", dest="config", default="/properties/expression.ini", required=false, help="Configuration file name fo HTTP Server")
+    parser.add_argument("-c", "--config", dest="config", default="/properties/symaicore.ini", required=false, help="Configuration file name of expression HTTP Server")
 
     args = parser.parse_args()
 
-    cfg = symaiconfig.create_config(args.config, args.ip, args.port)
+    cfg = symaiconfig.create_config(args.config, args.ip, args.port, symaiconfig.SymAIConfig.EXPRESSION.value)
     logging.config.fileConfig(args.config)
     logger = logging.getLogger("expression")
     signal.signal(signal.SIGINT, signal_handler)
