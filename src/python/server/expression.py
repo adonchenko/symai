@@ -139,7 +139,7 @@ def main():
 
     args = parser.parse_args()
 
-    cfg = symaiconfig.create_config(args.config, args.ip, args.port, symaiconfig.SymAIConfig.EXPRESSION.value)
+    cfg = symaiconfig.create_config(args.config, args.ip, args.port)
     logging.config.fileConfig(args.config)
     logger = logging.getLogger("expression")
     signal.signal(signal.SIGINT, signal_handler)
