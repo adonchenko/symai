@@ -1,7 +1,8 @@
 #!/bin/bash
 #
-# Build a docker image
+# Build a dockers images
 #
-pushd ../../server
-sudo docker build -t symai-expression:0.0.1 . -f docker/Expression
+BASE_PATH="/home/andriy/symai"
+pushd ../../server/docker
+sudo LOGDIR=${BASE_PATH}/logdir PROPERTIES=${BASE_PATH}/properties TMPDIR=${BASE_PATH}/temp docker compose build
 popd

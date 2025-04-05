@@ -1,0 +1,29 @@
+services:
+  expression:
+    image: docker/symai-expression.0.0.1
+    container_name: symai-expression.0.0.1
+    build:
+      context: ..
+      dockerfile: docker/Expression
+    ports:
+      - 8080:8080
+    working_dir: /app
+    network_mode: host
+    volumes:
+        - ${PROPERTIES}:/properties
+        - ${LOGDIR}:/logdir
+        - ${TMPDIR}:/tmpdir
+  core:
+    image: docker/symai-core.0.0.1
+    container_name: symai-core.0.0.1
+    build:
+      context: ..
+      dockerfile: docker/SymAICore
+    ports:
+      - 12345:12345
+    working_dir: /app
+    network_mode: host
+    volumes:
+        - ${PROPERTIES}:/properties
+        - ${LOGDIR}:/logdir
+        - ${TMPDIR}:/tmpdir

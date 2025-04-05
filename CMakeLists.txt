@@ -13,19 +13,19 @@ ADD_CUSTOM_COMMAND(TARGET antlr4-generate-expression
     DEPENDS "${PROJECT_SOURCE_DIR}/src/python/antlr4/ExpressionGrammar.g4"
 )
 
-ADD_CUSTOM_TARGET(symai-expression-docker DEPENDS antlr4-generate-expression)
-ADD_CUSTOM_COMMAND(TARGET symai-expression-docker
+ADD_CUSTOM_TARGET(symai-docker DEPENDS antlr4-generate-expression)
+ADD_CUSTOM_COMMAND(TARGET symai-docker
 		   WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/python/etc/tools"
     COMMAND sudo ./build-docker.sh
 )
 
-ADD_CUSTOM_TARGET(symai-expression-docker-run DEPENDS symai-expression-docker)
-ADD_CUSTOM_COMMAND(TARGET symai-expression-docker-run
+ADD_CUSTOM_TARGET(symai-run DEPENDS symai-docker)
+ADD_CUSTOM_COMMAND(TARGET symai-run
 		   WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/python/etc/tools"
     COMMAND sudo ./run-docker.sh
 )
 
-ADD_CUSTOM_TARGET(symai ALL DEPENDS symai-expression-docker
+ADD_CUSTOM_TARGET(symai ALL DEPENDS symai-docker
 )
 ADD_CUSTOM_TARGET(cleanall
   COMMAND rm -rf "${PROJECT_SOURCE_DIR}/build/*"

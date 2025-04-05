@@ -1,9 +1,10 @@
 #!/bin/bash
 #
-# Script that starts a doker
+# Script that starts the dokers
 #
-LOGDIR=$HOME/symai/logdir
-PROPERTIES=$HOME/symai/properties
-sudo docker run -it --net host -p 8080:8080 -v $PROPERTIES:/properties -v $LOGDIR:/logdir symai-expression:0.0.1 
+BASE_PATH="/home/andriy/symai"
+pushd ../../server/docker
+sudo LOGDIR=${BASE_PATH}/logdir PROPERTIES=${BASE_PATH}/properties TMPDIR=${BASE_PATH}/temp docker compose up
+popd
 
 

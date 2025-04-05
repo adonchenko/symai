@@ -8,6 +8,9 @@
          Server response: {"formula": "5"}
 /api/v1/shutdown GET request stops the server.
 """
+import configparser
+from configparser import ConfigParser
+
 from antlr4.error.Errors import ParseCancellationException
 
 import symaiconfig
@@ -135,11 +138,16 @@ def main():
     parser = argparse.ArgumentParser(description="HTTP Server")
     parser.add_argument( "-p", "--port", dest="port", default = 8080, required = false, type=int, help="Listening port for an expressions HTTP Server")
     parser.add_argument("-i", "--ip", dest = "ip", default = "localhost", required = false, help="Expressions HTTP Server IP")
-    parser.add_argument("-c", "--config", dest="config", default="/properties/symaicore.ini", required=false, help="Configuration file name of expression HTTP Server")
+    parser.add_argument("-c", "--config", dest="config", default="/properties/symai.ini", required=false, help="Configuration file name of expression HTTP Server")
 
     args = parser.parse_args()
 
-    cfg = symaiconfig.create_config(args.config, args.ip, args.port, symaiconfig.SymAIConfig.EXPRESSION.value)
+    cfg = configparser.ConfigParser()
+    cfg.add_section(symaiconfig.SymAIConfig.EXPRESSION.value)
+    cfg.set(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.HOST.value, args.ip)
+    cfg.set(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.PORT.value, str(args.port))
+
+    cfg = symaiconfig.create_config(args.config, symaiconfig.SymAIConfig.EXPRESSION.value, cfg)
     logging.config.fileConfig(args.config)
     logger = logging.getLogger("expression")
     signal.signal(signal.SIGINT, signal_handler)
