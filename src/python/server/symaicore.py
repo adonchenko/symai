@@ -3,9 +3,8 @@
 """A websockets server with SymAO UI protocol for python 3.
 """
 import configparser
-from configparser import ConfigParser
 import asyncio
-from tempfile import tempdir
+import json
 
 import websockets
 import symaiconfig
@@ -14,29 +13,60 @@ from logging import config
 import signal
 import sys
 import argparse
+import symaicorecommands
+from symaicorecommands import SymAICoreCommands
 
-
-# Set of connected clients
-connected_clients = set()
+connected_clients = dict()
 
 # Function to handle each client connection
 async def handle_client(websocket):
+    global connected_clients
+    if connected_clients.get(websocket) is None:
+        connected_clients.update({websocket: symaicorecommands.SymAICoreParam()})
+    sc: SymAICoreCommands = SymAICoreCommands()
     # Add the new client to the set of connected clients
-    connected_clients.add(websocket)
     try:
         # Listen for messages from the client
         async for message in websocket:
-            if message == "shutdown" :
-                exit()
-            # Broadcast the message to all other connected clients
-            for client in connected_clients:
-                if client != websocket:
-                    await client.send(message)
+            st = message.replace("\t"," ").replace("\r"," ").replace("\n"," ").strip().split()[0]
+
+            match st:
+                case "shutdown":
+                    sc.do_shutdown()
+                    await websocket.close()
+                    if connected_clients.get(websocket) is not None:
+                        connected_clients.pop(websocket)
+                    sys.exit(0)
+                case "stop":
+                    sc.do_stop()
+                    await websocket.close()
+                    if connected_clients.get(websocket) is not None:
+                        connected_clients.pop(websocket)
+                case "property":
+                    if connected_clients.get(websocket) is None:
+                        sc.get_logger().error("UUID not found.Cannot process " + message)
+                        await websocket.send("UUID not found.Cannot process " + message)
+                    else:
+                        res = "ok"
+                        try:
+                            sc.do_get_file(connected_clients.get(websocket).get_uuid(),
+                                           symaiconfig.SymAIConfig.BASE_PROPERTIES.value,
+                                           message[8:].strip())
+                        except Exception as e:
+                            sc.get_logger().error(str(e))
+                            res = "nok " + str(e)
+                        finally:
+                            await websocket.send(res)
+                case _:
+                    sc.get_logger().error("Unknown command " + message)
+                    await websocket.send("Unknown command " + message)
+
     except websockets.exceptions.ConnectionClosed:
-        pass
+        if connected_clients.get(websocket) is not None:
+            connected_clients.pop(websocket)
     finally:
         # Remove the client from the set of connected clients
-        connected_clients.remove(websocket)
+        pass
 
 def signal_handler(signal, frame):
     logger = logging.getLogger("symaicore")
@@ -45,6 +75,8 @@ def signal_handler(signal, frame):
 
 # Main function to start the WebSocket server
 async def main():
+    sc = symaicorecommands.SymAICoreCommands()
+
     parser = argparse.ArgumentParser(description="HTTP Server")
     parser.add_argument("-p", "--port", dest="port", default=12345, required=False, type=int,
                         help="Listening port for an SymAI Core Websockets Server")
@@ -76,6 +108,9 @@ async def main():
     logging.getLogger('asyncio.coroutines').setLevel(logging.ERROR)
     logging.getLogger('websockets.server').setLevel(logging.ERROR)
     logging.getLogger('websockets.protocol').setLevel(logging.ERROR)
+
+    sc.set_config(cfg)
+    sc.set_logger(logger)
 
     server = await websockets.serve(handle_client,
                                     str(cfg.get(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.HOST.value)),

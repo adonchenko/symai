@@ -31,6 +31,11 @@ class SymAIConfig(Enum):
     INTERVAL = "interval"
     BACKUP_COUNT = "backupCount"
 
+    BASE_TEMP = "/tmpdir"
+    BASE_PROPERTIES = "properties"
+    BASE_PRECONDITION = "precondition"
+    BASE_POSTCONDITION = "postcondition"
+
 def create_config(cfg_file, section, cfg):
     """
     Create a config file
