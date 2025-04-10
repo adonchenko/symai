@@ -54,8 +54,8 @@ class SymAICoreCommands:
     def do_get_file(self, pref, mid, data_received):
         try:
             res = json.loads(data_received.replace("'", '"'))
-        except:
-            self.get_logger().error("Incorrect input JSON data " + data_received)
+        except Exception as e:
+            self.get_logger().error("Incorrect input JSON data " + data_received + " " + str(e))
             raise Exception("Incorrect input JSON data " + data_received)
         if res["filename"] is None or len(res["filename"].strip()) == 0:
             self.get_logger().error("Incorrect JSON data. Field 'filename' is empty.")
@@ -64,15 +64,19 @@ class SymAICoreCommands:
             self.get_logger().error("Incorrect JSON data. Field 'content' is empty.")
             raise Exception("Incorrect JSON data. Field 'content' is empty.")
         else:
-            filename = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+            d = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
                                     pref,
-                                    mid,
-                                    res["filename"].strip())
-            file_content = bytes(data_received["content"])
+                                    mid)
+            if not os.path.exists(d):
+                try:
+                    os.makedirs(d)
+                except:
+                    raise Exception("Cannot create directory " + d)
+            filename = os.path.join(d, res["filename"].strip())
+            file_content = str(res["content"])
             try:
-                with open(f"{filename}", 'wb') as file:
+                with open(filename, "w") as file:
                     file.write(file_content)
             except:
-                self.get_logger().error("Cannot write content to file '" + str(filename) + "'")
                 raise Exception("Cannot write content to file '" + str(filename) + "'")
 

@@ -4,7 +4,6 @@
 """
 import configparser
 import asyncio
-import json
 
 import websockets
 import symaiconfig
@@ -28,7 +27,9 @@ async def handle_client(websocket):
     try:
         # Listen for messages from the client
         async for message in websocket:
-            st = message.replace("\t"," ").replace("\r"," ").replace("\n"," ").strip().split()[0]
+            st = message.replace("\t"," ").replace("\r"," ").replace("\n"," ").strip().split()
+            if len(st) > 0:
+                st = message.replace("\t"," ").replace("\r"," ").replace("\n"," ").strip().split()[0]
 
             match st:
                 case "shutdown":
@@ -43,15 +44,46 @@ async def handle_client(websocket):
                     if connected_clients.get(websocket) is not None:
                         connected_clients.pop(websocket)
                 case "property":
+                    sc.get_logger().info("property command received")
                     if connected_clients.get(websocket) is None:
                         sc.get_logger().error("UUID not found.Cannot process " + message)
                         await websocket.send("UUID not found.Cannot process " + message)
                     else:
                         res = "ok"
                         try:
-                            sc.do_get_file(connected_clients.get(websocket).get_uuid(),
+                            sc.do_get_file(str(connected_clients.get(websocket).get_uuid()),
                                            symaiconfig.SymAIConfig.BASE_PROPERTIES.value,
-                                           message[8:].strip())
+                                           str(message).strip()[8:])
+                        except Exception as e:
+                            sc.get_logger().error(str(e))
+                            res = "nok " + str(e)
+                        finally:
+                            await websocket.send(res)
+                case "precondition":
+                    if connected_clients.get(websocket) is None:
+                        sc.get_logger().error("UUID not found.Cannot process " + message)
+                        await websocket.send("UUID not found.Cannot process " + message)
+                    else:
+                        res = "ok"
+                        try:
+                            sc.do_get_file(str(connected_clients.get(websocket).get_uuid()),
+                                           symaiconfig.SymAIConfig.BASE_PRECONDITION.value,
+                                           str(message).strip()[8:])
+                        except Exception as e:
+                            sc.get_logger().error(str(e))
+                            res = "nok " + str(e)
+                        finally:
+                            await websocket.send(res)
+                case "postcondition":
+                    if connected_clients.get(websocket) is None:
+                        sc.get_logger().error("UUID not found.Cannot process " + message)
+                        await websocket.send("UUID not found.Cannot process " + message)
+                    else:
+                        res = "ok"
+                        try:
+                            sc.do_get_file(str(connected_clients.get(websocket).get_uuid()),
+                                           symaiconfig.SymAIConfig.BASE_POSTCONDITION.value,
+                                           str(message).strip()[8:])
                         except Exception as e:
                             sc.get_logger().error(str(e))
                             res = "nok " + str(e)

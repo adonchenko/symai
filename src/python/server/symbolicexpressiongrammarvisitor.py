@@ -23,10 +23,9 @@ class SymbolicExpressionGrammarErrorListener( ErrorListener ):
 
 class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
 
-    hasTrigonometric : bool
-    hasNonLinear : bool
-
     def __init__(self):
+        self.substitution = dict()
+        self.var_list = []
         self.hasTrigonometric = False
         self.hasNonLinear = False
         super().__init__()
@@ -36,6 +35,15 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
 
     def isTrigonometric(self):
         return self.hasTrigonometric
+
+    def setSubstitution(self, subs):
+        self.substitution = subs
+
+    def getSubstitution(self) :
+        return self.substitution
+
+    def getVarList(self):
+        return self.var_list
 
     # Visit a parse tree produced by ExpressionGrammarParser#primaryExpression.
     def visitPrimaryExpression(self, ctx:ExpressionGrammarParser.PrimaryExpressionContext):
@@ -54,13 +62,12 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         nl_funct=["log", "ln", "sqrt"]
 
         result = self.visit(ctx.primaryExpression())
-        if result.lower() in trig_funct and len(ctx.children) > 1:
+        if result.lower().strip() in trig_funct and len(ctx.children) > 1:
             if ctx.getChild(1).getText() == '(':
                 self.hasTrigonometric = True
-        if result.lower() in nl_funct and len(ctx.children) > 1:
+        if result.lower().strip() in nl_funct and len(ctx.children) > 1:
             if ctx.getChild(1).getText() == '(':
                 self.hasNonLinear = True
-
         i = 1
         j = 0
         while i < len(ctx.children):
@@ -89,17 +96,23 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
 
     # Visit a parse tree produced by ExpressionGrammarParser#unaryExpression.
     def visitUnaryExpression(self, ctx:ExpressionGrammarParser.UnaryExpressionContext):
-        result = ""
-        op = ""
+        result = self.visit(ctx.postfixExpression()).strip()
+        # Variables and substitutions. Should be processed in unaryExpression
+        if not (result[0:1].isdigit()) and result.find("(") < 0 and result.find("_d_o_t_") < 0:
+            # Identifier appeared result.strip()
+            if result.strip() not in self.var_list:
+                self.var_list.append(result.strip())
+            # Redefine variables, if any substitutions present
+            for x, y in self.substitution:
+                if result.strip() == x:
+                    result = y
+
         if ctx.unaryOperator() is not None:
             op = ctx.unaryOperator().getText()
             if op == '!':
-                result = op + "("
+                result = " not (" + result + ")"
             else:
-                result = result + op
-        result = result + self.visit(ctx.postfixExpression())
-        if op == "!":
-            result = result + ")"
+                result = op + result
         return result
 
     # Visit a parse tree produced by ExpressionGrammarParser#unaryOperator.

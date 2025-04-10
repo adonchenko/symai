@@ -42,7 +42,67 @@ def _parse_header(content_type):
 class HTTPRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         logger = logging.getLogger("expression")
-        if re.search("/api/v1/simplify", self.path):
+        if re.search("/api/v1/check", self.path):
+            ctype, pdict = _parse_header(self.headers.get("content-type"))
+            if ctype == "application/json":
+                length = int(self.headers.get("content-length"))
+                rfile_str = self.rfile.read(length).decode("utf8")
+                try:
+                    source_expr = json.loads(rfile_str)
+                except:
+                    logger.error("Bad Request: incorrect syntax of json request")
+                    self.send_response(
+                        HTTPStatus.BAD_REQUEST, "Bad Request: incorrect syntax of json request"
+                    )
+                else:
+                    expr = source_expr.get("formula")
+                    if expr is None:
+                        logger.error("Bad Request: missing formula")
+                        self.send_response(
+                            HTTPStatus.BAD_REQUEST, "Bad Request: missing formula field"
+                        )
+                    else:
+                        try:
+                            expr_n = ((((((" " + expr + " ")
+                                          .replace(" not ", " _n_o_t_ "))
+                                         .replace("!", " not "))
+                                        .replace("_d_o_t_", "__d__o__t__"))
+                                       .replace(".", "_d_o_t_"))
+                                      .strip(" "))
+
+                            lexer = ExpressionGrammarLexer(InputStream(expr_n))
+                            errorListener = SymbolicExpressionGrammarErrorListener()
+                            lexer.removeErrorListeners()
+                            lexer.addErrorListener(errorListener)
+                            stream = CommonTokenStream(lexer)
+                            parser = ExpressionGrammarParser(stream)
+                            parser.removeErrorListeners()
+                            parser.addErrorListener(errorListener)
+
+                            tree = parser.expression()
+                            visitor = SymbolicExpressionGrammarVisitor()
+                            formula = visitor.visit(tree)
+
+                            source_expr["is_trigonometric"] = visitor.isTrigonometric()
+                            source_expr["is_nonlinear"] = visitor.isNonLinear()
+                            source_expr["vars"] = visitor.var_list
+                        except:
+                            logger.error("error processing formula %s" % expr)
+                            self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR,
+                                               "Bad request: error processing formula %s" % (expr))
+                        else:
+                            self.send_response(HTTPStatus.OK)
+                            self.send_header("Content-Type", "application/json")
+                            self.end_headers()
+
+                            logger.info("check %s" % expr)
+                            self.wfile.write(json.dumps(source_expr).encode("utf8"))
+            else:
+                logger.error("Bad Request: must give data")
+                self.send_response(
+                    HTTPStatus.BAD_REQUEST, "Bad Request: must give data"
+                )
+        elif re.search("/api/v1/simplify", self.path):
             ctype, pdict = _parse_header(self.headers.get("content-type"))
             if ctype == "application/json":
                 length = int(self.headers.get("content-length"))
