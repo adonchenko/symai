@@ -63,6 +63,10 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                         )
                     else:
                         try:
+                            subs = source_expr.get("substitution")
+                            if subs is None:
+                                subs = dict()
+
                             expr_n = ((((((" " + expr + " ")
                                           .replace(" not ", " _n_o_t_ "))
                                          .replace("!", " not "))
@@ -81,21 +85,30 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
 
                             tree = parser.expression()
                             visitor = SymbolicExpressionGrammarVisitor()
+                            visitor.setSubstitution(subs)
                             formula = visitor.visit(tree)
-
+                            formula = (((((" " + formula + " ")
+                                          .replace("&", "&&")
+                                          .replace("|", "||")
+                                          .replace("_d_o_t_", "."))
+                                         .replace("__d__o__t__", "_d_o_t_"))
+                                        .replace(" not ", "!"))
+                                       .replace(" _n_o_t_ ", " not ")).strip(" ")
+                            source_expr["formula"] = formula
                             source_expr["is_trigonometric"] = visitor.isTrigonometric()
                             source_expr["is_nonlinear"] = visitor.isNonLinear()
-                            source_expr["vars"] = visitor.var_list
+                            source_expr["vars"] = visitor.getVarList()
+                            source_expr["substitution"] = visitor.getSubstitution()
                         except:
                             logger.error("error processing formula %s" % expr)
                             self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR,
-                                               "Bad request: error processing formula %s" % (expr))
+                                               "Bad request: error processing formula %s" % expr)
                         else:
                             self.send_response(HTTPStatus.OK)
                             self.send_header("Content-Type", "application/json")
                             self.end_headers()
 
-                            logger.info("check %s" % expr)
+                            logger.info("check %s->%s" % (expr, formula))
                             self.wfile.write(json.dumps(source_expr).encode("utf8"))
             else:
                 logger.error("Bad Request: must give data")

@@ -19,7 +19,7 @@ class SymbolicExpressionGrammarErrorListener( ErrorListener ):
         raise Exception("Error appeared during parsing")
 
     def reportContextSensitivity(self, recognizer, dfa, startIndex, stopIndex, prediction, configs):
-        raise Exception("Oh no!!")
+        raise Exception("Error appeared during parsing")
 
 class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
 
@@ -103,9 +103,15 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             if result.strip() not in self.var_list:
                 self.var_list.append(result.strip())
             # Redefine variables, if any substitutions present
-            for x, y in self.substitution:
-                if result.strip() == x:
-                    result = y
+            if self.substitution is not None:
+                i = 0
+                while i < len(self.substitution):
+                    x = str(self.substitution[i]["name"])
+                    y = str(self.substitution[i]["value"])
+                    i = i + 1
+                    if result.strip() == x:
+                        result = y
+                        i = len(self.substitution)
 
         if ctx.unaryOperator() is not None:
             op = ctx.unaryOperator().getText()
