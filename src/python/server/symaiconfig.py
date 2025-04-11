@@ -35,6 +35,7 @@ class SymAIConfig(Enum):
     BASE_PROPERTIES = "properties"
     BASE_PRECONDITION = "precondition"
     BASE_POSTCONDITION = "postcondition"
+    BASE_ENVIRONMENT = "environment"
 
 def create_config(cfg_file, section, cfg):
     """

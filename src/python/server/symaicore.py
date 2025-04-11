@@ -43,6 +43,24 @@ async def handle_client(websocket):
                     await websocket.close()
                     if connected_clients.get(websocket) is not None:
                         connected_clients.pop(websocket)
+                case "environment":
+                    sc.get_logger().info("environment command received")
+                    if connected_clients.get(websocket) is None:
+                        sc.get_logger().error("UUID not found.Cannot process " + message)
+                        await websocket.send("UUID not found.Cannot process " + message)
+                    else:
+                        res = "ok"
+                        try:
+                            sc.do_get_file(str(connected_clients.get(websocket).get_uuid()),
+                                           symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value,
+                                           str(message).strip()[8:])
+                        except Exception as e:
+                            sc.get_logger().error("environment command failed " + str(e))
+                            res = "nok " + str(e)
+                        else:
+                            sc.get_logger().info("environment command passed ok")
+                        finally:
+                            await websocket.send(res)
                 case "property":
                     sc.get_logger().info("property command received")
                     if connected_clients.get(websocket) is None:
@@ -55,11 +73,14 @@ async def handle_client(websocket):
                                            symaiconfig.SymAIConfig.BASE_PROPERTIES.value,
                                            str(message).strip()[8:])
                         except Exception as e:
-                            sc.get_logger().error(str(e))
+                            sc.get_logger().error("property command failed " + str(e))
                             res = "nok " + str(e)
+                        else:
+                            sc.get_logger().info("property command passed ok")
                         finally:
                             await websocket.send(res)
                 case "precondition":
+                    sc.get_logger().info("precondition command received")
                     if connected_clients.get(websocket) is None:
                         sc.get_logger().error("UUID not found.Cannot process " + message)
                         await websocket.send("UUID not found.Cannot process " + message)
@@ -72,9 +93,12 @@ async def handle_client(websocket):
                         except Exception as e:
                             sc.get_logger().error(str(e))
                             res = "nok " + str(e)
+                        else:
+                            sc.get_logger().info("precondition command passed ok")
                         finally:
                             await websocket.send(res)
                 case "postcondition":
+                    sc.get_logger().info("postcondition command received")
                     if connected_clients.get(websocket) is None:
                         sc.get_logger().error("UUID not found.Cannot process " + message)
                         await websocket.send("UUID not found.Cannot process " + message)
@@ -87,6 +111,8 @@ async def handle_client(websocket):
                         except Exception as e:
                             sc.get_logger().error(str(e))
                             res = "nok " + str(e)
+                        else:
+                            sc.get_logger().info("postcondition command passed ok")
                         finally:
                             await websocket.send(res)
                 case _:
