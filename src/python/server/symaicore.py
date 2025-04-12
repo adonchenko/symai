@@ -51,9 +51,8 @@ async def handle_client(websocket):
                     else:
                         res = "ok"
                         try:
-                            sc.do_get_file(str(connected_clients.get(websocket).get_uuid()),
-                                           symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value,
-                                           str(message).strip()[8:])
+                            sc.do_environment(str(connected_clients.get(websocket).get_uuid()),
+                                           str(message).strip()[11:])
                         except Exception as e:
                             sc.get_logger().error("environment command failed " + str(e))
                             res = "nok " + str(e)
@@ -89,7 +88,7 @@ async def handle_client(websocket):
                         try:
                             sc.do_get_file(str(connected_clients.get(websocket).get_uuid()),
                                            symaiconfig.SymAIConfig.BASE_PRECONDITION.value,
-                                           str(message).strip()[8:])
+                                           str(message).strip()[12:])
                         except Exception as e:
                             sc.get_logger().error(str(e))
                             res = "nok " + str(e)
@@ -107,7 +106,7 @@ async def handle_client(websocket):
                         try:
                             sc.do_get_file(str(connected_clients.get(websocket).get_uuid()),
                                            symaiconfig.SymAIConfig.BASE_POSTCONDITION.value,
-                                           str(message).strip()[8:])
+                                           str(message).strip()[13:])
                         except Exception as e:
                             sc.get_logger().error(str(e))
                             res = "nok " + str(e)

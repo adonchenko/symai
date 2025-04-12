@@ -1,3 +1,7 @@
+from http import HTTPStatus
+
+from websockets.legacy.server import HTTPResponse
+
 import symaiconfig
 from configparser import ConfigParser
 from logging import Logger
@@ -39,7 +43,7 @@ class SymAICoreCommands:
                 int(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
                                         symaiconfig.SymAIConfig.EXPRESSION_PORT.value)))
             conn.request('GET', '/api/v1/shutdown', "", headers)
-            # response = conn.getresponse()
+            response = conn.getresponse()
         except:
             self.get_logger().error("Error on shutdown expression ",
                                   self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
@@ -51,6 +55,11 @@ class SymAICoreCommands:
     def do_stop(self):
         self.get_logger().info("Stop command received. Session closed.")
 
+    # Loads and saves the file
+    # On success returns the structure that has two fields:
+    # - filename that is a source file name
+    # - content that is a content of this file
+    # On error raises an Exception
     def do_get_file(self, pref, mid, data_received):
         try:
             res = json.loads(data_received.replace("'", '"'))
@@ -79,4 +88,34 @@ class SymAICoreCommands:
                     file.write(file_content)
             except:
                 raise Exception("Cannot write content to file '" + str(filename) + "'")
+        return res
 
+    def do_environment(self, cuuid, data_received):
+        # Loading
+        res = self.do_get_file(cuuid,
+                               symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value,
+                               data_received)
+        # checking and simplifying content
+        headers = {'Content-type': 'application/json'}
+        try:
+            # Make an HTTP request for simplifying
+            conn = http.client.HTTPConnection(
+                str(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                          symaiconfig.SymAIConfig.EXPRESSION_HOST.value)),
+                int(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                          symaiconfig.SymAIConfig.EXPRESSION_PORT.value)))
+            query = dict()
+            query["formula"] = res["content"].strip()
+            conn.request('POST', '/api/v1/simplify', json.dumps(query), headers)
+            response = conn.getresponse()
+            if not (response.getcode() == HTTPStatus.OK):
+                raise Exception("Attempt simplify expression error Error code " + str(conn.getresponse()))
+            rsp = json.loads(response.read().decode())
+            with open(os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+                        cuuid,
+                        symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value,
+                        res["filename"]), "w") as f:
+                f.write(rsp["formula"])
+
+        except Exception as e:
+            raise e
