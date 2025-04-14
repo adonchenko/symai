@@ -33,21 +33,41 @@ async def handle_client(websocket):
 
             match st:
                 case "shutdown":
-                    sc.do_shutdown()
-                    await websocket.close()
-                    if connected_clients.get(websocket) is not None:
-                        connected_clients.pop(websocket)
+                    try:
+                        sc.do_shutdown()
+                        await websocket.close()
+                        if connected_clients.get(websocket) is not None:
+                            connected_clients.pop(websocket)
+                        for ws, param in connected_clients.items():
+                            sc.do_stop(param.get_uuid())
+                            await ws.send("ok stop")
+                            ws.close()
+                    except:
+                        pass
                     sys.exit(0)
                 case "stop":
-                    sc.do_stop()
-                    await websocket.close()
-                    if connected_clients.get(websocket) is not None:
+                    sc.get_logger().info("stop command received")
+                    res = "ok stop"
+                    try:
+                        if connected_clients.get(websocket) is not None:
+                            sc.do_stop(connected_clients.get(websocket).get_uuid())
+                            connected_clients.pop(websocket)
+                    except Exception as e:
+                        sc.get_logger().error("stop command failed " + str(e))
+                        res = "nok " + str(e)
+                    else:
+                        sc.get_logger().info("stop command passed ok")
+                    try:
+                        await websocket.send(res)
                         connected_clients.pop(websocket)
+                    except:
+                        pass
+                    await websocket.close()
                 case "environment":
                     sc.get_logger().info("environment command received")
                     if connected_clients.get(websocket) is None:
                         sc.get_logger().error("UUID not found.Cannot process " + message)
-                        await websocket.send("UUID not found.Cannot process " + message)
+                        await websocket.send("nok UUID not found.Cannot process " + message)
                     else:
                         res = "ok"
                         try:
@@ -64,7 +84,7 @@ async def handle_client(websocket):
                     sc.get_logger().info("property command received")
                     if connected_clients.get(websocket) is None:
                         sc.get_logger().error("UUID not found.Cannot process " + message)
-                        await websocket.send("UUID not found.Cannot process " + message)
+                        await websocket.send("nok UUID not found.Cannot process " + message)
                     else:
                         res = "ok"
                         try:
@@ -82,12 +102,11 @@ async def handle_client(websocket):
                     sc.get_logger().info("precondition command received")
                     if connected_clients.get(websocket) is None:
                         sc.get_logger().error("UUID not found.Cannot process " + message)
-                        await websocket.send("UUID not found.Cannot process " + message)
+                        await websocket.send("nok UUID not found.Cannot process " + message)
                     else:
                         res = "ok"
                         try:
-                            sc.do_get_file(str(connected_clients.get(websocket).get_uuid()),
-                                           symaiconfig.SymAIConfig.BASE_PRECONDITION.value,
+                            sc.do_precondition(str(connected_clients.get(websocket).get_uuid()),
                                            str(message).strip()[12:])
                         except Exception as e:
                             sc.get_logger().error(str(e))
@@ -100,7 +119,7 @@ async def handle_client(websocket):
                     sc.get_logger().info("postcondition command received")
                     if connected_clients.get(websocket) is None:
                         sc.get_logger().error("UUID not found.Cannot process " + message)
-                        await websocket.send("UUID not found.Cannot process " + message)
+                        await websocket.send("nok UUID not found.Cannot process " + message)
                     else:
                         res = "ok"
                         try:
