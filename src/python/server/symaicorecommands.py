@@ -149,3 +149,20 @@ class SymAICoreCommands:
         except Exception as e:
             self.get_logger().error(f"{infix} command processing failed {str(e)}")
             raise e
+
+    def do_ai(self, cuuid, msg:str):
+        b = False
+        s = str(msg).strip().split()
+        if len(s) == 1:
+            if not hasattr(self, "ai"):
+                setattr(self, "ai", False)
+            b = getattr(self, "ai")
+        elif len(s) == 2:
+            if s[1].lower() == "true" or s[1].lower() == "yes" or s[1].lower() == "1":
+                setattr(self, "ai", True)
+            else:
+                setattr(self, "ai", False)
+            b = getattr(self, "ai")
+        else:
+            raise Exception(f"Incorrect command format {msg}")
+        return str(b)

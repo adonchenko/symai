@@ -35,19 +35,14 @@ async def handle_client(websocket):
                 case "shutdown":
                     try:
                         sc.do_shutdown()
-                        await websocket.close()
-                        if connected_clients.get(websocket) is not None:
-                            connected_clients.pop(websocket)
                         for ws, param in connected_clients.items():
                             sc.do_stop(param.get_uuid())
-                            await ws.send("ok stop")
-                            ws.close()
+                            await ws.close()
                     except:
                         pass
                     sys.exit(0)
                 case "stop":
                     sc.get_logger().info("stop command received")
-                    res = "ok stop"
                     try:
                         if connected_clients.get(websocket) is not None:
                             sc.do_stop(connected_clients.get(websocket).get_uuid())
@@ -55,24 +50,40 @@ async def handle_client(websocket):
                     except Exception as e:
                         sc.get_logger().error("stop command failed " + str(e))
                         res = "nok " + str(e)
+                        await websocket.send(res)
                     else:
                         sc.get_logger().info("stop command passed ok")
                     try:
-                        await websocket.send(res)
                         connected_clients.pop(websocket)
                     except:
                         pass
                     await websocket.close()
-                case "environment":
-                    sc.get_logger().info("environment command received")
+                case "ai":
+                    sc.get_logger().info("ai command received")
                     if connected_clients.get(websocket) is None:
                         sc.get_logger().error("UUID not found.Cannot process " + message)
                         await websocket.send("nok UUID not found.Cannot process " + message)
                     else:
+                        try:
+                            res = "ok " + sc.do_ai(str(connected_clients.get(websocket).get_uuid()),
+                                                   str(message))
+                        except Exception as e:
+                            sc.get_logger().error(f"ai command error {str(e)}")
+                            res = f"nok {str(e)}"
+                        try:
+                            await websocket.send(res)
+                        except:
+                            pass
+                case "environment":
+                    sc.get_logger().info("environment command received")
+                    if connected_clients.get(websocket) is None:
+                        sc.get_logger().error(f"UUID not found.Cannot process {message}" )
+                        await websocket.send(f"nok UUID not found.Cannot process {message}")
+                    else:
                         res = "ok"
                         try:
                             sc.do_environment(str(connected_clients.get(websocket).get_uuid()),
-                                           str(message).strip()[11:])
+                                              str(message).strip()[11:])
                         except Exception as e:
                             sc.get_logger().error("environment command failed " + str(e))
                             res = "nok " + str(e)
