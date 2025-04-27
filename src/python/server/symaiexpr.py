@@ -1,4 +1,8 @@
-import json
+from antlr4.CommonTokenStream import CommonTokenStream
+from antlr4.InputStream import InputStream
+from symbolicexpressiongrammarvisitor import *
+from ExpressionGrammar.ExpressionGrammarLexer import ExpressionGrammarLexer
+from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
 
 class SymAIExpression:
 
@@ -12,10 +16,20 @@ class SymAIExpression:
         self.solver = slvr
 
     def postprocess(self, args):
-        raise Exception("postprocess method is not implemented yet")
+        return (" " + args + " ").replace("&", "&&").replace("|", "||").replace("_d_o_t_", ".").replace("__d__o__t__", "_d_o_t_").replace(" not ", "!").replace(" _n_o_t_ ", " not ").strip(" ")
 
     def preprocess(self, args):
-        raise Exception("preprocess method is not implemented yet")
+        expr_n = (" " + args + " ").replace(" not ", " _n_o_t_ ").replace("_d_o_t_", "__d__o__t__").strip(" ")
+        lexer = ExpressionGrammarLexer(InputStream(expr_n))
+        errorListener = SymbolicExpressionGrammarErrorListener()
+        lexer.removeErrorListeners()
+        lexer.addErrorListener(errorListener)
+        stream = CommonTokenStream(lexer)
+        parser = ExpressionGrammarParser(stream)
+        parser.removeErrorListeners()
+        parser.addErrorListener(errorListener)
+
+        return parser
 
     def process_body(self, args):
         raise Exception("postprocess method is not implemented yet")

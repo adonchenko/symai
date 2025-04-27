@@ -10,8 +10,6 @@
 """
 import configparser
 
-from antlr4.error.Errors import ParseCancellationException
-
 import symaiconfig
 import symaiexpressioncommands
 import logging
@@ -49,68 +47,23 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                 length = int(self.headers.get("content-length"))
                 rfile_str = self.rfile.read(length).decode("utf8")
                 try:
-                    source_expr = json.loads(rfile_str)
-                except:
-                    logger.error("Bad Request: incorrect syntax of json request")
+                    res = sc.do_check(rfile_str)
+                except Exception as e:
+                    sc.get_logger().error(f"Bad request: {str(e)}")
                     self.send_response(
-                        HTTPStatus.BAD_REQUEST, "Bad Request: incorrect syntax of json request"
+                        HTTPStatus.BAD_REQUEST, f"Bad Request: {str(e)}"
                     )
                 else:
-                    expr = source_expr.get("formula")
-                    if expr is None:
-                        logger.error("Bad Request: missing formula field")
-                        self.send_response(
-                            HTTPStatus.BAD_REQUEST, "Bad Request: missing formula field"
-                        )
+                    try:
+                        self.send_response(HTTPStatus.OK)
+                        self.send_header("Content-Type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps(res).encode("utf8"))
+                    except Exception as e:
+                        sc.get_logger().error(f"Error sending response {str(e)}")
                     else:
-                        try:
-                            subs = source_expr.get("substitution")
-                            if subs is None:
-                                subs = dict()
-
-                            expr_n = ((((((" " + expr + " ")
-                                          .replace(" not ", " _n_o_t_ "))
-                                         .replace("!", " not "))
-                                        .replace("_d_o_t_", "__d__o__t__"))
-                                       .replace(".", "_d_o_t_"))
-                                      .strip(" "))
-
-                            lexer = ExpressionGrammarLexer(InputStream(expr_n))
-                            errorListener = SymbolicExpressionGrammarErrorListener()
-                            lexer.removeErrorListeners()
-                            lexer.addErrorListener(errorListener)
-                            stream = CommonTokenStream(lexer)
-                            parser = ExpressionGrammarParser(stream)
-                            parser.removeErrorListeners()
-                            parser.addErrorListener(errorListener)
-
-                            tree = parser.expression()
-                            visitor = SymbolicExpressionGrammarVisitor()
-                            visitor.setSubstitution(subs)
-                            formula = visitor.visit(tree)
-                            formula = (((((" " + formula + " ")
-                                          .replace("&", "&&")
-                                          .replace("|", "||")
-                                          .replace("_d_o_t_", "."))
-                                         .replace("__d__o__t__", "_d_o_t_"))
-                                        .replace(" not ", "!"))
-                                       .replace(" _n_o_t_ ", " not ")).strip(" ")
-                            source_expr["formula"] = formula
-                            source_expr["is_trigonometric"] = visitor.isTrigonometric()
-                            source_expr["is_nonlinear"] = visitor.isNonLinear()
-                            source_expr["vars"] = visitor.getVarList()
-                            source_expr["substitution"] = visitor.getSubstitution()
-                        except:
-                            logger.error("error processing formula %s" % expr)
-                            self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR,
-                                               "Bad request: error processing formula %s" % expr)
-                        else:
-                            self.send_response(HTTPStatus.OK)
-                            self.send_header("Content-Type", "application/json")
-                            self.end_headers()
-
-                            logger.info("check %s->%s passed" % (expr, formula))
-                            self.wfile.write(json.dumps(source_expr).encode("utf8"))
+                        sc.get_logger().info(f"Check passed with result {res['formula']}")
+                        self.wfile.write(json.dumps(res).encode("utf8"))
             else:
                 logger.error("Bad Request: must give data")
                 self.send_response(

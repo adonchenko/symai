@@ -3,6 +3,7 @@ import os.path
 from enum import Enum
 
 class SymAISolvers(Enum):
+    BASE = "Base"
     SYMPY = "SymPy"
     Z3 = "Z3"
     CVC5= "CVC5"
