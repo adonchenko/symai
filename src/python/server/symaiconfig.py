@@ -2,12 +2,18 @@ import configparser
 import os.path
 from enum import Enum
 
+class SymAISolvers(Enum):
+    SYMPY = "SymPy"
+    Z3 = "Z3"
+    CVC5= "CVC5"
+
 class SymAIConfig(Enum):
     EXPRESSION = "Expression"
     SYMAICORE = "SymAI"
     TEMP = "tempdir"
     EXPRESSION_HOST="expression_host"
     EXPRESSION_PORT="expression_port"
+    EXPRESSION_SOLVER="expression_solver"   # Math package i.e. SymPy, Z3, CVC5
     HOST = "host"
     PORT = "port"
     LOGGERS = "loggers"
@@ -50,13 +56,13 @@ def create_config(cfg_file, section, cfg):
         c.set(SymAIConfig.SYMAICORE.value, SymAIConfig.TEMP.value, "/tmpdir/temp")
         c.set(SymAIConfig.SYMAICORE.value,SymAIConfig.HOST.value, "localhost")
         c.set(SymAIConfig.SYMAICORE.value, SymAIConfig.PORT.value, str(12345))
+        c.set(SymAIConfig.SYMAICORE.value,SymAIConfig.EXPRESSION_HOST.value, "localhost")
+        c.set(SymAIConfig.SYMAICORE.value, SymAIConfig.EXPRESSION_PORT.value, str(8080))
         #Expression
         c.add_section(SymAIConfig.EXPRESSION.value)
         c.set(SymAIConfig.EXPRESSION.value,SymAIConfig.HOST.value, "localhost")
         c.set(SymAIConfig.EXPRESSION.value, SymAIConfig.PORT.value, str(8080))
-
-
-
+        c.set(SymAIConfig.EXPRESSION.value, SymAIConfig.EXPRESSION_SOLVER.value, SymAISolvers.SYMPY.value)
         #Loggers
         c.add_section(SymAIConfig.LOGGERS.value)
         c.set(SymAIConfig.LOGGERS.value, SymAIConfig.KEYS.value, "root, expression, symaicore")

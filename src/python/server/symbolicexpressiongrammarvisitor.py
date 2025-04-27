@@ -1,6 +1,5 @@
-from ExpressionGrammar.antlr4.ExpressionGrammarVisitor import ExpressionGrammarVisitor
-from ExpressionGrammar.antlr4.ExpressionGrammarLexer import ExpressionGrammarLexer
-from ExpressionGrammar.antlr4.ExpressionGrammarParser import ExpressionGrammarParser
+from ExpressionGrammar.ExpressionGrammarVisitor import ExpressionGrammarVisitor
+from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
 
 from antlr4.error.ErrorListener import *
 
@@ -24,6 +23,9 @@ class SymbolicExpressionGrammarErrorListener( ErrorListener ):
 class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
 
     def __init__(self):
+        self.arg_list_start = "("
+        self.arg_list_cnt = ","
+        self.arg_list_fin = ")"
         self.substitution = dict()
         self.var_list = []
         self.hasTrigonometric = False
@@ -58,30 +60,58 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
 
     # Visit a parse tree produced by ExpressionGrammarParser#postfixExpression.
     def visitPostfixExpression(self, ctx:ExpressionGrammarParser.PostfixExpressionContext):
-        trig_funct=["sin", "cos", "tg", "ctg","asin", "acos", "atan", "actg"]
-        nl_funct=["log", "ln", "sqrt"]
+        trig_funct=["sin", "cos", "tan", "catan","asin", "acos", "atan", "acatan"]
+        nl_funct=["log", "ln", "sqrt", "exp, diff"]
+        tmp_arg_list_start = self.arg_list_start
+        tmp_arg_list_cnt = self.arg_list_cnt
+        tmp_arg_list_fin = self.arg_list_fin
+        self.arg_list_start = "("
+        self.arg_list_cnt = ","
+        self.arg_list_fin = ")"
 
         result = self.visit(ctx.primaryExpression())
         if result.lower().strip() in trig_funct and len(ctx.children) > 1:
             if ctx.getChild(1).getText() == '(':
                 self.hasTrigonometric = True
-        if result.lower().strip() in nl_funct and len(ctx.children) > 1:
+        elif result.lower().strip() in nl_funct and len(ctx.children) > 1:
             if ctx.getChild(1).getText() == '(':
                 self.hasNonLinear = True
+        # CVC5: Here should be if And, Or Xor or Not
+        # Z3: and or xor not
+        # sympy: and or not
+        elif  result.lower().strip() == "or" and  ctx.getChild(1).getText() == '(':
+            self.arg_list_start = "("
+            self.arg_list_cnt = ") | ("
+            self.arg_list_fin = ")"
+            result = ""
+        elif result.lower().strip() == "and" and ctx.getChild(1).getText() == '(':
+            self.arg_list_start = "("
+            self.arg_list_cnt = ") & ("
+            self.arg_list_fin = ")"
+            result = ""
+        elif result.lower().strip() == "not" and ctx.getChild(1).getText() == '(':
+            self.arg_list_start = "! ("
+            self.arg_list_cnt = ") & ! ("
+            self.arg_list_fin = ")"
+            result = ""
+
         i = 1
         j = 0
         while i < len(ctx.children):
             if len(ctx.children) > i + 1:
                 if ctx.getChild(i).getText() == '.':
-                    result = result + "."
+                    result = result + '_d_o_t_'
                     i = i + 1
                     result = result + ctx.getChild(i).getText()
                 else:
                     if ctx.getChild(i).getText() == '(':
-                        result = result + "(" + self.visit(ctx.argumentExpressionList(j)) + ")"
+                        result = result + self.arg_list_start + self.visit(ctx.argumentExpressionList(j)) + self.arg_list_fin
                         j = j + 1
                         i = i + 1
             i = i + 1
+        self.arg_list_cnt = tmp_arg_list_cnt
+        self.arg_list_start = tmp_arg_list_start
+        self.arg_list_fin = tmp_arg_list_fin
         return result
 
     # Visit a parse tree produced by ExpressionGrammarParser#argumentExpressionList.
@@ -90,7 +120,7 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         result = self.visit(ctx.assignmentExpression(i))
         i = i + 1
         while i < len(ctx.assignmentExpression()):
-            result = result + "," + self.visit(ctx.assignmentExpression(i))
+            result = result + self.arg_list_cnt + self.visit(ctx.assignmentExpression(i))
             i = i + 1
         return result
 
@@ -100,7 +130,7 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         # Variables and substitutions. Should be processed in unaryExpression
         if not (result[0:1].isdigit()) and result.find("(") < 0 and result.find("_d_o_t_") < 0:
             # Identifier appeared result.strip()
-            if result.strip() not in self.var_list:
+            if result.strip() not in self.var_list and result.lower() != "true" and result.lower() != "false":
                 self.var_list.append(result.strip())
             # Redefine variables, if any substitutions present
             if self.substitution is not None:
@@ -116,7 +146,7 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         if ctx.unaryOperator() is not None:
             op = ctx.unaryOperator().getText()
             if op == '!':
-                result = " not (" + result + ")"
+                result = " Not (" + result + ")"
             else:
                 result = op + result
         return result
@@ -173,7 +203,7 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
                 result = "(" + result + ")"
             op = ctx.getChild(2 * (i - 1) + 1).getText()
             if op == "!=":
-                result = "!(" + result + "==" + self.visit(ctx.relationalExpression(i)) + ")"
+                result = " not (" + result + "==" + self.visit(ctx.relationalExpression(i)) + ")"
             else:
                 result = result + op + self.visit(ctx.relationalExpression(i))
             i = i + 1
@@ -184,7 +214,7 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         result = self.visit(ctx.equalityExpression(0))
         i = 1
         while i < len(ctx.equalityExpression()):
-            result = "(" + result + ")&(" + self.visit(ctx.equalityExpression(i)) + ")"
+            result = "And(" + result + "," + self.visit(ctx.equalityExpression(i)) + ")"
             i = i + 1
         return result
 
@@ -193,13 +223,12 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         result = self.visit(ctx.logicalAndExpression(0))
         i = 1
         while i < len(ctx.logicalAndExpression()):
-            result = "(" + result + ")|(" + self.visit(ctx.logicalAndExpression(i)) + ")"
+            result = "Or(" + result + "," + self.visit(ctx.logicalAndExpression(i)) + ")"
             i = i + 1
         return result
 
     # Visit a parse tree produced by ExpressionGrammarParser#assignmentExpression.
     def visitAssignmentExpression(self, ctx:ExpressionGrammarParser.AssignmentExpressionContext):
-        result = ""
         if ctx.logicalOrExpression() is not None:
             result = self.visit(ctx.logicalOrExpression())
         else:

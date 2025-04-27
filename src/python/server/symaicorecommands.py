@@ -1,8 +1,6 @@
 from http import HTTPStatus
-
+import symaicommands
 import symaiconfig
-from configparser import ConfigParser
-from logging import Logger
 import http.client
 import json
 import uuid
@@ -16,9 +14,8 @@ class SymAICoreParam:
     def get_uuid(self):
         return self.session_uuid
 
-class SymAICoreCommands:
-    config:ConfigParser
-    logger:Logger
+class SymAICoreCommands(symaicommands.SymAICommands):
+
     def remove_directory_tree(self, start_directory: str):
         """Recursively and permanently removes the specified directory, all of its
         subdirectories, and every file contained in any of those folders."""
@@ -32,20 +29,6 @@ class SymAICoreCommands:
                     self.remove_directory_tree(path)
             self.get_logger().debug(f"Deleting the empty '{start_directory}' directory.")
             os.rmdir(start_directory)
-
-    def set_config(self, cfg : ConfigParser):
-        if not hasattr(SymAICoreCommands, "config"):
-            SymAICoreCommands.config = cfg
-
-    def get_config(self)->ConfigParser:
-        return  self.config
-
-    def set_logger(self,lgr : Logger):
-        if not hasattr(SymAICoreCommands, "logger"):
-            SymAICoreCommands.logger = lgr
-
-    def get_logger(self)->Logger:
-        return self.logger
 
     def do_shutdown(self):
         headers = {'Content-type': 'application/json'}
@@ -66,7 +49,6 @@ class SymAICoreCommands:
         self.get_logger().info("Shutting down the service....")
 
     def do_stop(self, cuuid : str):
-        self.get_logger().info("Stop command received. Session closed.")
         self.remove_directory_tree(os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
                                     str(cuuid)))
 

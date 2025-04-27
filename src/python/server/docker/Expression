@@ -8,14 +8,20 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY ./expression.py /app/expression.py
 COPY ./symaiconfig.py /app/symaiconfig.py
+COPY ./symaicommands.py /app/symaicommands.py
+COPY ./symaiexpressioncommands.py /app/symaiexpressioncommands.py
+COPY ./symaiexpr.py /app/symaiexpr.py
+COPY ./symaiexprcvc5.py /app/symaiexprcvc5.py
+COPY ./symaiexprz3.py /app/symaiexprz3.py
+COPY ./symaiexprsympy.py /app/symaiexprsympy.py
 COPY ./symbolicexpressiongrammarvisitor.py /app/symbolicexpressiongrammarvisitor.py
-COPY ./ExpressionGrammar/ExpressionGrammarLexer.py /app/ExpressionGrammar/antlr4/ExpressionGrammarLexer.py
-COPY ./ExpressionGrammar/ExpressionGrammarListener.py /app/ExpressionGrammar/antlr4/ExpressionGrammarListener.py
-COPY ./ExpressionGrammar/ExpressionGrammarParser.py /app/ExpressionGrammar/antlr4/ExpressionGrammarParser.py
-COPY ./ExpressionGrammar/ExpressionGrammarVisitor.py /app/ExpressionGrammar/antlr4/ExpressionGrammarVisitor.py
+COPY ./ExpressionGrammar/ExpressionGrammarLexer.py /app/ExpressionGrammar/ExpressionGrammarLexer.py
+COPY ./ExpressionGrammar/ExpressionGrammarListener.py /app/ExpressionGrammar/ExpressionGrammarListener.py
+COPY ./ExpressionGrammar/ExpressionGrammarParser.py /app/ExpressionGrammar/ExpressionGrammarParser.py
+COPY ./ExpressionGrammar/ExpressionGrammarVisitor.py /app/ExpressionGrammar/ExpressionGrammarVisitor.py
 
 # Install any needed dependencies specified in requirements.txt
-RUN pip3 install sympy antlr4-python3-runtime
+RUN pip3 install sympy antlr4-python3-runtime cvc5 z3-solver
 # RUN pip3 install --no-cache-dir -r requirements.txt
 # Make port 8080 available to the world outside this container
 EXPOSE 8080

@@ -34,12 +34,12 @@ async def handle_client(websocket):
             match st:
                 case "shutdown":
                     try:
-                        sc.do_shutdown()
                         for ws, param in connected_clients.items():
                             sc.do_stop(param.get_uuid())
                             await ws.close()
                     except:
                         pass
+                    sc.do_shutdown()
                     sys.exit(0)
                 case "stop":
                     sc.get_logger().info("stop command received")
@@ -48,7 +48,7 @@ async def handle_client(websocket):
                             sc.do_stop(connected_clients.get(websocket).get_uuid())
                             connected_clients.pop(websocket)
                     except Exception as e:
-                        sc.get_logger().error("stop command failed " + str(e))
+                        sc.get_logger().error(f"stop command failed {str(e)}")
                         res = "nok " + str(e)
                         await websocket.send(res)
                     else:
