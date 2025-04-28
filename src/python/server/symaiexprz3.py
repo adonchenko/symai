@@ -29,3 +29,26 @@ class SymAIExpressionZ3(symaiexpr.SymAIExpression):
         tree = p.expression()
         res = visitor.visit(tree)
         return str(res)
+
+    def process_body_check(self, args):
+        fml = args.get("formula")
+        visitor = args.get("visitor")
+        if fml is None or visitor is None:
+            raise Exception("Error: process_body_check incorrect arguments")
+        check_vars = dict()
+        lst = visitor.getVarList()
+
+        solver = Solver()
+
+        for n in lst:
+            check_vars[n] = Real(n)
+
+        check_vars["solver"] = solver
+        glob_vars = dict()
+        exec("solver.add(" + fml + ")", glob_vars, check_vars)
+
+        if solver.check() == sat:
+            args["satisfiable"] = True
+        else:
+            args["satisfiable"] = False
+        return args

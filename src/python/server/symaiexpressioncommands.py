@@ -11,8 +11,6 @@ class SymAIExpressionCommands(symaicommands.SymAICommands):
 
     def do_check_solver(self, solver_name : str)->symaiexpr.SymAIExpression():
         match solver_name:
-            case symaiconfig.SymAISolvers.BASE.value:
-                return symaiexpr.SymAIExpression()
             case symaiconfig.SymAISolvers.SYMPY.value:
                 return symaiexprsympy.SymAIExpressionSymPy()
             case symaiconfig.SymAISolvers.CVC5.value:
@@ -51,19 +49,10 @@ class SymAIExpressionCommands(symaicommands.SymAICommands):
             if expr is None:
                 raise Exception("Bad Request: missing formula field")
             else:
-                subs = source_expr.get("substitution")
-                if subs is None:
-                    subs = dict()
-                solver = self.do_check_solver(symaiconfig.SymAISolvers.BASE.value)
-                parser = solver.preprocess(expr)
-                tree = parser.expression()
-                visitor = SymbolicExpressionGrammarVisitor()
-                visitor.setSubstitution(subs)
-                formula = solver.postprocess(str(visitor.visit(tree)))
-                source_expr["formula"] = formula
-                source_expr["is_trigonometric"] = visitor.isTrigonometric()
-                source_expr["is_nonlinear"] = visitor.isNonLinear()
-                source_expr["vars"] = visitor.getVarList()
-                source_expr["substitution"] = visitor.getSubstitution()
-                self.get_logger().info(f"Check request received. Source formula is '{expr}'")
-        return source_expr
+                solver_name = source_expr.get("solver")
+                if solver_name is None:
+                    solver_name = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value)
+                self.get_logger().info(f"Check request received. Source formula is '{expr}. Solver is '{solver_name}'")
+
+                solver = self.do_check_solver(solver_name)
+                return solver.process_check(source_expr)

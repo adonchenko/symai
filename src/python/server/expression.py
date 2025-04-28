@@ -62,7 +62,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                     except Exception as e:
                         sc.get_logger().error(f"Error sending response {str(e)}")
                     else:
-                        sc.get_logger().info(f"Check passed with result {res['formula']}")
+                        sc.get_logger().info(f"Check passed with result {res}")
                         self.wfile.write(json.dumps(res).encode("utf8"))
             else:
                 logger.error("Bad Request: must give data")

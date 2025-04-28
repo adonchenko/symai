@@ -52,3 +52,40 @@ class SymAIExpression:
             source_expr["formula"] = res
             return source_expr
 
+    def preprocess_check(self, args):
+        return self.preprocess(args)
+
+    def postprocess_check(self, args):
+        args.pop("visitor")
+        return args
+
+    def process_body_check(self, args):
+        return self.process_body(args)
+
+    def process_check(self, source_expr):
+        expr = source_expr.get("formula")
+        if expr is None:
+            raise Exception("Bad Request: missing formula field in check request")
+        else:
+            parser = self.preprocess_check(expr)
+
+            # TODO: process_body check withing parser (return value) from preprocess_check
+            subs = source_expr.get("substitution")
+            if subs is None:
+                subs = dict()
+            tree = parser.expression()
+            visitor = SymbolicExpressionGrammarVisitor()
+            visitor.setSubstitution(subs)
+            fml = str(visitor.visit(tree))
+            formula = self.postprocess(fml)
+            source_expr["formula"] = formula
+            source_expr["is_trigonometric"] = visitor.isTrigonometric()
+            source_expr["is_nonlinear"] = visitor.isNonLinear()
+            source_expr["vars"] = visitor.getVarList()
+            source_expr["substitution"] = visitor.getSubstitution()
+            source_expr["visitor"] = visitor
+            # TODO: satisfiable
+            source_expr = self.process_body_check(source_expr)
+            # TODO postprocess_check with source_expr from process_body_check
+            # res = self.postprocess_check(self.process_body_check(self.preprocess_check(expr)))
+            return self.postprocess_check(source_expr)
