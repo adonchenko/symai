@@ -32,6 +32,9 @@ async def main():
                 # Receive a message from the server
                 response = await websocket.recv()
                 print(f"Received: {response}")
+    except websockets.exceptions.ConnectionClosed:
+        print(f"Quitting. Socket is closed")
+        sys.exit(0)            
     except Exception as e:
         print(f"Something wrong. {str(e)} Quitting.")
         sys.exit(0)

@@ -132,12 +132,20 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             self.get_logger().error(f"{infix} command processing failed {str(e)}")
             raise e
 
+    # TODO: AI and SOLVER values should be saved into .ini file!!!
     def do_ai(self, cuuid, msg:str):
         b = False
+        try:
+            s = self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.AI.value)
+            if s is not None:
+                if s[1].lower() == "true" or s[1].lower() == "yes" or s[1].lower() == "1":
+                    b = True
+        except:
+            b = False
         s = str(msg).strip().split()
         if len(s) == 1:
             if not hasattr(self, "ai"):
-                setattr(self, "ai", False)
+                setattr(self, "ai", b)
             b = getattr(self, "ai")
         elif len(s) == 2:
             if s[1].lower() == "true" or s[1].lower() == "yes" or s[1].lower() == "1":
@@ -145,6 +153,29 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             else:
                 setattr(self, "ai", False)
             b = getattr(self, "ai")
+        else:
+            raise Exception(f"Incorrect command format {msg}")
+        return str(b)
+
+    def do_solver(self, cuuid, msg:str):
+        b = False
+        s = str(msg).strip().split()
+        if len(s) == 1:
+            if not hasattr(self, "solver"):
+                try:
+                    s = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value)
+                except:
+                    s = symaiconfig.SymAISolvers.SYMPY.value
+                if s is None or s[1] not in symaiconfig.SymAISolvers._value2member_map_:
+                    s = symaiconfig.SymAISolvers.SYMPY.value
+                setattr(self, "solver", symaiconfig.SymAISolvers.SYMPY.value)
+            b = getattr(self, "solver")
+        elif len(s) == 2:
+            if s[1] in symaiconfig.SymAISolvers._value2member_map_:
+                setattr(self, "solver", s[1])
+            else:
+                raise Exception(f"Incorrect value {s[1]}")
+            b = getattr(self, "solver")
         else:
             raise Exception(f"Incorrect command format {msg}")
         return str(b)

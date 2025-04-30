@@ -1,4 +1,3 @@
-import symaiconfig
 from configparser import ConfigParser
 from logging import Logger
 

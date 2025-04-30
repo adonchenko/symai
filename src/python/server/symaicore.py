@@ -74,6 +74,22 @@ async def handle_client(websocket):
                             await websocket.send(res)
                         except:
                             pass
+                case "solver":
+                    sc.get_logger().info("solver command received")
+                    if connected_clients.get(websocket) is None:
+                        sc.get_logger().error("UUID not found.Cannot process " + message)
+                        await websocket.send("nok UUID not found.Cannot process " + message)
+                    else:
+                        try:
+                            res = "ok " + sc.do_solver(str(connected_clients.get(websocket).get_uuid()),
+                                                   str(message))
+                        except Exception as e:
+                            sc.get_logger().error(f"solver command error {str(e)}")
+                            res = f"nok {str(e)}"
+                        try:
+                            await websocket.send(res)
+                        except:
+                            pass
                 case "environment":
                     sc.get_logger().info("environment command received")
                     if connected_clients.get(websocket) is None:

@@ -2,6 +2,8 @@ import configparser
 import os.path
 from enum import Enum
 
+config_file:str = ""
+
 class SymAISolvers(Enum):
     SYMPY = "SymPy"
     Z3 = "Z3"
@@ -14,6 +16,7 @@ class SymAIConfig(Enum):
     EXPRESSION_HOST="expression_host"
     EXPRESSION_PORT="expression_port"
     EXPRESSION_SOLVER="expression_solver"   # Math package i.e. SymPy, Z3, CVC5
+    AI='AI'
     HOST = "host"
     PORT = "port"
     LOGGERS = "loggers"
@@ -47,6 +50,8 @@ def create_config(cfg_file, section, cfg):
     """
     Create a config file
     """
+    global config_file
+
     c = configparser.ConfigParser()
     if os.path.exists(cfg_file) :
         c.read(cfg_file)
@@ -58,6 +63,8 @@ def create_config(cfg_file, section, cfg):
         c.set(SymAIConfig.SYMAICORE.value, SymAIConfig.PORT.value, str(12345))
         c.set(SymAIConfig.SYMAICORE.value,SymAIConfig.EXPRESSION_HOST.value, "localhost")
         c.set(SymAIConfig.SYMAICORE.value, SymAIConfig.EXPRESSION_PORT.value, str(8080))
+        c.set(SymAIConfig.SYMAICORE.value,SymAIConfig.AI.value, str(False))
+
         #Expression
         c.add_section(SymAIConfig.EXPRESSION.value)
         c.set(SymAIConfig.EXPRESSION.value,SymAIConfig.HOST.value, "localhost")
@@ -117,4 +124,5 @@ def create_config(cfg_file, section, cfg):
         c.set(section, k, cfg.get(section, k))
     with open(cfg_file, "w") as c_file:
         c.write(c_file)
+    config_file = cfg_file
     return c

@@ -38,64 +38,56 @@ def _parse_header(content_type):
     return m.get_content_type(), m["content-type"].params
 
 class HTTPRequestHandler(BaseHTTPRequestHandler):
+    sc : symaiexpressioncommands.SymAIExpressionCommands
+    def do_send_ok_rsp(self, rsp, cmn, res):
+        try:
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(rsp).encode("utf8"))
+        except Exception as e:
+            self.sc.get_logger().error(f"{cmn} failed. Error sending response {str(e)}")
+        else:
+            try:
+                self.wfile.write(json.dumps(rsp).encode("utf8"))
+            except Exception as e:
+                self.sc.get_logger().error(f"{cmn} failed. Error sending response body {str(e)}")
+            else:
+                self.sc.get_logger().info(f"{cmn} passed with result {res}")
+
+    def do_send_err_rsp(self, rsp):
+        self.sc.get_logger().error(rsp)
+        self.send_response(HTTPStatus.BAD_REQUEST, rsp)
+
     def do_POST(self):
-        sc = symaiexpressioncommands.SymAIExpressionCommands()
-        logger = sc.get_logger()
+        self.sc = symaiexpressioncommands.SymAIExpressionCommands()
+        logger = self.sc.get_logger()
         if re.search("/api/v1/check", self.path):
             ctype, pdict = _parse_header(self.headers.get("content-type"))
             if ctype == "application/json":
                 length = int(self.headers.get("content-length"))
                 rfile_str = self.rfile.read(length).decode("utf8")
                 try:
-                    res = sc.do_check(rfile_str)
+                    res = self.sc.do_check(rfile_str)
                 except Exception as e:
-                    sc.get_logger().error(f"Bad request: {str(e)}")
-                    self.send_response(
-                        HTTPStatus.BAD_REQUEST, f"Bad Request: {str(e)}"
-                    )
+                    self.do_send_err_rsp(f"Bad request: {str(e)}")
                 else:
-                    try:
-                        self.send_response(HTTPStatus.OK)
-                        self.send_header("Content-Type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(res).encode("utf8"))
-                    except Exception as e:
-                        sc.get_logger().error(f"Error sending response {str(e)}")
-                    else:
-                        sc.get_logger().info(f"Check passed with result {res}")
-                        self.wfile.write(json.dumps(res).encode("utf8"))
+                    self.do_send_ok_rsp(res, "check", res)
             else:
-                logger.error("Bad Request: must give data")
-                self.send_response(
-                    HTTPStatus.BAD_REQUEST, "Bad Request: must give data"
-                )
+                self.do_send_err_rsp("Bad Request: must give data")
         elif re.search("/api/v1/simplify", self.path):
             ctype, pdict = _parse_header(self.headers.get("content-type"))
             if ctype == "application/json":
                 length = int(self.headers.get("content-length"))
                 rfile_str = self.rfile.read(length).decode("utf8")
                 try:
-                    res = sc.do_simplify(rfile_str)
+                    res = self.sc.do_simplify(rfile_str)
                 except Exception as e:
-                    sc.get_logger().error(f"Bad request: {str(e)}")
-                    self.send_response(
-                        HTTPStatus.BAD_REQUEST, f"Bad Request: {str(e)}"
-                    )
+                    self.do_send_err_rsp(f"Bad request: {str(e)}")
                 else:
-                    try:
-                        self.send_response(HTTPStatus.OK)
-                        self.send_header("Content-Type", "application/json")
-                        self.end_headers()
-                        self.wfile.write(json.dumps(res).encode("utf8"))
-                    except Exception as e:
-                        sc.get_logger().error(f"Error sending response {str(e)}")
-                    else:
-                        sc.get_logger().info(f"Simplify passed with result {res['formula']}")
+                    self.do_send_ok_rsp(res, "simplify", res["formula"])
             else:
-                sc.get_logger().error("Bad Request: must give data")
-                self.send_response(
-                    HTTPStatus.BAD_REQUEST, "Bad Request: must give data"
-                )
+                self.do_send_err_rsp("Bad Request: must give data")
         elif re.search("/api/v1/solve", self.path):
             ctype, pdict = _parse_header(self.headers.get("content-type"))
             if ctype == "application/json":
