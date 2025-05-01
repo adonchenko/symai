@@ -135,13 +135,16 @@ class SymAICoreCommands(symaicommands.SymAICommands):
     # TODO: AI and SOLVER values should be saved into .ini file!!!
     def do_ai(self, cuuid, msg:str):
         b = False
-        try:
-            s = self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.AI.value)
-            if s is not None:
-                if s[1].lower() == "true" or s[1].lower() == "yes" or s[1].lower() == "1":
-                    b = True
-        except:
-            b = False
+        if hasattr(self, "ai"):
+            b = getattr(self, "ai")
+        else:
+            try:
+                s = self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.AI.value)
+                if s is not None:
+                    if s.lower() == "true" or s.lower() == "yes" or s.lower() == "1":
+                        b = True
+            except:
+                b = False
         s = str(msg).strip().split()
         if len(s) == 1:
             if not hasattr(self, "ai"):
@@ -158,24 +161,26 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         return str(b)
 
     def do_solver(self, cuuid, msg:str):
-        b = False
-        s = str(msg).strip().split()
-        if len(s) == 1:
-            if not hasattr(self, "solver"):
-                try:
-                    s = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value)
-                except:
-                    s = symaiconfig.SymAISolvers.SYMPY.value
-                if s is None or s[1] not in symaiconfig.SymAISolvers._value2member_map_:
-                    s = symaiconfig.SymAISolvers.SYMPY.value
-                setattr(self, "solver", symaiconfig.SymAISolvers.SYMPY.value)
-            b = getattr(self, "solver")
-        elif len(s) == 2:
-            if s[1] in symaiconfig.SymAISolvers._value2member_map_:
-                setattr(self, "solver", s[1])
-            else:
-                raise Exception(f"Incorrect value {s[1]}")
+        if hasattr(self, "solver"):
             b = getattr(self, "solver")
         else:
+            b = symaiconfig.SymAISolvers.SYMPY.value
+            try:
+                s = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value)
+                if s in symaiconfig.SymAISolvers._value2member_map_:
+                    b = s
+            except:
+                b = symaiconfig.SymAISolvers.SYMPY.value
+        s = msg.strip().split()
+        if len(s) == 1:
+            if hasattr(self, "solver"):
+                b = getattr(self, "solver")
+        elif len(s) == 2:
+            if s[1] in symaiconfig.SymAISolvers._value2member_map_:
+                b = s[1]
+            else:
+                raise Exception(f"Incorrect value {s[1]}")
+        else:
             raise Exception(f"Incorrect command format {msg}")
+        setattr(self, "solver", b)
         return str(b)
