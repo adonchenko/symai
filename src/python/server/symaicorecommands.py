@@ -40,12 +40,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                         symaiconfig.SymAIConfig.EXPRESSION_PORT.value)))
             conn.request('GET', '/api/v1/shutdown', "", headers)
             conn.getresponse()
-        except:
-            self.get_logger().error("Error on shutdown expression ",
-                                  self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
-                                                      symaiconfig.SymAIConfig.EXPRESSION_HOST.value),
-                                  " ", int(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
-                                                               symaiconfig.SymAIConfig.EXPRESSION_PORT.value)))
+        except Exception as e:
+            self.get_logger().error(f"Error on shutdown expression module {str(e)}")
         self.get_logger().info("Shutting down the service....")
 
     def do_stop(self, cuuid : str):
@@ -127,12 +123,11 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                         infix,
                         res["filename"]), "w") as f:
                 f.write(rsp["formula"])
-            self.get_logger().info(f"{infix} command processed. The {infix} formula {rsp["formula"]} saved")
+            self.get_logger().info(f"{infix} command processed. The {infix} formula {rsp.get('formula')} saved")
         except Exception as e:
             self.get_logger().error(f"{infix} command processing failed {str(e)}")
             raise e
 
-    # TODO: AI and SOLVER values should be saved into .ini file!!!
     def do_ai(self, cuuid, msg:str):
         b = False
         if hasattr(self, "ai"):
@@ -146,18 +141,47 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             except:
                 b = False
         s = str(msg).strip().split()
+        is_flush = False
         if len(s) == 1:
             if not hasattr(self, "ai"):
                 setattr(self, "ai", b)
             b = getattr(self, "ai")
         elif len(s) == 2:
-            if s[1].lower() == "true" or s[1].lower() == "yes" or s[1].lower() == "1":
+            if s[1].lower() == "flush":
+                is_flush = True
+            elif s[1].lower() == "true" or s[1].lower() == "yes" or s[1].lower() == "1":
                 setattr(self, "ai", True)
             else:
                 setattr(self, "ai", False)
             b = getattr(self, "ai")
+        elif len(s) == 3:
+            if s[2].lower() == "flush":
+                is_flush = True
+                if s[1].lower() == "true" or s[1].lower() == "yes" or s[1].lower() == "1":
+                    setattr(self, "ai", True)
+                elif s[1].lower() == "false" or s[1].lower() == "no" or s[1].lower() == "0":
+                    setattr(self, "ai", False)
+                else:
+                    raise Exception(f"Incorrect command format {msg}")
+            elif s[1].lower() == "flush":
+                is_flush = True
+                if s[2].lower() == "true" or s[2].lower() == "yes" or s[2].lower() == "1":
+                    setattr(self, "ai", True)
+                elif s[2].lower() == "false" or s[2].lower() == "no" or s[2].lower() == "0":
+                    setattr(self, "ai", False)
+                else:
+                    raise Exception(f"Incorrect command format {msg}")
+            else:
+                raise Exception(f"Incorrect command format {msg}")
+            b = getattr(self, "ai")
         else:
             raise Exception(f"Incorrect command format {msg}")
+        if is_flush:
+            cfg = self.get_config()
+            cfg.set(symaiconfig.SymAIConfig.SYMAICORE.value,
+                    symaiconfig.SymAIConfig.AI.value, str(b))
+            symaiconfig.create_config(symaiconfig.get_config_file(),
+                                      symaiconfig.SymAIConfig.SYMAICORE.value, cfg)
         return str(b)
 
     def do_solver(self, cuuid, msg:str):
@@ -171,6 +195,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                     b = s
             except:
                 b = symaiconfig.SymAISolvers.SYMPY.value
+        is_flush = False
         s = msg.strip().split()
         if len(s) == 1:
             if hasattr(self, "solver"):
@@ -178,9 +203,31 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         elif len(s) == 2:
             if s[1] in symaiconfig.SymAISolvers._value2member_map_:
                 b = s[1]
+            elif s[1].lower() == "flush":
+                is_flush = True
             else:
                 raise Exception(f"Incorrect value {s[1]}")
+        elif len(s) == 3:
+            if s[1].lower() == "flush":
+                is_flush = True
+                if s[2] in symaiconfig.SymAISolvers._value2member_map_:
+                    b = s[2]
+                else:
+                    raise Exception(f"Incorrect command format {msg}")
+            elif s[2].lower() == "flush":
+                is_flush = True
+                if s[1] in symaiconfig.SymAISolvers._value2member_map_:
+                    b = s[1]
+                else:
+                    raise Exception(f"Incorrect command format {msg}")
+            else:
+                raise Exception(f"Incorrect command format {msg}")
         else:
             raise Exception(f"Incorrect command format {msg}")
         setattr(self, "solver", b)
+        if is_flush:
+            cfg = self.get_config()
+            cfg.set(symaiconfig.SymAIConfig.EXPRESSION.value,
+                                  symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value, b)
+            symaiconfig.create_config(symaiconfig.get_config_file(), symaiconfig.SymAIConfig.EXPRESSION.value, cfg)
         return str(b)
