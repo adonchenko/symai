@@ -46,9 +46,14 @@ class SymAIExpressionZ3(symaiexpr.SymAIExpression):
         check_vars["solver"] = solver
         glob_vars = dict()
         exec("solver.add(" + fml + ")", glob_vars, check_vars)
+        res = dict()
 
         if solver.check() == sat:
             args["satisfiable"] = True
+            m = solver.model()
+            for dd in  m.decls():
+                res[str(dd.name())] = str(m[dd])
         else:
             args["satisfiable"] = False
+        args["model"] = res
         return args

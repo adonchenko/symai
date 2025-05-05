@@ -69,7 +69,6 @@ class SymAIExpression:
         else:
             parser = self.preprocess_check(expr)
 
-            # TODO: process_body check withing parser (return value) from preprocess_check
             subs = source_expr.get("substitution")
             if subs is None:
                 subs = dict()
@@ -84,8 +83,6 @@ class SymAIExpression:
             source_expr["vars"] = visitor.getVarList()
             source_expr["substitution"] = visitor.getSubstitution()
             source_expr["visitor"] = visitor
-            # TODO: satisfiable
+
             source_expr = self.process_body_check(source_expr)
-            # TODO postprocess_check with source_expr from process_body_check
-            # res = self.postprocess_check(self.process_body_check(self.preprocess_check(expr)))
             return self.postprocess_check(source_expr)

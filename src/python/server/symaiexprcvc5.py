@@ -46,11 +46,16 @@ class SymAIExpressionCVC5(symaiexpr.SymAIExpression):
 
         check_vars["solver"] = solver
         glob_vars = dict()
+        res = dict()
         exec("solver.add(" + fml + ")", glob_vars, check_vars)
 
         if solver.check() == sat:
             args["satisfiable"] = True
+            m = solver.model()
+            for dd in  m.decls():
+                res[str(dd)] = str(m[dd])
         else:
             args["satisfiable"] = False
+        args["model"] = res
         return args
     

@@ -1,8 +1,9 @@
 import configparser
 import os.path
 from enum import Enum
-
 config_file:str = ""
+
+
 
 class SymAISolvers(Enum):
     SYMPY = "SymPy"
