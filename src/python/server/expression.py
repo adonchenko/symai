@@ -25,11 +25,6 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import signal
 
-from antlr4.CommonTokenStream import CommonTokenStream
-from antlr4.InputStream import InputStream
-from symbolicexpressiongrammarvisitor import *
-from ExpressionGrammar.ExpressionGrammarLexer import ExpressionGrammarLexer
-from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
 import sys
 
 def _parse_header(content_type):
@@ -61,8 +56,20 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         self.sc = symaiexpressioncommands.SymAIExpressionCommands()
-        logger = self.sc.get_logger()
-        if re.search("/api/v1/check", self.path):
+        if re.search("/api/v1/expression/inverse", self.path):
+            ctype, pdict = _parse_header(self.headers.get("content-type"))
+            if ctype == "application/json":
+                length = int(self.headers.get("content-length"))
+                rfile_str = self.rfile.read(length).decode("utf8")
+                try:
+                    res = self.sc.do_inverse(rfile_str)
+                except Exception as e:
+                    self.do_send_err_rsp(f"Bad request: {str(e)}")
+                else:
+                    self.do_send_ok_rsp(res, "inverse", res["formula"])
+            else:
+                self.do_send_err_rsp("Bad Request: must give data")
+        elif re.search("/api/v1/expression/check", self.path):
             ctype, pdict = _parse_header(self.headers.get("content-type"))
             if ctype == "application/json":
                 length = int(self.headers.get("content-length"))
@@ -75,7 +82,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                     self.do_send_ok_rsp(res, "check", res)
             else:
                 self.do_send_err_rsp("Bad Request: must give data")
-        elif re.search("/api/v1/simplify", self.path):
+        elif re.search("/api/v1/expression/simplify", self.path):
             ctype, pdict = _parse_header(self.headers.get("content-type"))
             if ctype == "application/json":
                 length = int(self.headers.get("content-length"))
@@ -93,7 +100,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if re.search("/api/v1/shutdown", self.path):
+        if re.search("/api/v1/system/shutdown", self.path):
             symaiexpressioncommands.SymAIExpressionCommands().do_shutdown()
             # Must process shutdown in another thread or we'll hang
             def kill_me_please():

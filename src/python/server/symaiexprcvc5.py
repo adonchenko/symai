@@ -32,10 +32,11 @@ class SymAIExpressionCVC5(symaiexpr.SymAIExpression):
         return str(res)
 
     def process_body_check(self, args):
-        fml = args.get("formula")
         visitor = args.get("visitor")
-        if fml is None or visitor is None:
+        tree = args.get("tree")
+        if tree is None or visitor is None:
             raise Exception("Error: process_body_check incorrect arguments")
+        fml = visitor.visit(tree)
         check_vars = dict()
         lst = visitor.getVarList()
 
@@ -58,4 +59,6 @@ class SymAIExpressionCVC5(symaiexpr.SymAIExpression):
             args["satisfiable"] = False
         args["model"] = res
         return args
-    
+
+    def process_body_inverse(self, args):
+        raise Exception("Not implemented yet")

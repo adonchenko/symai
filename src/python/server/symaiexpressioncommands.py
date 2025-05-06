@@ -56,3 +56,21 @@ class SymAIExpressionCommands(symaicommands.SymAICommands):
 
                 solver = self.do_check_solver(solver_name)
                 return solver.process_check(source_expr)
+
+    def do_inverse(self, source : str):
+        try:
+            source_expr = json.loads(source)
+        except Exception as e:
+            raise Exception(f"Bad Request: incorrect syntax of json request {str(e)}")
+        else:
+            expr = source_expr.get("formula")
+            if expr is None:
+                raise Exception("Bad Request: missing formula field")
+            else:
+                solver_name = source_expr.get("solver")
+                if solver_name is None:
+                    solver_name = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value)
+                self.get_logger().info(f"Inverse request received. Source formula is '{expr}. Solver is '{solver_name}'")
+
+                solver = self.do_check_solver(solver_name)
+                return solver.process_inverse(source_expr)

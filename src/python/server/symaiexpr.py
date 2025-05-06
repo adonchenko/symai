@@ -57,6 +57,7 @@ class SymAIExpression:
 
     def postprocess_check(self, args):
         args.pop("visitor")
+        args.pop("tree")
         return args
 
     def process_body_check(self, args):
@@ -83,6 +84,49 @@ class SymAIExpression:
             source_expr["vars"] = visitor.getVarList()
             source_expr["substitution"] = visitor.getSubstitution()
             source_expr["visitor"] = visitor
+            source_expr["tree"] = tree
 
             source_expr = self.process_body_check(source_expr)
             return self.postprocess_check(source_expr)
+
+    def preprocess_inverse(self, args):
+        return self.preprocess(args)
+
+    def postprocess_inverse(self, args):
+        args.pop("visitor")
+        args.pop("tree")
+        args.pop("target")
+        return args
+
+    def process_body_inverse(self, args):
+        return self.process_body(args)
+
+    def process_inverse(self, source_expr):
+        expr = source_expr.get("formula")
+        if expr is None:
+            raise Exception("Bad Request: missing formula field in inverse request")
+        else:
+            s = expr.split("=")[0]
+            t = expr[len(s) + 1:]
+            t = "(" + t + ") - " + s
+            parser = self.preprocess_inverse(t + '-' + s)
+            source_expr.pop("formula")
+            source_expr["formula"] = t
+            source_expr["target"] = s
+
+            subs = source_expr.get("substitution")
+            if subs is None:
+                subs = dict()
+            tree = parser.expression()
+            visitor = SymbolicExpressionGrammarVisitor()
+            visitor.setSubstitution(subs)
+            visitor.visit(tree)
+            vars = visitor.getVarList()
+            if vars is None or len(vars) > 0:
+                source_expr["target"] = vars[0]
+            source_expr["tree"] = tree
+            source_expr["visitor"] = visitor
+
+            source_expr = self.process_body_inverse(source_expr)
+            source_expr["formula"] = expr
+            return self.postprocess_inverse(source_expr)

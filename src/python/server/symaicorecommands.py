@@ -38,7 +38,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                         symaiconfig.SymAIConfig.EXPRESSION_HOST.value)),
                 int(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
                                         symaiconfig.SymAIConfig.EXPRESSION_PORT.value)))
-            conn.request('GET', '/api/v1/shutdown', "", headers)
+            conn.request('GET', '/api/v1/system/shutdown', "", headers)
             conn.getresponse()
         except Exception as e:
             self.get_logger().error(f"Error on shutdown expression module {str(e)}")
@@ -113,7 +113,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                           symaiconfig.SymAIConfig.EXPRESSION_PORT.value)))
             query = dict()
             query["formula"] = res["content"].strip()
-            conn.request('POST', '/api/v1/simplify', json.dumps(query), headers)
+            conn.request('POST', '/api/v1/expression/simplify', json.dumps(query), headers)
             response = conn.getresponse()
             if not (response.getcode() == HTTPStatus.OK):
                 raise Exception("Attempt simplify expression error Error code " + str(conn.getresponse()))
@@ -231,3 +231,4 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                   symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value, b)
             symaiconfig.create_config(symaiconfig.get_config_file(), symaiconfig.SymAIConfig.EXPRESSION.value, cfg)
         return str(b)
+

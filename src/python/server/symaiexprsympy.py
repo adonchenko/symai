@@ -17,13 +17,12 @@ class SymAIExpressionSymPy(symaiexpr.SymAIExpression):
         return str(sympy.simplify(fml, rational=True, evaluate=True))
 
     def process_body_check(self, args):
-        fml = args.get("formula")
         visitor = args.get("visitor")
-        if fml is None or visitor is None:
+        tree = args.get("tree")
+        if tree is None or visitor is None or visitor is None:
             raise Exception("Error: process_body_check incorrect arguments")
+        fml = visitor.visit(tree)
         models = sympy.satisfiable(fml)
-        x, y, z = sympy.symbols("x y z")
-        solution = sympy.solve(fml, (x, y, z), dict=True)
         res = dict()
         if models:
             args["satisfiable"] = True
@@ -50,4 +49,29 @@ class SymAIExpressionSymPy(symaiexpr.SymAIExpression):
             args["satisfiable"] = False
         args["model"] = res
         return args
-    
+
+    def process_body_inverse(self, args):
+        visitor = args.get("visitor")
+        tree = args.get("tree")
+        tv = args.get("target")
+        expr = args["formula"]
+        if tree is None or visitor is None or visitor is None or tv is None:
+            raise Exception("Error: process_body_inverse incorrect arguments")
+        fml = visitor.visit(tree)
+        models = sympy.satisfiable(fml)
+        res = dict()
+        if models:
+            args["satisfiable"] = True
+            lst = visitor.getVarList()
+            check_vars = dict()
+            if len(lst) > 0:
+                for n in lst:
+                    check_vars[n] = sympy.symbols(n)
+            glob_vars = dict()
+            glob_vars["solve"] = sympy.solve
+            solutions = eval("solve(" + expr + "," + tv + ")", glob_vars, check_vars)
+            res[tv] = str(solutions[0])
+        else:
+            args["satisfiable"] = False
+        args["inverse"] = res
+        return args

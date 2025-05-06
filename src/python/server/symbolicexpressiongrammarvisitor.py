@@ -129,10 +129,8 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         result = self.visit(ctx.postfixExpression()).strip()
         # Variables and substitutions. Should be processed in unaryExpression
         if not (result[0:1].isdigit()) and result.find("(") < 0 and result.find("_d_o_t_") < 0:
-            # Identifier appeared result.strip()
             if result.strip() not in self.var_list and result.lower() != "true" and result.lower() != "false":
                 self.var_list.append(result.strip())
-            # Redefine variables, if any substitutions present
             if self.substitution is not None:
                 i = 0
                 while i < len(self.substitution):
