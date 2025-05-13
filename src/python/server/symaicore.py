@@ -17,7 +17,7 @@ from symaicorecommands import SymAICoreCommands
 
 connected_clients = dict()
 
-# Function to handle each client connection
+# Function to handle one client connection
 async def handle_client(websocket):
     global connected_clients
     if connected_clients.get(websocket) is None:
@@ -211,6 +211,8 @@ async def main():
     logging.getLogger('asyncio.coroutines').setLevel(logging.ERROR)
     logging.getLogger('websockets.server').setLevel(logging.ERROR)
     logging.getLogger('websockets.protocol').setLevel(logging.ERROR)
+    logging.getLogger("requests").setLevel(logging.ERROR)
+    logging.getLogger("urllib3").setLevel(logging.ERROR)
 
     sc.set_config(cfg)
     sc.set_logger(logger)

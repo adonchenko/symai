@@ -34,6 +34,10 @@ def _parse_header(content_type):
 
 class HTTPRequestHandler(BaseHTTPRequestHandler):
     sc : symaiexpressioncommands.SymAIExpressionCommands
+
+    def log_message(self, format, *args):
+        return
+    
     def do_send_ok_rsp(self, rsp, cmn, res):
         try:
             self.send_response(HTTPStatus.OK)

@@ -70,6 +70,7 @@ class SymAIExpressionCommands(symaicommands.SymAICommands):
                 solver_name = source_expr.get("solver")
                 if solver_name is None:
                     solver_name = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value)
+                solver_name = symaiconfig.SymAISolvers.SYMPY.value
                 self.get_logger().info(f"Inverse request received. Source formula is '{expr}. Solver is '{solver_name}'")
 
                 solver = self.do_check_solver(solver_name)
