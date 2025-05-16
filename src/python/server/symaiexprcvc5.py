@@ -22,6 +22,9 @@ class SymAIExpressionCVC5(symaiexpr.SymAIExpression):
             simplify_vars[n] = Real(n)
 
         glob_vars = dict()
+        glob_vars["And"] = cvc5_pythonic.And
+        glob_vars["Or"] = cvc5_pythonic.Or
+        glob_vars["Not"] = cvc5_pythonic.Not
         glob_vars["simplify"] = cvc5_pythonic.simplify
         res = eval("simplify(" + fml + ")", glob_vars, simplify_vars)
 
@@ -45,8 +48,11 @@ class SymAIExpressionCVC5(symaiexpr.SymAIExpression):
         for n in lst:
             check_vars[n] = Real(n)
 
-        check_vars["solver"] = solver
         glob_vars = dict()
+        glob_vars["solver"] = solver
+        glob_vars["And"] = cvc5_pythonic.And
+        glob_vars["Or"] = cvc5_pythonic.Or
+        glob_vars["Not"] = cvc5_pythonic.Not
         res = dict()
         exec("solver.add(" + fml + ")", glob_vars, check_vars)
 

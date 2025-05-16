@@ -21,6 +21,9 @@ class SymAIExpressionZ3(symaiexpr.SymAIExpression):
             simplify_vars[n] = Real(n)
 
         glob_vars = dict()
+        glob_vars["And"] = And
+        glob_vars["Or"] = Or
+        glob_vars["Not"] = Not
         glob_vars["simplify"] = z3.simplify
         res = eval("simplify(" + fml + ")", glob_vars, simplify_vars)
 
@@ -43,12 +46,14 @@ class SymAIExpressionZ3(symaiexpr.SymAIExpression):
 
         for n in lst:
             check_vars[n] = Real(n)
-
-        check_vars["solver"] = solver
         glob_vars = dict()
+        glob_vars["And"] = And
+        glob_vars["Or"] = Or
+        glob_vars["Not"] = Not
+        glob_vars["solver"] = solver
+
         exec("solver.add(" + fml + ")", glob_vars, check_vars)
         res = dict()
-
         if solver.check() == sat:
             args["satisfiable"] = True
             m = solver.model()

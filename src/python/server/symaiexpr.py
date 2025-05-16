@@ -1,5 +1,7 @@
 from antlr4.CommonTokenStream import CommonTokenStream
 from antlr4.InputStream import InputStream
+from sympy.polys.polyroots import preprocess_roots
+
 from symbolicexpressiongrammarvisitor import *
 from ExpressionGrammar.ExpressionGrammarLexer import ExpressionGrammarLexer
 from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
@@ -58,7 +60,17 @@ class SymAIExpression:
     def postprocess_check(self, args):
         args.pop("visitor")
         args.pop("tree")
-        return args
+
+        parser = self.preprocess_check(args["formula"])
+        subs = args.get("substitution")
+        if subs is None:
+            subs = dict()
+        tree = parser.expression()
+        visitor = SymbolicExpressionGrammarVisitor()
+        visitor.setSubstitution(subs)
+        fml = str(visitor.visit(tree))
+        args["formula"] = self.postprocess(fml)
+        return self.process_simplify(args)
 
     def process_body_check(self, args):
         return self.process_body(args)
@@ -85,7 +97,6 @@ class SymAIExpression:
             source_expr["substitution"] = visitor.getSubstitution()
             source_expr["visitor"] = visitor
             source_expr["tree"] = tree
-
             source_expr = self.process_body_check(source_expr)
             return self.postprocess_check(source_expr)
 

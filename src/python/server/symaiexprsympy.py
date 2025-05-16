@@ -14,7 +14,18 @@ class SymAIExpressionSymPy(symaiexpr.SymAIExpression):
         visitor = SymbolicExpressionGrammarVisitor()
         tree = args.expression()
         fml = visitor.visit(tree)
-        return str(sympy.simplify(fml, rational=True, evaluate=True))
+        glob_vars = dict()
+        glob_vars["And"] = sympy.And
+        glob_vars["Or"] = sympy.Or
+        glob_vars["Not"] = sympy.Not
+        glob_vars["simplify"] = sympy.simplify
+        simplify_vars = dict()
+        lst = visitor.getVarList()
+        if len(lst) > 0:
+            for n in lst:
+                simplify_vars[n] = sympy.symbols(n)
+
+        return str(eval("simplify(" + fml + ", rational=True, evaluate=True)", glob_vars, simplify_vars))
 
     def process_body_check(self, args):
         visitor = args.get("visitor")
@@ -23,9 +34,9 @@ class SymAIExpressionSymPy(symaiexpr.SymAIExpression):
             raise Exception("Error: process_body_check incorrect arguments")
         fml = visitor.visit(tree)
         models = sympy.satisfiable(fml)
+
         res = dict()
-        if models:
-            args["satisfiable"] = True
+        if models and len(models) > 0:
             lst = visitor.getVarList()
             check_vars = dict()
             s = ""
@@ -40,14 +51,19 @@ class SymAIExpressionSymPy(symaiexpr.SymAIExpression):
                     check_vars[n] = sympy.symbols(n)
                 s = s + ")"
             glob_vars = dict()
+            glob_vars["And"] = sympy.And
+            glob_vars["Or"] = sympy.Or
+            glob_vars["Not"] = sympy.Not
             glob_vars["solve"] = sympy.solve
-            solutions = eval("solve(" + fml + s + ", dict=True)", glob_vars, check_vars)
+            solutions = eval("solve(" + fml + "==True" + s + ", dict=True)", glob_vars, check_vars)
             for it in solutions:
                 for jj in it:
                     res[str(jj)] = str(it[jj])
         else:
             args["satisfiable"] = False
         args["model"] = res
+        if len(res) <= 0:
+            args["satisfiable"] = False
         return args
 
     def process_body_inverse(self, args):

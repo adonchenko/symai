@@ -184,10 +184,15 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
     def visitRelationalExpression(self, ctx:ExpressionGrammarParser.RelationalExpressionContext):
         i = 0
         result = self.visit(ctx.additiveExpression(i))
+        first = ""
         while i + 1 < len(ctx.additiveExpression()):
             if i > 0:
-                result = "(" + result + ")"
-            result = result + ctx.getChild(2*i + 1).getText() + self.visit(ctx.additiveExpression(i + 1))
+                result = "And(" + result + ", (" + first
+            second = self.visit(ctx.additiveExpression(i + 1))
+            result = result + ctx.getChild(2*i + 1).getText() + second
+            if i > 0:
+                result = result + "))"
+            first = second
             i = i + 1
         return result
 
@@ -201,7 +206,7 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
                 result = "(" + result + ")"
             op = ctx.getChild(2 * (i - 1) + 1).getText()
             if op == "!=":
-                result = " not (" + result + "==" + self.visit(ctx.relationalExpression(i)) + ")"
+                result = " not ((" + result + ")==(" + self.visit(ctx.relationalExpression(i)) + "))"
             else:
                 result = result + op + self.visit(ctx.relationalExpression(i))
             i = i + 1
@@ -212,7 +217,7 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         result = self.visit(ctx.equalityExpression(0))
         i = 1
         while i < len(ctx.equalityExpression()):
-            result = "And(" + result + "," + self.visit(ctx.equalityExpression(i)) + ")"
+            result = "And((" + result + "),(" + self.visit(ctx.equalityExpression(i)) + "))"
             i = i + 1
         return result
 
@@ -221,7 +226,7 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         result = self.visit(ctx.logicalAndExpression(0))
         i = 1
         while i < len(ctx.logicalAndExpression()):
-            result = "Or(" + result + "," + self.visit(ctx.logicalAndExpression(i)) + ")"
+            result = "Or((" + result + "),(" + self.visit(ctx.logicalAndExpression(i)) + "))"
             i = i + 1
         return result
 
