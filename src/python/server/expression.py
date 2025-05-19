@@ -14,7 +14,6 @@ import symaiconfig
 import symaiexpressioncommands
 import logging
 from logging import config
-import sympy
 from sympy import *
 import argparse
 import json
@@ -43,7 +42,6 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps(rsp).encode("utf8"))
         except Exception as e:
             self.sc.get_logger().error(f"{cmn} failed. Error sending response {str(e)}")
         else:
@@ -96,7 +94,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                 except Exception as e:
                     self.do_send_err_rsp(f"Bad request: {str(e)}")
                 else:
-                    self.do_send_ok_rsp(res, "simplify", res["formula"])
+                    self.do_send_ok_rsp(res, "simplify", res)
             else:
                 self.do_send_err_rsp("Bad Request: must give data")
         else:
@@ -131,6 +129,7 @@ def main():
     parser.add_argument("-i", "--ip", dest = "ip", default = "localhost", required = false, help="Expressions HTTP Server IP")
     parser.add_argument("-c", "--config", dest="config", default="/properties/symai.ini", required=false, help="Configuration file name of expression HTTP Server")
     parser.add_argument("-s", "--solver", dest="solver", default=symaiconfig.SymAISolvers.SYMPY.value, required=false, help="A solver package name")
+    parser.add_argument("-m", "--max", dest="max_models", default=10, required = false, type=int, help="Maximal number of resulting models for solve")
 
     args = parser.parse_args()
 
@@ -139,6 +138,7 @@ def main():
     cfg.set(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.HOST.value, args.ip)
     cfg.set(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.PORT.value, str(args.port))
     cfg.set(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value, str(args.solver))
+    cfg.set(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.SOLVER_MAX_MODELS.value, str(args.max_models))
 
     cfg = symaiconfig.create_config(args.config, symaiconfig.SymAIConfig.EXPRESSION.value, cfg)
     logging.config.fileConfig(args.config)

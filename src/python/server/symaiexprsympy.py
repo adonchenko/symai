@@ -1,3 +1,5 @@
+from sympy import solve
+
 from symbolicexpressiongrammarvisitor import *
 
 import sympy
@@ -14,22 +16,25 @@ class SymAIExpressionSymPy(symaiexpr.SymAIExpression):
         visitor = SymbolicExpressionGrammarVisitor()
         tree = args.expression()
         fml = visitor.visit(tree)
+        lst = visitor.getVarList()
+        check_vars = dict()
+
+        for n in lst:
+            check_vars[n] = sympy.Symbol(n, real=True)
         glob_vars = dict()
         glob_vars["And"] = sympy.And
         glob_vars["Or"] = sympy.Or
         glob_vars["Not"] = sympy.Not
-        glob_vars["simplify"] = sympy.simplify
-        simplify_vars = dict()
-        lst = visitor.getVarList()
-        if len(lst) > 0:
-            for n in lst:
-                simplify_vars[n] = sympy.symbols(n)
 
-        return str(eval("simplify(" + fml + ", rational=True, evaluate=True)", glob_vars, simplify_vars))
+        f2 = eval(fml, glob_vars, check_vars)
+
+        return str(sympy.simplify(f2))
+
 
     def process_body_check(self, args):
         visitor = args.get("visitor")
         tree = args.get("tree")
+
         if tree is None or visitor is None or visitor is None:
             raise Exception("Error: process_body_check incorrect arguments")
         fml = visitor.visit(tree)
@@ -41,21 +46,24 @@ class SymAIExpressionSymPy(symaiexpr.SymAIExpression):
             check_vars = dict()
             s = ""
             if len(lst) > 0:
-                s = ",("
+                s = "("
                 b = False
                 for n in lst:
                     if b:
                         s = s + ","
                     s = s + n
                     b = True
-                    check_vars[n] = sympy.symbols(n)
+                    check_vars[n] = sympy.symbols(n, real=True)
                 s = s + ")"
             glob_vars = dict()
             glob_vars["And"] = sympy.And
             glob_vars["Or"] = sympy.Or
             glob_vars["Not"] = sympy.Not
-            glob_vars["solve"] = sympy.solve
-            solutions = eval("solve(" + fml + "==True" + s + ", dict=True)", glob_vars, check_vars)
+            glob_vars["solve"] = sympy.solveset
+            f2 = eval(fml, glob_vars, check_vars)
+            sm = eval(s, glob_vars, check_vars)
+            ss = set()
+            solutions = sympy.solve(f2, sm, dict=True)
             for it in solutions:
                 for jj in it:
                     res[str(jj)] = str(it[jj])

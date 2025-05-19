@@ -17,6 +17,7 @@ class SymAIConfig(Enum):
     EXPRESSION_HOST="expression_host"
     EXPRESSION_PORT="expression_port"
     EXPRESSION_SOLVER="expression_solver"   # Math package i.e. SymPy, Z3, CVC5
+    SOLVER_MAX_MODELS="solver_max_models"
     AI='AI'
     HOST = "host"
     PORT = "port"
@@ -79,6 +80,8 @@ def create_config(cfg_file, section, cfg):
         c.set(SymAIConfig.EXPRESSION.value,SymAIConfig.HOST.value, "localhost")
         c.set(SymAIConfig.EXPRESSION.value, SymAIConfig.PORT.value, str(8080))
         c.set(SymAIConfig.EXPRESSION.value, SymAIConfig.EXPRESSION_SOLVER.value, SymAISolvers.SYMPY.value)
+        c.set(SymAIConfig.EXPRESSION.value,SymAIConfig.SOLVER_MAX_MODELS.value, str(10))
+
         #Loggers
         c.add_section(SymAIConfig.LOGGERS.value)
         c.set(SymAIConfig.LOGGERS.value, SymAIConfig.KEYS.value, "root, expression, symaicore")

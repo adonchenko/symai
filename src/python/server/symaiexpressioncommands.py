@@ -5,18 +5,24 @@ import symaiexpr
 import symaiexprsympy
 import symaiexprz3
 import symaiexprcvc5
-from symbolicexpressiongrammarvisitor import *
 
 class SymAIExpressionCommands(symaicommands.SymAICommands):
 
     def do_check_solver(self, solver_name : str)->symaiexpr.SymAIExpression():
+        max_models =  int(self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value,symaiconfig.SymAIConfig.SOLVER_MAX_MODELS.value))
         match solver_name:
             case symaiconfig.SymAISolvers.SYMPY.value:
-                return symaiexprsympy.SymAIExpressionSymPy()
+                res = symaiexprsympy.SymAIExpressionSymPy()
+                res.set_max_models(max_models)
+                return res
             case symaiconfig.SymAISolvers.CVC5.value:
-                return symaiexprcvc5.SymAIExpressionCVC5()
+                res = symaiexprcvc5.SymAIExpressionCVC5()
+                res.set_max_models(max_models)
+                return res
             case symaiconfig.SymAISolvers.Z3.value:
-                return symaiexprz3.SymAIExpressionZ3()
+                res = symaiexprz3.SymAIExpressionZ3()
+                res.set_max_models(max_models)
+                return res
             case default: raise Exception(f"Not implemented solver type {solver_name}")
 
     def do_shutdown(self):

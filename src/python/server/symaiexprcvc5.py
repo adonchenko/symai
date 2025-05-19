@@ -34,10 +34,30 @@ class SymAIExpressionCVC5(symaiexpr.SymAIExpression):
         res = visitor.visit(tree)
         return str(res)
 
+    def all_models(self, formula, global_vars, local_vars):
+        " a generator of up to max models "
+        solver = Solver()
+        f2 = eval(formula, global_vars, local_vars)
+        solver.add(f2)
+
+        count = 0
+        while count < self.get_max_models() or self.get_max_models() == 0:
+            count += 1
+
+            if solver.check() == sat:
+                model = solver.model()
+                yield model
+                # exclude this model
+                block = []
+                for cvc5_decl in model:
+                    f2 = eval(str(cvc5_decl) + "!=" + str(model[cvc5_decl]), global_vars, local_vars)
+                    block.append(f2)
+                solver.add(Or(block))
+
     def process_body_check(self, args):
         visitor = args.get("visitor")
         tree = args.get("tree")
-        if tree is None or visitor is None:
+        if visitor is None or visitor is None:
             raise Exception("Error: process_body_check incorrect arguments")
         fml = visitor.visit(tree)
         check_vars = dict()
@@ -47,23 +67,25 @@ class SymAIExpressionCVC5(symaiexpr.SymAIExpression):
 
         for n in lst:
             check_vars[n] = Real(n)
-
         glob_vars = dict()
+        glob_vars["And"] = And
+        glob_vars["Or"] = Or
+        glob_vars["Not"] = Not
         glob_vars["solver"] = solver
-        glob_vars["And"] = cvc5_pythonic.And
-        glob_vars["Or"] = cvc5_pythonic.Or
-        glob_vars["Not"] = cvc5_pythonic.Not
-        res = dict()
-        exec("solver.add(" + fml + ")", glob_vars, check_vars)
 
-        if solver.check() == sat:
+        f2 = eval(fml, glob_vars, check_vars)
+
+        solver.add(f2)
+        args["satisfiable"] = False
+        lst = []
+        for m in self.all_models(fml, glob_vars, check_vars):
             args["satisfiable"] = True
-            m = solver.model()
-            for dd in  m.decls():
-                res[str(dd)] = str(m[dd])
-        else:
-            args["satisfiable"] = False
-        args["model"] = res
+            dc = dict()
+            for dd in m.decls():
+                dc[str(dd)] = str(m[dd])
+            lst.append(dc)
+            args["model"] = lst
+
         return args
 
     def process_body_inverse(self, args):

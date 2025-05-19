@@ -10,12 +10,19 @@ class SymAIExpression:
 
     def __init__(self):
         self.solver = None
+        self.max_models = 10
 
     def get_solver(self):
         return self.solver
 
     def set_solver(self, slvr):
         self.solver = slvr
+
+    def get_max_models(self):
+        return self.max_models
+
+    def set_max_models(self, m : int):
+        self.max_models = m
 
     def postprocess(self, args):
         return (" " + args + " ").replace("&", "&&").replace("|", "||").replace("_d_o_t_", ".").replace("__d__o__t__", "_d_o_t_").replace(" not ", "!").replace(" _n_o_t_ ", " not ").strip(" ")
@@ -51,6 +58,7 @@ class SymAIExpression:
             raise Exception("Bad Request: missing formula field")
         else:
             res = self.postprocess_simplify(self.process_body_simplify(self.preprocess_simplify(expr)))
+            source_expr.pop("formula")
             source_expr["formula"] = res
             return source_expr
 
