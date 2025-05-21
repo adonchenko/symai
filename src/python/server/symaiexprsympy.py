@@ -30,7 +30,6 @@ class SymAIExpressionSymPy(symaiexpr.SymAIExpression):
 
         return str(sympy.simplify(f2))
 
-
     def process_body_check(self, args):
         visitor = args.get("visitor")
         tree = args.get("tree")
@@ -40,7 +39,7 @@ class SymAIExpressionSymPy(symaiexpr.SymAIExpression):
         fml = visitor.visit(tree)
         models = sympy.satisfiable(fml)
 
-        res = dict()
+        lst = []
         if models and len(models) > 0:
             lst = visitor.getVarList()
             check_vars = dict()
@@ -62,16 +61,17 @@ class SymAIExpressionSymPy(symaiexpr.SymAIExpression):
             glob_vars["solve"] = sympy.solveset
             f2 = eval(fml, glob_vars, check_vars)
             sm = eval(s, glob_vars, check_vars)
-            ss = set()
             solutions = sympy.solve(f2, sm, dict=True)
+
+            dc = dict()
             for it in solutions:
                 for jj in it:
-                    res[str(jj)] = str(it[jj])
+                    dc[str(jj)] = str(it[jj])
+            lst.append(dc)
+            args["satisfiable"] = True
         else:
             args["satisfiable"] = False
-        args["model"] = res
-        if len(res) <= 0:
-            args["satisfiable"] = False
+        args["model"] = lst
         return args
 
     def process_body_inverse(self, args):

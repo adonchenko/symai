@@ -48,11 +48,11 @@ class SymAIExpressionCVC5(symaiexpr.SymAIExpression):
                 model = solver.model()
                 yield model
                 # exclude this model
-                block = []
+                block = [False]
                 for cvc5_decl in model:
                     f2 = eval(str(cvc5_decl) + "!=" + str(model[cvc5_decl]), global_vars, local_vars)
                     block.append(f2)
-                solver.add(Or(block))
+                    solver.add(Or(block))
 
     def process_body_check(self, args):
         visitor = args.get("visitor")
@@ -73,9 +73,6 @@ class SymAIExpressionCVC5(symaiexpr.SymAIExpression):
         glob_vars["Not"] = Not
         glob_vars["solver"] = solver
 
-        f2 = eval(fml, glob_vars, check_vars)
-
-        solver.add(f2)
         args["satisfiable"] = False
         lst = []
         for m in self.all_models(fml, glob_vars, check_vars):
@@ -84,7 +81,7 @@ class SymAIExpressionCVC5(symaiexpr.SymAIExpression):
             for dd in m.decls():
                 dc[str(dd)] = str(m[dd])
             lst.append(dc)
-            args["model"] = lst
+        args["model"] = lst
 
         return args
 

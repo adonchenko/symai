@@ -60,7 +60,7 @@ class SymAIExpressionZ3(symaiexpr.SymAIExpression):
                     for args in itertools.product(*arg_domains):
                         f2  = eval(str(z3_decl(*args)) + "!=" + str(model.eval(z3_decl(*args))), global_vars, local_vars)
                         block.append(f2)
-                solver.add(Or(block))
+                        solver.add(Or(block))
 
     def process_body_check(self, args):
         visitor = args.get("visitor")
@@ -92,7 +92,7 @@ class SymAIExpressionZ3(symaiexpr.SymAIExpression):
             for dd in m.decls():
                 dc[str(dd)] = str(m[dd])
             lst.append(dc)
-            args["model"] = lst
+        args["model"] = lst
 
         return args
 
