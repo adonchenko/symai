@@ -90,6 +90,23 @@ async def handle_client(websocket):
                             await websocket.send(res)
                         except:
                             pass
+                case "max_models":
+                    sc.get_logger().info("max_models command received")
+                    if connected_clients.get(websocket) is None:
+                        sc.get_logger().error("UUID not found.Cannot process " + message)
+                        await websocket.send("nok UUID not found.Cannot process " + message)
+                    else:
+                        try:
+                            res = "ok " + sc.do_max_models(str(connected_clients.get(websocket).get_uuid()),
+                                                       str(message))
+                        except Exception as e:
+                            sc.get_logger().error(f"max_models command error {str(e)}")
+                            res = f"nok {str(e)}"
+                        try:
+                            await websocket.send(res)
+                        except:
+                            pass
+
                 case "environment":
                     sc.get_logger().info("environment command received")
                     if connected_clients.get(websocket) is None:

@@ -232,3 +232,87 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             symaiconfig.create_config(symaiconfig.get_config_file(), symaiconfig.SymAIConfig.EXPRESSION.value, cfg)
         return str(b)
 
+    def do_max_models(self, cuuid, msg:str):
+        b = 10  # default value of solver max models
+        if hasattr(self, "max_models"):
+            b = getattr(self, "max_models")
+        else:
+            try:
+                s = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.SOLVER_MAX_MODELS.value)
+                if s.isnumeric():
+                   b = int(s)
+            except:
+                b = 10
+        is_flush = False
+
+        s = msg.strip().split()
+        if len(s) == 1:
+            if hasattr(self, "max_models"):
+                b = getattr(self, "max_models")
+        elif len(s) == 2:
+            if s[1].lower() == "flush":
+                is_flush = True
+                try:
+                    int(self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value,
+                                          symaiconfig.SymAIConfig.SOLVER_MAX_MODELS.value))
+                except:
+                    b = 10
+            else:
+                try:
+                    b = int(s[1])
+                except:
+                    raise Exception(f"Incorrect value {s[1]}")
+        elif len(s) == 3:
+            if s[1].lower() == "flush":
+                is_flush = True
+                try:
+                    b = str(int(s[2]))
+                except:
+                    raise Exception(f"Incorrect command format {msg}")
+            elif s[2].lower() == "flush":
+                is_flush = True
+                try:
+                    b = str(int(s[1]))
+                except:
+                    raise Exception(f"Incorrect command format {msg}")
+            else:
+                raise Exception(f"Incorrect command format {msg}")
+        else:
+            raise Exception(f"Incorrect command format {msg}")
+
+        setattr(self, "max_models", b)
+        if is_flush:
+            cfg = self.get_config()
+            cfg.set(symaiconfig.SymAIConfig.EXPRESSION.value,
+                                  symaiconfig.SymAIConfig.SOLVER_MAX_MODELS.value, str(b))
+            symaiconfig.create_config(symaiconfig.get_config_file(), symaiconfig.SymAIConfig.EXPRESSION.value, cfg)
+        return str(b)
+
+    def do_symbolic_modelling_step(self, cuuid, environment, precondition, postcondition, prop):
+        fml = ""
+        if environment is not None and len(environment.strip()) > 0:
+            if precondition is None or len(precondition.strip() <= 0):
+                fml = environment
+            else:
+                fml = "(" + environment.strip() + ") && (" + precondition.strip() + "0"
+        self.do_calc_formula(fml)
+        self.do_calc_formula(prop)
+
+    def do_calc_formula(self, fml):
+        attr = dict()
+        if hasattr(self, "solver"):
+            b = getattr(self, "solver")
+        else:
+            b = symaiconfig.SymAISolvers.SYMPY.value
+            try:
+                s = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value)
+                if s in symaiconfig.SymAISolvers._value2member_map_:
+                    b = s
+            except:
+                b = symaiconfig.SymAISolvers.SYMPY.value
+        setattr(self, "solver", b)
+        attr["solver"] = b
+        attr["formula"] = fml
+        
+
+        return

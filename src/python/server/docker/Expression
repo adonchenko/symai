@@ -19,6 +19,7 @@ COPY ./ExpressionGrammar/ExpressionGrammarLexer.py /app/ExpressionGrammar/Expres
 COPY ./ExpressionGrammar/ExpressionGrammarListener.py /app/ExpressionGrammar/ExpressionGrammarListener.py
 COPY ./ExpressionGrammar/ExpressionGrammarParser.py /app/ExpressionGrammar/ExpressionGrammarParser.py
 COPY ./ExpressionGrammar/ExpressionGrammarVisitor.py /app/ExpressionGrammar/ExpressionGrammarVisitor.py
+COPY ./bash/run.sh /app/run.sh
 
 # Install any needed dependencies specified in requirements.txt
 RUN pip3 install sympy antlr4-python3-runtime cvc5 z3-solver
@@ -26,4 +27,4 @@ RUN pip3 install sympy antlr4-python3-runtime cvc5 z3-solver
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
 # Run app.py when the container launches
-CMD ["python", "expression.py"]
+CMD ["bash", "run.sh", "python", "expression.py"]

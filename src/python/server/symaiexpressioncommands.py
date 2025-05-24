@@ -41,6 +41,17 @@ class SymAIExpressionCommands(symaicommands.SymAICommands):
                 solver_name = source_expr.get("solver")
                 if solver_name is None:
                     solver_name = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value)
+                max_models = source_expr.get("max_models")
+                if max_models is None:
+                    max_models = "10"
+                elif not max_models.isnumeric():
+                    max_models = "10"
+                try:
+                    int(max_models)
+                except:
+                    max_models = "10"
+                self.get_config().set(symaiconfig.SymAIConfig.EXPRESSION.value,
+                                      symaiconfig.SymAIConfig.SOLVER_MAX_MODELS.value, max_models)
                 solver = self.do_check_solver(solver_name)
                 self.get_logger().info(f"Simplify request received. Solver is '{solver_name}' and source formula is '{expr}'")
         return solver.process_simplify(source_expr)

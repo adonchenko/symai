@@ -35,8 +35,8 @@ class SymAIExpressionCVC5(symaiexpr.SymAIExpression):
         return str(res)
 
     def all_models(self, formula, global_vars, local_vars):
-        " a generator of up to max models "
-        solver = Solver()
+        """ a generator of up to max models """
+        solver = global_vars["solver"]
         f2 = eval(formula, global_vars, local_vars)
         solver.add(f2)
 
@@ -81,7 +81,7 @@ class SymAIExpressionCVC5(symaiexpr.SymAIExpression):
             for dd in m.decls():
                 dc[str(dd)] = str(m[dd])
             lst.append(dc)
-        args["model"] = lst
+            args["model"] = lst
 
         return args
 

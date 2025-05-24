@@ -1,6 +1,5 @@
 from antlr4.CommonTokenStream import CommonTokenStream
 from antlr4.InputStream import InputStream
-from sympy.polys.polyroots import preprocess_roots
 
 from symbolicexpressiongrammarvisitor import *
 from ExpressionGrammar.ExpressionGrammarLexer import ExpressionGrammarLexer

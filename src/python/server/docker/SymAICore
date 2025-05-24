@@ -11,6 +11,7 @@ COPY ./symaicore.py /app/symaicore.py
 COPY ./symaiconfig.py /app/symaiconfig.py
 COPY ./symaicommands.py /app/symaicommands.py
 COPY ./symaicorecommands.py /app/symaicorecommands.py
+COPY ./bash/run.sh /app/run.sh
 
 # Install any needed dependencies specified in requirements.txt
 RUN pip3 install websockets
@@ -18,4 +19,4 @@ RUN pip3 install websockets
 # Make port 12345 available to the world outside this container
 EXPOSE 12345
 # Run symaicore.py when the container launches
-CMD ["python", "symaicore.py"]
+CMD ["bash", "run.sh", "python", "symaicore.py"]
