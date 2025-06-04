@@ -78,6 +78,18 @@ expression
     : assignmentExpression (',' assignmentExpression)*
     ;
 
+expressionList
+    : (assignmentExpression ',')+
+    ;
+
+actions
+    : (postfixExpression ':' (logicalOrExpression)? '->' assignmentExpression)+
+    ;
+
+Pointer
+    : '->'
+    ;
+
 LeftParen
     : '('
     ;

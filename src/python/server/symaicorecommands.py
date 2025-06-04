@@ -1,10 +1,17 @@
 from http import HTTPStatus
+
 import symaicommands
 import symaiconfig
 import http.client
 import json
 import uuid
 import os
+
+from antlr4.CommonTokenStream import CommonTokenStream
+from antlr4.InputStream import InputStream
+from extsegammarvisitor import *
+from ExpressionGrammar.ExpressionGrammarLexer import ExpressionGrammarLexer
+from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
 
 class SymAICoreParam:
 
@@ -93,6 +100,38 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
     def do_precondition(self, cuuid, data_received):
         self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_PRECONDITION.value)
+
+    def do_behaviors(self, cuuid, data_received):
+        self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_BEHAVIORS.value)
+
+    def get_behaviors(self, cuuid, data_received):
+        # Loading
+        cnt = self.do_get_file(cuuid,
+                               symaiconfig.SymAIConfig.BASE_BEHAVIORS.value,
+                               data_received)
+        try:
+            lexer = ExpressionGrammarLexer(InputStream(cnt))
+            errorListener = SymbolicExpressionGrammarErrorListener()
+            lexer.removeErrorListeners()
+            lexer.addErrorListener(errorListener)
+            stream = CommonTokenStream(lexer)
+            parser = ExpressionGrammarParser(stream)
+            parser.removeErrorListeners()
+            parser.addErrorListener(errorListener)
+
+            tree = parser.expressionList()
+
+            visitor = ExtSEGrammarVisitor()
+            res = visitor.visit(tree)
+            with open(os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+                        cuuid,
+                        SymAIConfig.BASE_BEHAVIORS.value,
+                        cnt["filename"]), "w") as f:
+                f.write(res)
+            self.get_logger().info(f"behaviors command processed. The behaviors saved")
+        except Exception as e:
+            self.get_logger().error(f"behaviors command processing failed {str(e)}")
+            raise e
 
     def do_environment(self, cuuid, data_received):
         self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value)
@@ -243,8 +282,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                    b = int(s)
             except:
                 b = 10
-        is_flush = False
 
+        is_flush = False
         s = msg.strip().split()
         if len(s) == 1:
             if hasattr(self, "max_models"):

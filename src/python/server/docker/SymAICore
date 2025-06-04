@@ -11,10 +11,16 @@ COPY ./symaicore.py /app/symaicore.py
 COPY ./symaiconfig.py /app/symaiconfig.py
 COPY ./symaicommands.py /app/symaicommands.py
 COPY ./symaicorecommands.py /app/symaicorecommands.py
+COPY ./symbolicexpressiongrammarvisitor.py /app/symbolicexpressiongrammarvisitor.py
+COPY ./extsegammarvisitor.py /app/extsegammarvisitor.py
+COPY ./ExpressionGrammar/ExpressionGrammarLexer.py /app/ExpressionGrammar/ExpressionGrammarLexer.py
+COPY ./ExpressionGrammar/ExpressionGrammarListener.py /app/ExpressionGrammar/ExpressionGrammarListener.py
+COPY ./ExpressionGrammar/ExpressionGrammarParser.py /app/ExpressionGrammar/ExpressionGrammarParser.py
+COPY ./ExpressionGrammar/ExpressionGrammarVisitor.py /app/ExpressionGrammar/ExpressionGrammarVisitor.py
 COPY ./bash/run.sh /app/run.sh
 
 # Install any needed dependencies specified in requirements.txt
-RUN pip3 install websockets
+RUN pip3 install antlr4-python3-runtime websockets 
 #RUN pip3 install --no-cache-dir -r requirements.txt
 # Make port 12345 available to the world outside this container
 EXPOSE 12345

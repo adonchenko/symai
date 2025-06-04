@@ -106,7 +106,23 @@ async def handle_client(websocket):
                             await websocket.send(res)
                         except:
                             pass
-
+                case "behaviors":
+                    sc.get_logger().info("behaviors command received")
+                    if connected_clients.get(websocket) is None:
+                        sc.get_logger().error(f"UUID not found.Cannot process {message}")
+                        await websocket.send(f"nok UUID not found.Cannot process {message}")
+                    else:
+                        res = "ok"
+                        try:
+                            sc.do_behaviors(str(connected_clients.get(websocket).get_uuid()),
+                                              str(message).strip()[9:])
+                        except Exception as e:
+                            sc.get_logger().error("behaviors command failed " + str(e))
+                            res = "nok " + str(e)
+                        else:
+                            sc.get_logger().info("behaviors command passed ok")
+                        finally:
+                            await websocket.send(res)
                 case "environment":
                     sc.get_logger().info("environment command received")
                     if connected_clients.get(websocket) is None:
