@@ -102,9 +102,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_PRECONDITION.value)
 
     def do_behaviors(self, cuuid, data_received):
-        self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_BEHAVIORS.value)
-
-    def get_behaviors(self, cuuid, data_received):
         # Loading
         cnt = self.do_get_file(cuuid,
                                symaiconfig.SymAIConfig.BASE_BEHAVIORS.value,
