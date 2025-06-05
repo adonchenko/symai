@@ -125,7 +125,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             res = visitor.visit(tree)
             with open(os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
                         cuuid,
-                        SymAIConfig.BASE_BEHAVIORS.value,
+                        symaiconfig.SymAIConfig.BASE_BEHAVIORS.value,
                         cnt["filename"]), "w") as f:
                 f.write(res)
             self.get_logger().info(f"behaviors command processed. The behaviors saved")
