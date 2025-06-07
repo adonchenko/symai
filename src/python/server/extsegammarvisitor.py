@@ -239,15 +239,13 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
         i = 0
         j = 0
         while i < len(ctx.postfixExpression()):
-            j = j + 1
             t = []
             t.append(self.visit(ctx.postfixExpression(i)))
-            if ctx.getChild(j).getText() == ":" and ctx.getChild(j + 1) != "->":
-                t.append(self.visit(ctx.getChild(j + 1)))
-                j = j + 2
+            if ctx.getChild(i * 4 + j * 2 + 1).getText() == ":" and ctx.getChild(i * 4 + j * 2 + 3).getText() == "->":
+                t.append(self.visit(ctx.logicalOrExpression(j)))
+                j = j + 1
             else:
                 t.append(None)
-                j = j + 1
             t.append(self.visit(ctx.assignmentExpression(i)))
             i = i + 1
             result.append(t)
