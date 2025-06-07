@@ -9,7 +9,7 @@ class SymbolicExpressionGrammarErrorListener( ErrorListener ):
         super(SymbolicExpressionGrammarErrorListener, self).__init__()
 
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
-        raise Exception("Syntax error appeared on symbol '" + offendingSymbol + "' " + msg)
+        raise Exception(f"Syntax error appeared on symbol '{offendingSymbol}' on line {line} column  {column} {msg}")
 
     def reportAmbiguity(self, recognizer, dfa, startIndex, stopIndex, exact, ambigAlts, configs):
         raise Exception("Ambiguity error appeared during parsing")

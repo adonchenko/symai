@@ -83,7 +83,7 @@ expressionList
     ;
 
 actions
-    : (postfixExpression ':' (logicalOrExpression)? '->' assignmentExpression)+
+    : (postfixExpression ':' (logicalOrExpression '->')?  assignmentExpression ',')+
     ;
 
 Pointer

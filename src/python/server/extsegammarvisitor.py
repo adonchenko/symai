@@ -3,14 +3,14 @@ from symbolicexpressiongrammarvisitor import *
 class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
 
     def __init__(self):
-        self.behaviors = []
+        self.results = []
         super().__init__()
 
-    def getBehaviors(self):
-        return self.behaviors
+    def getResults(self):
+        return self.results
 
-    def setBehaviors(self, beh):
-        self.behaviors = beh
+    def setResults(self, res):
+        self.results = res
 
     # Visit a parse tree produced by ExpressionGrammarParser#primaryExpression.
     def visitPrimaryExpression(self, ctx:ExpressionGrammarParser.PrimaryExpressionContext):
@@ -223,11 +223,11 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
  # Visit a parse tree produced by ExpressionGrammarParser#expressionList.
     def visitExpressionList(self, ctx:ExpressionGrammarParser.ExpressionListContext):
         result = self.visit(ctx.assignmentExpression(0))
-        self.behaviors.append(result)
+        self.results.append(result)
         i = 1
         while i < len(ctx.assignmentExpression()):
             beh = self.visit(ctx.assignmentExpression(i))
-            self.behaviors.append(beh)
+            self.results.append(beh)
             result = result + "," + beh
             i = i + 1
         result = result + ","
@@ -235,4 +235,21 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
 
     # Visit a parse tree produced by ExpressionGrammarParser#actions.
     def visitActions(self, ctx:ExpressionGrammarParser.ActionsContext):
-        return self.visitChildren(ctx)
+        result = []
+        i = 0
+        j = 0
+        while i < len(ctx.postfixExpression()):
+            j = j + 1
+            t = []
+            t.append(self.visit(ctx.postfixExpression(i)))
+            if ctx.getChild(j).getText() == ":" and ctx.getChild(j + 1) != "->":
+                t.append(self.visit(ctx.getChild(j + 1)))
+                j = j + 2
+            else:
+                t.append(None)
+                j = j + 1
+            t.append(self.visit(ctx.assignmentExpression(i)))
+            i = i + 1
+            result.append(t)
+
+        return result
