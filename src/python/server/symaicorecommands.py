@@ -130,6 +130,35 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             self.get_logger().error(f"behaviors command processing failed {str(e)}")
             raise e
 
+    def do_actions(self, cuuid, data_received):
+        # Loading
+        cnt = self.do_get_file(cuuid,
+                               symaiconfig.SymAIConfig.BASE_ACTIONS.value,
+                               data_received)
+        try:
+            lexer = ExpressionGrammarLexer(InputStream(cnt))
+            errorListener = SymbolicExpressionGrammarErrorListener()
+            lexer.removeErrorListeners()
+            lexer.addErrorListener(errorListener)
+            stream = CommonTokenStream(lexer)
+            parser = ExpressionGrammarParser(stream)
+            parser.removeErrorListeners()
+            parser.addErrorListener(errorListener)
+
+            tree = parser.actions()
+
+            visitor = ExtSEGrammarVisitor()
+            res = visitor.visit(tree)
+            with open(os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+                        cuuid,
+                        symaiconfig.SymAIConfig.BASE_ACTIONS.value,
+                        cnt["filename"]), "w") as f:
+                f.write(res)
+            self.get_logger().info(f"actions command processed. The actions list saved")
+        except Exception as e:
+            self.get_logger().error(f"actions command processing failed {str(e)}")
+            raise e
+
     def do_environment(self, cuuid, data_received):
         self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value)
 

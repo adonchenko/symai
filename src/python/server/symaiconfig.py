@@ -48,6 +48,7 @@ class SymAIConfig(Enum):
     BASE_POSTCONDITION = "postcondition"
     BASE_ENVIRONMENT = "environment"
     BASE_BEHAVIORS = "behaviors"
+    BASE_ACTIONS = "actions"
 
 def get_config_file() -> str:
     global config_file
