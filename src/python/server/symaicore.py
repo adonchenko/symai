@@ -157,6 +157,7 @@ async def handle_client(websocket):
                             sc.get_logger().info("environment command passed ok")
                         finally:
                             await websocket.send(res)
+
                 case "property":
                     sc.get_logger().info("property command received")
                     if connected_clients.get(websocket) is None:
@@ -165,9 +166,8 @@ async def handle_client(websocket):
                     else:
                         res = "ok"
                         try:
-                            sc.do_get_file(str(connected_clients.get(websocket).get_uuid()),
-                                           symaiconfig.SymAIConfig.BASE_PROPERTIES.value,
-                                           str(message).strip()[8:])
+                            sc.do_property(str(connected_clients.get(websocket).get_uuid()),
+                                              str(message).strip()[8:])
                         except Exception as e:
                             sc.get_logger().error("property command failed " + str(e))
                             res = "nok " + str(e)
@@ -175,6 +175,7 @@ async def handle_client(websocket):
                             sc.get_logger().info("property command passed ok")
                         finally:
                             await websocket.send(res)
+
                 case "precondition":
                     sc.get_logger().info("precondition command received")
                     if connected_clients.get(websocket) is None:

@@ -188,6 +188,27 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 pass
             raise e
 
+    def do_property(self, cuuid, data_received):
+        res = self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_PROPERTIES.value)
+
+        fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+                          cuuid,
+                          symaiconfig.SymAIConfig.BASE_PROPERTIES.value,
+                          res["filename"])
+        try:
+            with open(fn, "w") as f:
+                f.write(res["formula"])
+            self.get_logger().info(f"property command processed. The property saved to {fn}")
+            setattr(self, "property", fn)
+        except Exception as e:
+            self.get_logger().error(f"property command processing failed {str(e)}")
+            try:
+                if os.path.exists(fn):
+                    os.remove(fn)
+            except:
+                pass
+            raise e
+
     def get_and_simplify(self, cuuid, data_received, infix):
         # Loading
         res = self.do_get_file(cuuid,
