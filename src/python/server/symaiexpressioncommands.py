@@ -41,6 +41,8 @@ class SymAIExpressionCommands(symaicommands.SymAICommands):
                 solver_name = source_expr.get("solver")
                 if solver_name is None:
                     solver_name = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value)
+                    if solver_name is None:
+                        solver_name = symaiconfig.SymAISolvers.Z3
                 max_models = source_expr.get("max_models")
                 if max_models is None:
                     max_models = "10"

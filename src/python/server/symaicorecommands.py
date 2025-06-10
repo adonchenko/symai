@@ -20,6 +20,7 @@ class SymAICoreParam:
         self.actions = None
         self.behaviors = None
         self.environment = None
+        self.property = None
 
     def get_uuid(self):
         return self.session_uuid
@@ -168,11 +169,24 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
     def do_environment(self, cuuid, data_received):
         res = self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value)
+
         fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
                           cuuid,
                           symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value,
                           res["filename"])
-        setattr(self, "environment", fn)
+        try:
+            with open(fn, "w") as f:
+                f.write(res["formula"])
+            self.get_logger().info(f"environment command processed. The environment saved to {fn}")
+            setattr(self, "environment", fn)
+        except Exception as e:
+            self.get_logger().error(f"environment command processing failed {str(e)}")
+            try:
+                if os.path.exists(fn):
+                    os.remove(fn)
+            except:
+                pass
+            raise e
 
     def get_and_simplify(self, cuuid, data_received, infix):
         # Loading
@@ -190,6 +204,17 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                           symaiconfig.SymAIConfig.EXPRESSION_PORT.value)))
             query = dict()
             query["formula"] = res["content"].strip()
+            slvr = None
+            if hasattr(res, "solver"):
+                slvr = res.get("solver")
+            if slvr is None and hasattr(self, "solver"):
+                slvr = getattr(self,"solver")
+            if slvr is None:
+                slvr = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value,
+                                             symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value)
+            if slvr is None:
+                slvr = symaiconfig.SymAISolvers.Z3
+            query["solver"] = slvr
             conn.request('POST', '/api/v1/expression/simplify', json.dumps(query), headers)
             response = conn.getresponse()
             if not (response.getcode() == HTTPStatus.OK):
@@ -204,6 +229,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         except Exception as e:
             self.get_logger().error(f"{infix} command processing failed {str(e)}")
             raise e
+        res["formula"] = rsp["formula"]
         return res
 
     def do_ai(self, cuuid, msg:str):

@@ -81,7 +81,7 @@ def create_config(cfg_file, section, cfg):
         c.add_section(SymAIConfig.EXPRESSION.value)
         c.set(SymAIConfig.EXPRESSION.value,SymAIConfig.HOST.value, "localhost")
         c.set(SymAIConfig.EXPRESSION.value, SymAIConfig.PORT.value, str(8080))
-        c.set(SymAIConfig.EXPRESSION.value, SymAIConfig.EXPRESSION_SOLVER.value, SymAISolvers.SYMPY.value)
+        c.set(SymAIConfig.EXPRESSION.value, SymAIConfig.EXPRESSION_SOLVER.value, SymAISolvers.Z3.value)
         c.set(SymAIConfig.EXPRESSION.value,SymAIConfig.SOLVER_MAX_MODELS.value, str(10))
 
         #Loggers
