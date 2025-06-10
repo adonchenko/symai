@@ -131,8 +131,8 @@ async def handle_client(websocket):
                     else:
                         res = "ok"
                         try:
-                            sc.do_actions(str(connected_clients.get(websocket).get_uuid()),
-                                            str(message).strip()[9:])
+                            st = str(message).strip()[7:]
+                            sc.do_actions(str(connected_clients.get(websocket).get_uuid()), st)
                         except Exception as e:
                             sc.get_logger().error("actions command failed " + str(e))
                             res = "nok " + str(e)
@@ -224,6 +224,8 @@ async def handle_client(websocket):
 def signal_handler(signal, frame):
     logger = logging.getLogger("symaicore")
     logger.info("Signal INT caught")
+    sc = SymAICoreCommands()
+    sc.remove_directory_tree(symaiconfig.SymAIConfig.BASE_TEMP.value)
     sys.exit(0)
 
 # Main function to start the WebSocket server

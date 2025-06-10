@@ -17,6 +17,9 @@ class SymAICoreParam:
 
     def __init__(self):
         self.session_uuid = uuid.uuid4()
+        self.actions = None
+        self.behaviors = None
+        self.environment = None
 
     def get_uuid(self):
         return self.session_uuid
@@ -101,66 +104,75 @@ class SymAICoreCommands(symaicommands.SymAICommands):
     def do_precondition(self, cuuid, data_received):
         self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_PRECONDITION.value)
 
+    def prepare_parser_expr(self, inp : str)->ExpressionGrammarParser :
+        lexer = ExpressionGrammarLexer(InputStream(inp))
+        error_listener = SymbolicExpressionGrammarErrorListener()
+        lexer.removeErrorListeners()
+        lexer.addErrorListener(error_listener)
+        stream = CommonTokenStream(lexer)
+        parser = ExpressionGrammarParser(stream)
+        parser.removeErrorListeners()
+        parser.addErrorListener(error_listener)
+
+        return parser
+
     def do_behaviors(self, cuuid, data_received):
-        # Loading
         cnt = self.do_get_file(cuuid,
                                symaiconfig.SymAIConfig.BASE_BEHAVIORS.value,
                                data_received)
+        fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+                          cuuid,
+                          symaiconfig.SymAIConfig.BASE_BEHAVIORS.value,
+                          cnt["filename"])
         try:
-            lexer = ExpressionGrammarLexer(InputStream(cnt))
-            errorListener = SymbolicExpressionGrammarErrorListener()
-            lexer.removeErrorListeners()
-            lexer.addErrorListener(errorListener)
-            stream = CommonTokenStream(lexer)
-            parser = ExpressionGrammarParser(stream)
-            parser.removeErrorListeners()
-            parser.addErrorListener(errorListener)
-
-            tree = parser.expressionList()
-
+            tree = self.prepare_parser_expr(cnt).expressionList()
             visitor = ExtSEGrammarVisitor()
             res = visitor.visit(tree)
-            with open(os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
-                        cuuid,
-                        symaiconfig.SymAIConfig.BASE_BEHAVIORS.value,
-                        cnt["filename"]), "w") as f:
+            with open(fn, "w") as f:
                 f.write(res)
-            self.get_logger().info(f"behaviors command processed. The behaviors saved")
+            self.get_logger().info(f"behaviors command processed. The behaviors saved to {fn}")
+            setattr(self, "behaviors", fn)
         except Exception as e:
             self.get_logger().error(f"behaviors command processing failed {str(e)}")
+            try:
+                if os.path.exists(fn):
+                    os.remove(fn)
+            except:
+                pass
             raise e
 
     def do_actions(self, cuuid, data_received):
-        # Loading
         cnt = self.do_get_file(cuuid,
                                symaiconfig.SymAIConfig.BASE_ACTIONS.value,
                                data_received)
+        fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+                          cuuid,
+                          symaiconfig.SymAIConfig.BASE_ACTIONS.value,
+                          cnt["filename"])
         try:
-            lexer = ExpressionGrammarLexer(InputStream(cnt))
-            errorListener = SymbolicExpressionGrammarErrorListener()
-            lexer.removeErrorListeners()
-            lexer.addErrorListener(errorListener)
-            stream = CommonTokenStream(lexer)
-            parser = ExpressionGrammarParser(stream)
-            parser.removeErrorListeners()
-            parser.addErrorListener(errorListener)
-
-            tree = parser.actions()
-
+            tree = self.prepare_parser_expr(cnt["content"]).actions()
             visitor = ExtSEGrammarVisitor()
             res = visitor.visit(tree)
-            with open(os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
-                        cuuid,
-                        symaiconfig.SymAIConfig.BASE_ACTIONS.value,
-                        cnt["filename"]), "w") as f:
+            with open(fn, "w") as f:
                 f.write(res)
-            self.get_logger().info(f"actions command processed. The actions list saved")
+            self.get_logger().info(f"actions command processed. The actions list saved to {fn}")
+            setattr(self, "actions", fn)
         except Exception as e:
             self.get_logger().error(f"actions command processing failed {str(e)}")
+            try:
+                if os.path.exists(fn):
+                    os.remove(fn)
+            except:
+                pass
             raise e
 
     def do_environment(self, cuuid, data_received):
-        self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value)
+        res = self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value)
+        fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+                          cuuid,
+                          symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value,
+                          res["filename"])
+        setattr(self, "environment", fn)
 
     def get_and_simplify(self, cuuid, data_received, infix):
         # Loading
@@ -192,6 +204,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         except Exception as e:
             self.get_logger().error(f"{infix} command processing failed {str(e)}")
             raise e
+        return res
 
     def do_ai(self, cuuid, msg:str):
         b = False
