@@ -211,6 +211,24 @@ async def handle_client(websocket):
                             sc.get_logger().info("postcondition command passed ok")
                         finally:
                             await websocket.send(res)
+                case "traversalbeh":
+                    sc.get_logger().info("traversalbeh command received")
+                    if connected_clients.get(websocket) is None:
+                        sc.get_logger().error("UUID not found.Cannot process " + message)
+                        await websocket.send("nok UUID not found.Cannot process " + message)
+                    else:
+                        res = "ok"
+                        try:
+                            sc.do_traversalbeh(str(connected_clients.get(websocket).get_uuid()),
+                                               str(message).strip()[12:])
+                        except Exception as e:
+                            sc.get_logger().error("traversalbeh command failed " + str(e))
+                            res = "nok " + str(e)
+                        else:
+                            sc.get_logger().info("traversalbeh command passed ok")
+                        finally:
+                            await websocket.send(res)
+
                 case _:
                     sc.get_logger().error("Unknown command " + message)
                     await websocket.send("Unknown command " + message)

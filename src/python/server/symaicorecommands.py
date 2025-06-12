@@ -126,7 +126,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                           symaiconfig.SymAIConfig.BASE_BEHAVIORS.value,
                           cnt["filename"])
         try:
-            tree = self.prepare_parser_expr(cnt).expressionList()
+            tree = self.prepare_parser_expr(cnt["content"]).expressionList()
             visitor = ExtSEGrammarVisitor()
             res = visitor.visit(tree)
             with open(fn, "w") as f:
@@ -176,7 +176,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                           res["filename"])
         try:
             with open(fn, "w") as f:
-                f.write(res["formula"])
+                f.write(res["content"])
             self.get_logger().info(f"environment command processed. The environment saved to {fn}")
             setattr(self, "environment", fn)
         except Exception as e:
@@ -190,14 +190,13 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
     def do_property(self, cuuid, data_received):
         res = self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_PROPERTIES.value)
-
         fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
                           cuuid,
                           symaiconfig.SymAIConfig.BASE_PROPERTIES.value,
                           res["filename"])
         try:
             with open(fn, "w") as f:
-                f.write(res["formula"])
+                f.write(res["content"])
             self.get_logger().info(f"property command processed. The property saved to {fn}")
             setattr(self, "property", fn)
         except Exception as e:
@@ -209,10 +208,82 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 pass
             raise e
 
+    def get_behaviors(self):
+        if hasattr(self, "behaviors"):
+            fn = getattr(self, "behaviors")
+            try:
+                f = open(fn, "r")
+                cnt = f.read()
+                tree = self.prepare_parser_expr(cnt).expressionList()
+                visitor = ExtSEGrammarVisitor()
+                res = visitor.visit(tree)
+                self.get_logger().debug(f"behaviors successful retrieved. File {fn}")
+            except Exception as e:
+                self.get_logger().error(f"retrieving behaviors failed {str(e)} file {fn}")
+                raise Exception(f"Cannot retrieve behaviors")
+            return res
+        raise Exception("No behaviors were defined")
+
+    def get_actions(self):
+        if hasattr(self, "actions"):
+            fn = getattr(self, "actions")
+            try:
+                f = open(fn, "r")
+                cnt = f.read()
+                tree = self.prepare_parser_expr(cnt).actions()
+                visitor = ExtSEGrammarVisitor()
+                res = visitor.visit(tree)
+                self.get_logger().debug(f"actions successful retrieved. File {fn}")
+            except Exception as e:
+                self.get_logger().error(f"retrieving actions failed {str(e)} file {fn}")
+                raise Exception(f"Cannot retrieve actions")
+            return res
+        raise Exception("No actions were defined")
+
+    def get_property(self):
+        if hasattr(self, "property"):
+            fn = getattr(self, "property")
+            try:
+                f = open(fn, "r")
+                cnt = f.read()
+                tree = self.prepare_parser_expr(cnt).expression()
+                visitor = ExtSEGrammarVisitor()
+                res = visitor.visit(tree)
+                self.get_logger().debug(f"property successful retrieved. File {fn}")
+            except Exception as e:
+                self.get_logger().error(f"retrieving property failed {str(e)} file {fn}")
+                raise Exception(f"Cannot retrieve property")
+            return res
+        raise Exception("No properties were defined")
+
+    def get_environment(self):
+        if hasattr(self, "environment"):
+            fn = getattr(self, "environment")
+            try:
+                f = open(fn, "r")
+                cnt = f.read()
+                tree = self.prepare_parser_expr(cnt).expression()
+                visitor = ExtSEGrammarVisitor()
+                res = visitor.visit(tree)
+                self.get_logger().debug(f"environment successful retrieved. File {fn}")
+            except Exception as e:
+                self.get_logger().error(f"retrieving environment failed {str(e)} file {fn}")
+                raise Exception(f"Cannot retrieve environment")
+            return res
+        raise Exception("No environments were defined")
+
+    def do_traversalbeh(self, cuuid, data_received):
+        # behavior_content, env, actions_content, reach_property
+        # 1. Loading parameters, if any incoming were saved. Throwing an exception in case of error
+        beh = self.get_behaviors()
+        act = self.get_actions()
+        prop = self.get_property()
+        env = self.get_environment()
+
     def get_and_simplify(self, cuuid, data_received, infix):
         # Loading
         res = self.do_get_file(cuuid,
-                               symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value,
+                               infix,
                                data_received)
         # checking and simplifying content
         headers = {'Content-type': 'application/json'}
