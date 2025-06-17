@@ -276,7 +276,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
     def check_reachability(self, env:str, reach_property:str) -> bool:
         res = False
-        expr = "(" + env + ")" + "(" + reach_property + ")"
+        expr = "(" + env + ")" + "&& (" + reach_property + ")"
 
         headers = {'Content-type': 'application/json'}
         try:
