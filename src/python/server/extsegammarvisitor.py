@@ -225,12 +225,15 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
         result = self.visit(ctx.assignmentExpression(0))
         self.results.append(result)
         i = 1
+        r = list()
         while i < len(ctx.assignmentExpression()):
             beh = self.visit(ctx.assignmentExpression(i))
             self.results.append(beh)
             result = result + "," + beh
             i = i + 1
+            r.append(beh)
         result = result + ","
+        self.setResults(r)
         return result
 
     # Visit a parse tree produced by ExpressionGrammarParser#actions.
@@ -238,6 +241,7 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
         result = ""
         i = 0
         j = 0
+        r = list()
         while i < len(ctx.postfixExpression()):
             t = []
             t.append(self.visit(ctx.postfixExpression(i)))
@@ -253,5 +257,7 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
             if t[1] is not None:
                 result = result + str(t[1]) + "->"
             result = result + str(t[2]) + ","
+            r.append(t)
+        self.setResults(r)
 
         return result

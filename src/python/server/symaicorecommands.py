@@ -7,6 +7,8 @@ import json
 import uuid
 import os
 
+import re
+
 from antlr4.CommonTokenStream import CommonTokenStream
 from antlr4.InputStream import InputStream
 from extsegammarvisitor import *
@@ -221,7 +223,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             except Exception as e:
                 self.get_logger().error(f"retrieving behaviors failed {str(e)} file {fn}")
                 raise Exception(f"Cannot retrieve behaviors")
-            return res
+            return res, visitor
         raise Exception("No behaviors were defined")
 
     def get_actions(self):
@@ -237,7 +239,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             except Exception as e:
                 self.get_logger().error(f"retrieving actions failed {str(e)} file {fn}")
                 raise Exception(f"Cannot retrieve actions")
-            return res
+            return res, visitor
         raise Exception("No actions were defined")
 
     def get_property(self):
@@ -272,13 +274,158 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             return res
         raise Exception("No environments were defined")
 
+    def check_reachability(self, env:str, reach_property:str) -> bool:
+        res = False
+        expr = "(" + env + ")" + "(" + reach_property + ")"
+
+        headers = {'Content-type': 'application/json'}
+        try:
+            # Make an HTTP request for simplifying
+            conn = http.client.HTTPConnection(
+                str(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                          symaiconfig.SymAIConfig.EXPRESSION_HOST.value)),
+                int(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                          symaiconfig.SymAIConfig.EXPRESSION_PORT.value)))
+            query = dict()
+            query["formula"] = expr
+            slvr = None
+            if hasattr(res, "solver"):
+                slvr = res.get("solver")
+            if slvr is None and hasattr(self, "solver"):
+                slvr = getattr(self, "solver")
+            if slvr is None:
+                slvr = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value,
+                                             symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value)
+            if slvr is None:
+                slvr = symaiconfig.SymAISolvers.Z3
+            query["solver"] = slvr
+            conn.request('POST', '/api/v1/expression/check', json.dumps(query), headers)
+            response = conn.getresponse()
+            if not (response.getcode() == HTTPStatus.OK):
+                raise Exception("Attempt simplify expression error Error code " + str(conn.getresponse()))
+            rsp = json.loads(response.read().decode())
+
+            self.get_logger().info(f"check_reachability ( {env}, {reach_property} command processed with {res}.")
+        except Exception as e:
+            self.get_logger().error(f"check_reachability ( {env}, {reach_property} command processing failed {str(e)}")
+            raise e
+        res = rsp["satisfiable"]
+        return res
+
+    def remove_actions(self, tr, INCLUDE):
+        # видалити останній ланцюжок інструкцій в трасі включно чи без поведінки
+        while (tr[len(tr) - 1][0] != 'B'):
+            tr.pop()
+        if INCLUDE > 0:
+            tr.pop()
+        return tr
+
+    def load_terminal(self, b, bList):
+        tt = ""
+        # Завантажити поведінкове рівняння
+        for equality in bList:
+            tt = re.findall(r"(\+*\w+)\((.*?)\)", equality)
+            if tt[0][1] == str(b):
+                break
+        return tt
+
+    def step_modelling(self, x,y, inp_env,a):
+        env = inp_env
+        print(f"x: {x} y {y} env {inp_env} a {a}")
+        return env
+
     def do_traversalbeh(self, cuuid, data_received):
         # behavior_content, env, actions_content, reach_property
         # 1. Loading parameters, if any incoming were saved. Throwing an exception in case of error
-        beh = self.get_behaviors()
-        act = self.get_actions()
+        beh, beh_visitor = self.get_behaviors()
+        print(f"Behaviors {beh}")
+        act, act_visitor = self.get_actions()
+        actions = act_visitor.getResults()
+        print(f"Actions: {act} Whole list {actions}")
         prop = self.get_property()
+        print(f"Properties {prop}")
         env = self.get_environment()
+        print(f"Environment {env}")
+
+        trace = [['B', '0']]
+        beh_stack = []
+
+        terminal = re.findall(r"(\+*\w+)\((.*?)\)", beh)
+        equations = re.findall(r"\s*([^,]+?)\s*(?=,|$)", beh)
+        # завантажити всі термінали - поведінки та інструкцій - з першого рівняння
+        # як список пар - мнемоніка інструкції або В та параметр - адреса в сегменті коду
+        curBeh = terminal[0][1]
+        # поточна поведінка, вибрана як початок обходу
+        curPos = 1
+        # встановлює початкову позицію терміналу
+        # перший в правій частині рівняння - другий у списку
+        beh_stack.append([curBeh, curPos])
+        # В стек поміщаємо поточну поведінку, як пару, що містить параметр поточної поведінки
+        # поточний термінал в поведінці та лічильник дій в поведінці
+        stackLen = 1
+        # довжина стеку
+
+        print("Before while")
+        while stackLen > 0:  # поки стек не порожній обходимо поведінку
+            print(f"Pass {curBeh}")
+            if curPos >= len(terminal):
+                # якщо термінал останній в поведінці
+                self.remove_actions(trace, 1)
+                # видалити останній ланцюжок дій в трасі включно із поведінкою
+
+                stackLen -= 1
+                beh_stack.pop()
+                if stackLen > 0:
+                    # повертаємось назад по стеку
+                    curBeh = beh_stack[stackLen - 1][0]
+                    curPos = beh_stack[stackLen - 1][1]
+                    equations = list()
+                    actions.append(beh)
+                    terminal = self.load_terminal(curBeh, equations)
+                    # завантажити список терміналів поведінки curBeh
+                elif (str(terminal[curPos][0]))[0] == 'B':
+                    # якщо наступний термінал є поведінка
+                    curBeh = terminal[curPos][1]
+                    beh_stack[stackLen - 1][1] = curPos + 1
+                    # зберігаємо номер терміналу в стеку
+                    stackLen += 1
+                    beh_stack.append([curBeh, 1])
+                    trace.append(['B', curBeh])
+
+                    # в стек додаємо нову поведінку
+                    terminal = self.load_terminal(curBeh, equations)
+
+                    # завантажуємо нове рівняння поведінок (список терміналів)
+                    curPos = 1
+                else:  # якщо наступний термінал дія
+
+                    if (str(terminal[curPos][0]))[0] == '+':
+                        # якщо наступний термінал є альтернатива після +
+                        trace = self.remove_actions(trace, 0)
+
+                        env = self.step_modelling(terminal[curPos][0], terminal[curPos][1], env, actions)
+
+                        # моделювання дії
+
+                trace.append([terminal[curPos][0], terminal[curPos][1]])
+                """
+                if checkReachability(env, prop):
+                    print("REACHED:" + str(trace))
+                    return
+
+                if visited(terminal[curPos][0], terminal[curPos][1], trace):
+                    if check_visited():
+                        curPos = nextAlt(curPos, terminal, trace)
+                        print("Visited state")
+                    else:
+                        curPos += 1
+                else:
+                    curPos += 1
+                """
+            curPos += 1
+
+            beh_stack[stackLen - 1][1] = curPos
+        return trace
 
     def get_and_simplify(self, cuuid, data_received, infix):
         # Loading
