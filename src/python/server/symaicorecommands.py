@@ -274,18 +274,23 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             return res
         raise Exception("No environments were defined")
 
-    def check_reachability(self, env:str, reach_property:str) -> bool:
+    def check_reachability(self, env:str, reach_property:str) -> (bool, str):
         res = False
-        expr = "(" + env + ")" + "&& (" + reach_property + ")"
+        r_env =  env
+
+        if reach_property is None:
+            reach_property = "True"
+
+        expr = "(" + env + ") && (" + reach_property + ")"
 
         headers = {'Content-type': 'application/json'}
         try:
-            # Make an HTTP request for simplifying
-            conn = http.client.HTTPConnection(
-                str(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
-                                          symaiconfig.SymAIConfig.EXPRESSION_HOST.value)),
-                int(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
-                                          symaiconfig.SymAIConfig.EXPRESSION_PORT.value)))
+            # Make an HTTP request for check
+            expression_host = str(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                                    symaiconfig.SymAIConfig.EXPRESSION_HOST.value))
+            expression_port = int(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                          symaiconfig.SymAIConfig.EXPRESSION_PORT.value))
+            conn = http.client.HTTPConnection(expression_host,expression_port)
             query = dict()
             query["formula"] = expr
             slvr = None
@@ -302,15 +307,24 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             conn.request('POST', '/api/v1/expression/check', json.dumps(query), headers)
             response = conn.getresponse()
             if not (response.getcode() == HTTPStatus.OK):
+                raise Exception("Attempt check expression error Error code " + str(conn.getresponse()))
+            rsp = json.loads(response.read().decode())
+            res = rsp["satisfiable"]
+            query.pop("formula")
+            query["formula"] = env
+            conn = http.client.HTTPConnection(expression_host,expression_port)
+            conn.request('POST', '/api/v1/expression/simplify', json.dumps(query), headers)
+            response = conn.getresponse()
+            if not (response.getcode() == HTTPStatus.OK):
                 raise Exception("Attempt simplify expression error Error code " + str(conn.getresponse()))
             rsp = json.loads(response.read().decode())
-
+            r_env = rsp["formula"]
             self.get_logger().info(f"check_reachability ( {env}, {reach_property} command processed with {res}.")
         except Exception as e:
             self.get_logger().error(f"check_reachability ( {env}, {reach_property} command processing failed {str(e)}")
             raise e
-        res = rsp["satisfiable"]
-        return res
+
+        return res, r_env
 
     def remove_actions(self, tr, INCLUDE):
         # видалити останній ланцюжок інструкцій в трасі включно чи без поведінки
