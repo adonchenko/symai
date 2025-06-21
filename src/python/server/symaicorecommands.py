@@ -275,11 +275,11 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         raise Exception("No environments were defined")
 
     def check_reachability(self, env:str, reach_property:str) -> (bool, str):
-        res = False
-        r_env =  env
 
         if reach_property is None:
             reach_property = "True"
+        if env is None:
+            env = ""
 
         expr = "(" + env + ") && (" + reach_property + ")"
 
@@ -293,16 +293,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             conn = http.client.HTTPConnection(expression_host,expression_port)
             query = dict()
             query["formula"] = expr
-            slvr = None
-            if hasattr(res, "solver"):
-                slvr = res.get("solver")
-            if slvr is None and hasattr(self, "solver"):
-                slvr = getattr(self, "solver")
-            if slvr is None:
-                slvr = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value,
-                                             symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value)
-            if slvr is None:
-                slvr = symaiconfig.SymAISolvers.Z3
+            slvr = self.get_solver()
             query["solver"] = slvr
             conn.request('POST', '/api/v1/expression/check', json.dumps(query), headers)
             response = conn.getresponse()
@@ -457,16 +448,10 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                           symaiconfig.SymAIConfig.EXPRESSION_PORT.value)))
             query = dict()
             query["formula"] = res["content"].strip()
-            slvr = None
             if hasattr(res, "solver"):
                 slvr = res.get("solver")
-            if slvr is None and hasattr(self, "solver"):
-                slvr = getattr(self,"solver")
-            if slvr is None:
-                slvr = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value,
-                                             symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value)
-            if slvr is None:
-                slvr = symaiconfig.SymAISolvers.Z3
+            else:
+                slvr = self.get_solver()
             query["solver"] = slvr
             conn.request('POST', '/api/v1/expression/simplify', json.dumps(query), headers)
             response = conn.getresponse()
@@ -541,7 +526,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                       symaiconfig.SymAIConfig.SYMAICORE.value, cfg)
         return str(b)
 
-    def do_solver(self, cuuid, msg:str):
+    def get_solver(self)->str:
+
         if hasattr(self, "solver"):
             b = getattr(self, "solver")
         else:
@@ -551,7 +537,11 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 if s in symaiconfig.SymAISolvers._value2member_map_:
                     b = s
             except:
-                b = symaiconfig.SymAISolvers.SYMPY.value
+                b = symaiconfig.SymAISolvers.Z3.value
+        return b
+
+    def do_solver(self, cuuid, msg:str):
+        b = self.get_solver()
         is_flush = False
         s = msg.strip().split()
         if len(s) == 1:
@@ -589,17 +579,22 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             symaiconfig.create_config(symaiconfig.get_config_file(), symaiconfig.SymAIConfig.EXPRESSION.value, cfg)
         return str(b)
 
-    def do_max_models(self, cuuid, msg:str):
+    def get_max_models(self)->int:
         b = 10  # default value of solver max models
         if hasattr(self, "max_models"):
             b = getattr(self, "max_models")
         else:
             try:
-                s = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.SOLVER_MAX_MODELS.value)
+                s = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value,
+                                          symaiconfig.SymAIConfig.SOLVER_MAX_MODELS.value)
                 if s.isnumeric():
-                   b = int(s)
+                    b = int(s)
             except:
                 b = 10
+        return b
+
+    def do_max_models(self, cuuid, msg:str):
+        b = self.get_max_models()
 
         is_flush = False
         s = msg.strip().split()
