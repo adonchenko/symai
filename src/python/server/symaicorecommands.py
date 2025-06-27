@@ -128,7 +128,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                           symaiconfig.SymAIConfig.BASE_BEHAVIORS.value,
                           cnt["filename"])
         try:
-            tree = self.prepare_parser_expr(cnt["content"]).expressionList()
+            tree = self.prepare_parser_expr(cnt["content"]).behavior()
             visitor = ExtSEGrammarVisitor()
             res = visitor.visit(tree)
             with open(fn, "w") as f:
@@ -153,7 +153,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                           symaiconfig.SymAIConfig.BASE_ACTIONS.value,
                           cnt["filename"])
         try:
-            tree = self.prepare_parser_expr(cnt["content"]).actions()
+            tree = self.prepare_parser_expr(cnt["content"]).actionsList()
             visitor = ExtSEGrammarVisitor()
             res = visitor.visit(tree)
             with open(fn, "w") as f:
@@ -216,7 +216,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             try:
                 f = open(fn, "r")
                 cnt = f.read()
-                tree = self.prepare_parser_expr(cnt).expressionList()
+                tree = self.prepare_parser_expr(cnt).behaviorsList()
                 visitor = ExtSEGrammarVisitor()
                 res = visitor.visit(tree)
                 self.get_logger().debug(f"behaviors successful retrieved. File {fn}")
@@ -232,7 +232,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             try:
                 f = open(fn, "r")
                 cnt = f.read()
-                tree = self.prepare_parser_expr(cnt).actions()
+                tree = self.prepare_parser_expr(cnt).actionsList()
                 visitor = ExtSEGrammarVisitor()
                 res = visitor.visit(tree)
                 self.get_logger().debug(f"actions successful retrieved. File {fn}")
@@ -316,6 +316,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             raise e
 
         return res, r_env
+
+    
 
     def remove_actions(self, tr, INCLUDE):
         # видалити останній ланцюжок інструкцій в трасі включно чи без поведінки

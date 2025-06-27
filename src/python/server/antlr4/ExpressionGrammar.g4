@@ -78,12 +78,48 @@ expression
     : assignmentExpression (',' assignmentExpression)*
     ;
 
-expressionList
-    : (assignmentExpression ',')+
+actionsList
+    : (postfixExpression ':' logicalOrExpression '->'  assignmentExpression ',')+
     ;
 
-actions
-    : (postfixExpression ':' (logicalOrExpression '->')?  assignmentExpression ',')+
+behavior
+    : system_of_eqs
+    ;
+
+system_of_eqs
+    :  (eqs ',')+
+    ;
+
+eqs
+    : prim_name '=' items_list
+    ;
+
+prim_name
+    : '!'? Identifier ('(' argumentExpressionList? ')')
+    ;
+
+comp_name
+    : prim_name
+    | Constant
+    ;
+
+postfix_item
+    :  comp_name
+       ('(' argumentExpressionList? ')'
+       | '.' Identifier
+       )*
+    ;
+
+additive_item
+    : postfix_item ('+' postfix_item)*
+    ;
+
+items_list
+    : additive_item (';' additive_item )*
+    ;
+
+par_item
+    : items_list ('||' items_list)?
     ;
 
 Pointer
@@ -140,6 +176,14 @@ Pow
 
 AndAnd
     : '&&'
+    ;
+
+Colon
+    : ':'
+    ;
+
+Semicolon
+    : ';'
     ;
 
 OrOr
