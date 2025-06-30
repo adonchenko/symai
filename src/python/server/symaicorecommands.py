@@ -216,7 +216,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             try:
                 f = open(fn, "r")
                 cnt = f.read()
-                tree = self.prepare_parser_expr(cnt).behaviorsList()
+                tree = self.prepare_parser_expr(cnt).behavior()
                 visitor = ExtSEGrammarVisitor()
                 res = visitor.visit(tree)
                 self.get_logger().debug(f"behaviors successful retrieved. File {fn}")

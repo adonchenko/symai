@@ -95,7 +95,7 @@ eqs
     ;
 
 prim_name
-    : '!'? Identifier ('(' argumentExpressionList? ')')
+    : '!'? Identifier ('(' argumentExpressionList? ')')?
     ;
 
 comp_name
@@ -105,8 +105,7 @@ comp_name
 
 postfix_item
     :  comp_name
-       ('(' argumentExpressionList? ')'
-       | '.' Identifier
+       ( '.' Identifier ('(' argumentExpressionList? ')')*
        )*
     ;
 
