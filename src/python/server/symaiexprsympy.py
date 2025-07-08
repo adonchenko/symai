@@ -84,7 +84,7 @@ class SymAIExpressionSymPy(symaiexpr.SymAIExpression):
         fml = visitor.visit(tree)
         models = sympy.satisfiable(fml)
         res = dict()
-        if models:
+        if not models is None and len(models) > 0:
             args["satisfiable"] = True
             lst = visitor.getVarList()
             check_vars = dict()
@@ -94,7 +94,14 @@ class SymAIExpressionSymPy(symaiexpr.SymAIExpression):
             glob_vars = dict()
             glob_vars["solve"] = sympy.solve
             solutions = eval("solve(" + expr + "," + tv + ")", glob_vars, check_vars)
-            res[tv] = str(solutions[0])
+            if solutions is None:
+                res[tv] = expr
+            elif isinstance(solutions, str):
+                res[tv] = solutions
+            elif len(solutions) > 0:
+                res[tv] = str(solutions[0])
+            else:
+                res[tv] = expr
         else:
             args["satisfiable"] = False
         args["inverse"] = res

@@ -1,5 +1,6 @@
 import configparser
 import os.path
+from configparser import ConfigParser
 from enum import Enum
 config_file:str = ""
 
@@ -58,7 +59,7 @@ def set_config_file(file_name : str):
     global config_file
     config_file = file_name
 
-def create_config(cfg_file, section, cfg):
+def create_config(cfg_file, section, cfg:ConfigParser):
     """
     Create a config file
     """
@@ -132,10 +133,11 @@ def create_config(cfg_file, section, cfg):
     # merge input data
     if not c.has_section(section):
         c.add_section(section)
-    for k in cfg[section]:
-        if c.has_option(section, k):
-            c.remove_option(section, k)
-        c.set(section, k, cfg.get(section, k))
+    if cfg.has_section(section):
+        for k in cfg[section]:
+            if c.has_option(section, k):
+                c.remove_option(section, k)
+            c.set(section, k, cfg.get(section, k))
     with open(cfg_file, "w") as c_file:
         c.write(c_file)
     config_file = cfg_file
