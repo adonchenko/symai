@@ -280,8 +280,11 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
         while i < len(ctx.eqs()):
             beh = str(self.visit(ctx.getChild(2 * i)))
             res = res + beh + ","
-            r.append(beh)
             i = i + 1
+            j = beh.find("=")
+            head = (beh[:j]).strip()
+            tail = (beh[j+1:]).strip()
+            r.append([head, tail])
         self.setResults(r)
         return res
 

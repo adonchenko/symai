@@ -1,10 +1,13 @@
 from http import HTTPStatus
 
+from sympy.strategies.core import switch
+
 import symaicommands
 import symaiconfig
 import http.client
 import json
 import uuid
+from itertools import tee
 import os
 
 import re
@@ -310,129 +313,131 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 raise Exception("Attempt simplify expression error Error code " + str(conn.getresponse()))
             rsp = json.loads(response.read().decode())
             r_env = rsp["formula"]
-            self.get_logger().info(f"check_reachability ( {env}, {reach_property} command processed with {res}.")
+            self.get_logger().info(f"check_reachability ( {env}, {reach_property} ) command processed with {res}.")
         except Exception as e:
-            self.get_logger().error(f"check_reachability ( {env}, {reach_property} command processing failed {str(e)}")
+            self.get_logger().error(f"check_reachability ( {env}, {reach_property} ) command processing failed {str(e)}")
             raise e
 
         return res, r_env
 
-    
-
-    def remove_actions(self, tr, INCLUDE):
-        # видалити останній ланцюжок інструкцій в трасі включно чи без поведінки
-        while (tr[len(tr) - 1][0] != 'B'):
-            tr.pop()
-        if INCLUDE > 0:
-            tr.pop()
-        return tr
-
-    def load_terminal(self, b, bList):
-        tt = ""
-        # Завантажити поведінкове рівняння
-        for equality in bList:
-            tt = re.findall(r"(\+*\w+)\((.*?)\)", equality)
-            if tt[0][1] == str(b):
-                break
-        return tt
-
     def step_modelling(self, x,y, inp_env,a):
         env = inp_env
-        print(f"x: {x} y {y} env {inp_env} a {a}")
+        print(f"Step modelling x: {x} y: {y} env: {inp_env} a {a}")
         return env
 
-    def do_traversalbeh(self, cuuid, data_received):
-        # behavior_content, env, actions_content, reach_property
+    def do_load_traversal_data(self, cuuid, data_received):
         # 1. Loading parameters, if any incoming were saved. Throwing an exception in case of error
+        # Returns the context dictionary in case of success. Raises an exception in case or error
+        ctx = dict()
         beh, beh_visitor = self.get_behaviors()
-        print(f"Behaviors {beh}")
+        ctx["behaviors"] = beh
+        ctx["beh_visitor"] = beh_visitor
+
         act, act_visitor = self.get_actions()
-        actions = act_visitor.getResults()
-        print(f"Actions: {act} Whole list {actions}")
+        ctx["actions"] = act
+        ctx["act_visitor"] = act_visitor
+
         prop = self.get_property()
-        print(f"Properties {prop}")
+        ctx["property"] = prop
+
         env = self.get_environment()
-        print(f"Environment {env}")
+        ctx["environment"] = env
 
-        trace = [['B', '0']]
-        beh_stack = []
+        return ctx
 
-        terminal = re.findall(r"(\+*\w+)\((.*?)\)", beh)
-        equations = re.findall(r"\s*([^,]+?)\s*(?=,|$)", beh)
-        # завантажити всі термінали - поведінки та інструкцій - з першого рівняння
-        # як список пар - мнемоніка інструкції або В та параметр - адреса в сегменті коду
-        curBeh = terminal[0][1]
-        # поточна поведінка, вибрана як початок обходу
-        curPos = 1
-        # встановлює початкову позицію терміналу
-        # перший в правій частині рівняння - другий у списку
-        beh_stack.append([curBeh, curPos])
-        # В стек поміщаємо поточну поведінку, як пару, що містить параметр поточної поведінки
-        # поточний термінал в поведінці та лічильник дій в поведінці
-        stackLen = 1
-        # довжина стеку
+    def is_action(self, actions, term):
+        for a in actions:
+            if str(a[0]) == str(term):
+                return True
+        return False
 
-        print("Before while")
-        while stackLen > 0:  # поки стек не порожній обходимо поведінку
-            print(f"Pass {curBeh}")
-            if curPos >= len(terminal):
-                # якщо термінал останній в поведінці
-                self.remove_actions(trace, 1)
-                # видалити останній ланцюжок дій в трасі включно із поведінкою
+    def find_behavior(self, behaviors, term):
+        for bh in behaviors:
+            if str(bh) == str(term):
+                return behaviors[bh]
+        return None
 
-                stackLen -= 1
-                beh_stack.pop()
-                if stackLen > 0:
-                    # повертаємось назад по стеку
-                    curBeh = beh_stack[stackLen - 1][0]
-                    curPos = beh_stack[stackLen - 1][1]
-                    equations = list()
-                    actions.append(beh)
-                    terminal = self.load_terminal(curBeh, equations)
-                    # завантажити список терміналів поведінки curBeh
-                elif (str(terminal[curPos][0]))[0] == 'B':
-                    # якщо наступний термінал є поведінка
-                    curBeh = terminal[curPos][1]
-                    beh_stack[stackLen - 1][1] = curPos + 1
-                    # зберігаємо номер терміналу в стеку
-                    stackLen += 1
-                    beh_stack.append([curBeh, 1])
-                    trace.append(['B', curBeh])
+    def do_traversalbeh(self, cuuid, data_received):
+        self.get_logger().info(f"traversal behaviors started {data_received}")
+        yield "OK Traversal behaviors started"
+        try:
+            ctx = self.do_load_traversal_data(cuuid, data_received)
+            yield "OK Input data retrieved"
+            # Processing
+            self.get_logger().debug(f"traversal behaviors input data retrieved")
+            behaviors = ctx["beh_visitor"].getBehaviors()
+            actions = ctx["act_visitor"].getResults()
 
-                    # в стек додаємо нову поведінку
-                    terminal = self.load_terminal(curBeh, equations)
+            yield "OK TRACE START"
+            trace = []
+            beh_stack = []
 
-                    # завантажуємо нове рівняння поведінок (список терміналів)
-                    curPos = 1
-                else:  # якщо наступний термінал дія
+            if len(behaviors) > 0:
+                # Selecting an appropriate behavior to process.
+                # AI can be used here for initial cur_beh selection
+                # Now we are choosing the first behavior
+                it_beh = iter(behaviors)
+                cur_beh = next(it_beh)
+                cur_alt = 1
+                it = iter(behaviors[cur_beh])
+                it, cit = tee(it)
+                beh_stack.append([cur_beh,cit, behaviors[cur_beh], cur_alt])
+                trace.append(cur_beh)
+                is_print = True
+                while True:
+                    try:
+                        term = next(it)
+                        match term:
+                            case ".":
+                                continue
+                            case "+":
+                                while len(trace) > cur_alt:
+                                    trace.pop()
 
-                    if (str(terminal[curPos][0]))[0] == '+':
-                        # якщо наступний термінал є альтернатива після +
-                        trace = self.remove_actions(trace, 0)
+                            case default:
+                                cb = self.find_behavior(behaviors, term)
+                                if self.is_action(actions, term):
+                                    trace.append(term)
+                                    if self.check_reachability(ctx["environment"], ctx["property"]):
+                                        yield f"OK REACHED: {trace}"
+                                        break
+                                elif cb is not None:
+                                    is_print = False
+                                    it, cit = tee(it)
+                                    if trace.count(term) > 1:
+                                        trace.append(term)
+                                        # Well. We're visited {term}
+                                    else:
+                                        beh_stack.append([term, cit, behaviors[term], cur_alt])
+                                        cur_beh = term
+                                        it = iter(cb)
+                                        trace.append(term)
+                                        cur_alt = len(trace)
+                                else:
+                                    trace.append(term)
+                                    self.get_logger().warning(f"Unknown term {term}")
+                                    #raise Exception(f"ERR Unknown term {term}")
 
-                        env = self.step_modelling(terminal[curPos][0], terminal[curPos][1], env, actions)
+                        if is_print:
+                            yield f"OK {trace}"
+                        is_print = True
+                    except StopIteration:
+                        if len(beh_stack) > 0:
+                            r = beh_stack.pop()
+                            cur_beh = r[0]
+                            it = r[1]
+                            cb = r[2]
+                            cur_alt = r[3]
+                        else:
+                            break
 
-                        # моделювання дії
-
-                trace.append([terminal[curPos][0], terminal[curPos][1]])
-                """
-                if checkReachability(env, prop):
-                    print("REACHED:" + str(trace))
-                    return
-
-                if visited(terminal[curPos][0], terminal[curPos][1], trace):
-                    if check_visited():
-                        curPos = nextAlt(curPos, terminal, trace)
-                        print("Visited state")
-                    else:
-                        curPos += 1
-                else:
-                    curPos += 1
-                """
-            curPos += 1
-
-            beh_stack[stackLen - 1][1] = curPos
-        return trace
+            # Finalizing
+            yield "OK TRACE STOP"
+            yield "OK Traversal behaviors finished successful"
+            self.get_logger().info("traversal behaviors finished")
+        except Exception as e:
+            self.get_logger().error(f"traversal behaviors failed with {e}")
+            yield f"ERR Traversal behaviors failed {e}"
 
     def get_and_simplify(self, cuuid, data_received, infix):
         # Loading
@@ -667,6 +672,5 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         setattr(self, "solver", b)
         attr["solver"] = b
         attr["formula"] = fml
-        
 
         return
