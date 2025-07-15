@@ -359,23 +359,29 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
     def do_traversalbeh(self, cuuid, data_received):
         self.get_logger().info(f"traversal behaviors started {data_received}")
-        yield "OK Traversal behaviors started"
+        # Parsing incoming data
+        if data_received is not None and len(data_received) > 0:
+            dr = json.loads(data_received)
+        else:
+            dr = dict()
+
+        yield "ok Traversal behaviors started"
         try:
             ctx = self.do_load_traversal_data(cuuid, data_received)
-            yield "OK Input data retrieved"
+            yield "ok Input data retrieved"
             # Processing
             self.get_logger().debug(f"traversal behaviors input data retrieved")
             behaviors = ctx["beh_visitor"].getBehaviors()
             actions = ctx["act_visitor"].getResults()
 
-            yield "OK TRACE START"
+            yield "ok trace start"
             trace = []
             beh_stack = []
 
             if len(behaviors) > 0:
                 # Selecting an appropriate behavior to process.
                 # AI can be used here for initial cur_beh selection
-                # Now we are choosing the first behavior
+                # Now choosing the first behavior by default
                 it_beh = iter(behaviors)
                 cur_beh = next(it_beh)
                 cur_alt = 1
@@ -393,13 +399,14 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                             case "+":
                                 while len(trace) > cur_alt:
                                     trace.pop()
-
+                                is_print = False
                             case default:
                                 cb = self.find_behavior(behaviors, term)
                                 if self.is_action(actions, term):
                                     trace.append(term)
-                                    if self.check_reachability(ctx["environment"], ctx["property"]):
-                                        yield f"OK REACHED: {trace}"
+                                    res, r_env = self.check_reachability(ctx["environment"], ctx["property"])
+                                    if res:
+                                        yield f"ok trace reached {trace}"
                                         break
                                 elif cb is not None:
                                     is_print = False
@@ -409,35 +416,32 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                         # Well. We're visited {term}
                                     else:
                                         beh_stack.append([term, cit, behaviors[term], cur_alt])
-                                        cur_beh = term
-                                        it = iter(cb)
+                                        cb = term
+                                        it = iter(behaviors[term])
                                         trace.append(term)
                                         cur_alt = len(trace)
                                 else:
                                     trace.append(term)
-                                    self.get_logger().warning(f"Unknown term {term}")
-                                    #raise Exception(f"ERR Unknown term {term}")
-
+                                    raise Exception(f"Unknown term {term}")
                         if is_print:
-                            yield f"OK {trace}"
+                            yield f"ok trace {trace}"
                         is_print = True
                     except StopIteration:
                         if len(beh_stack) > 0:
                             r = beh_stack.pop()
-                            cur_beh = r[0]
+                            cb = r[0]
                             it = r[1]
-                            cb = r[2]
+                            ctr = r[2]
                             cur_alt = r[3]
                         else:
                             break
-
             # Finalizing
-            yield "OK TRACE STOP"
-            yield "OK Traversal behaviors finished successful"
+            yield "ok trace stop"
+            yield "ok Traversal behaviors finished successful"
             self.get_logger().info("traversal behaviors finished")
         except Exception as e:
             self.get_logger().error(f"traversal behaviors failed with {e}")
-            yield f"ERR Traversal behaviors failed {e}"
+            yield f"nok Traversal behaviors failed {e}"
 
     def get_and_simplify(self, cuuid, data_received, infix):
         # Loading
