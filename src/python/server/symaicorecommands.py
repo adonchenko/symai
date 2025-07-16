@@ -136,7 +136,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             res = visitor.visit(tree)
             with open(fn, "w") as f:
                 f.write(res)
-            self.get_logger().info(f"behaviors command processed. The behaviors saved to {fn}")
+            self.get_logger().info(f"behaviors command processed. The behaviors list saved to {fn}")
             setattr(self, "behaviors", fn)
         except Exception as e:
             self.get_logger().error(f"behaviors command processing failed {str(e)}")
@@ -329,6 +329,11 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         # 1. Loading parameters, if any incoming were saved. Throwing an exception in case of error
         # Returns the context dictionary in case of success. Raises an exception in case or error
         ctx = dict()
+        ctx["cuuid"] = cuuid
+
+        if hasattr(self, "trace_file"):
+            ctx["trace_file"] = getattr(self, "trace_file")
+
         beh, beh_visitor = self.get_behaviors()
         ctx["behaviors"] = beh
         ctx["beh_visitor"] = beh_visitor
@@ -356,6 +361,38 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             if str(bh) == str(term):
                 return behaviors[bh]
         return None
+
+    def append_trace(self, ctx, trace):
+        try:
+            if "trace" not in ctx or ctx["trace"] is None or "trace_file" not in ctx:
+                if "trace_file" in ctx:
+                    fn = ctx["trace_file"]
+                else:
+                    fn = os.path.join( symaiconfig.SymAIConfig.BASE_TEMP.value,
+                                       ctx["cuuid"],
+                                       symaiconfig.SymAIConfig.BASE_TRACE.value,
+                                       symaiconfig.SymAIConfig.BASE_TRACE_FILE.value)
+                ctx["trace_file"] = fn
+                ctx["trace"] = str(trace)
+                with open(fn, "w") as f:
+                    f.write(str(trace) + "\n")
+            else:
+                fn = ctx["trace_file"]
+                ctx["trace"] = ctx["trace"] + "\n" + str(trace)
+                with open(fn, "a+") as f:
+                    f.write(str(trace) + "\n")
+            self.get_logger().info(f"trace saved to {fn}")
+        except Exception as e:
+            self.get_logger().error(f"saving trace processing failed {str(e)}")
+            try:
+                if os.path.exists(fn):
+                    os.remove(fn)
+                ctx["trace"] = None
+                ctx["trace_file"] = None
+            except:
+                pass
+            raise e
+        return ctx
 
     def do_traversalbeh(self, cuuid, data_received):
         self.get_logger().info(f"traversal behaviors started {data_received}")
@@ -407,6 +444,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                     res, r_env = self.check_reachability(ctx["environment"], ctx["property"])
                                     if res:
                                         yield f"ok trace reached {trace}"
+                                        ctx = self.append_trace(ctx, trace)
                                         break
                                 elif cb is not None:
                                     is_print = False
@@ -425,6 +463,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                     raise Exception(f"Unknown term {term}")
                         if is_print:
                             yield f"ok trace {trace}"
+                            ctx = self.append_trace(ctx, trace)
                         is_print = True
                     except StopIteration:
                         if len(beh_stack) > 0:

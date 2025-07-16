@@ -50,6 +50,8 @@ class SymAIConfig(Enum):
     BASE_ENVIRONMENT = "environment"
     BASE_BEHAVIORS = "behaviors"
     BASE_ACTIONS = "actions"
+    BASE_TRACE = "trace"
+    BASE_TRACE_FILE = "trace.trx"
 
 def get_config_file() -> str:
     global config_file
