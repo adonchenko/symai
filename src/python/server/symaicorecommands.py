@@ -1,7 +1,5 @@
 from http import HTTPStatus
 
-from sympy.strategies.core import switch
-
 import symaicommands
 import symaiconfig
 import http.client
@@ -9,8 +7,6 @@ import json
 import uuid
 from itertools import tee
 import os
-
-import re
 
 from antlr4.CommonTokenStream import CommonTokenStream
 from antlr4.InputStream import InputStream
@@ -147,6 +143,85 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 pass
             raise e
 
+    def invert_one_action(self, name, expr):
+        tree = self.prepare_parser_expr(expr).assignmentExpression()
+        visitor = ExtSEGrammarVisitor()
+        a = visitor.visit(tree)
+        i = a.strip().find("=")
+        if i == -1:
+            raise Exception(f"Incorrect action description {a}")
+        else:
+            headers = {'Content-type': 'application/json'}
+            l = a[:i].strip()
+            r = a[i+1:].strip()
+            tr = self.prepare_parser_expr(r).assignmentExpression()
+            v = ExtSEGrammarVisitor()
+            v.visit(tr)
+            vl = v.getVarList()
+            if l in vl:
+                i = 0
+                nm = l + str(i)
+                while nm in vl:
+                    i = i + 1
+                    nm = l + str(i)
+                nexpr = nm + "=" + r
+                # Make an HTTP request for inverse eqation
+                expression_host = str(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                                            symaiconfig.SymAIConfig.EXPRESSION_HOST.value))
+                expression_port = int(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                                            symaiconfig.SymAIConfig.EXPRESSION_PORT.value))
+                conn = http.client.HTTPConnection(expression_host, expression_port)
+                query = dict()
+                query["formula"] = nexpr
+                slvr = self.get_solver()
+                query["solver"] = slvr
+                conn.request('POST', '/api/v1/expression/inverse', json.dumps(query), headers)
+                response = conn.getresponse()
+                if not (response.getcode() == HTTPStatus.OK):
+                    raise Exception(f"Attempt to inverse expression error {str(conn.getresponse())}")
+                rsp = json.loads(response.read().decode())
+                rs = rsp["formula"]
+                subsn = [{"name": nm, "value": l}]
+                tr = self.prepare_parser_expr(rs).assignmentExpression()
+                v = ExtSEGrammarVisitor()
+                v.setSubstitution(subsn)
+                res = v.visit(tr)
+            else:
+                res = expr
+        return res
+
+    def invert_actions(self, cuuid, visitor, fname):
+        res = dict()
+        if hasattr(self, "inverted"):
+            fn = getattr(self, "inverted")
+        elif hasattr(self, "actions"):
+            fn = getattr(self, "actions") + ".inv"
+        else:
+            fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+                              cuuid,
+                              symaiconfig.SymAIConfig.BASE_ACTIONS.value,
+                              fname + ".inv")
+        try:
+            rs = visitor.getResults()
+            r = dict()
+            with open(fn, "w") as f:
+                for act in rs:
+                    nm = act[0]
+                    expr = act[2]
+                    res[nm]  = self.invert_one_action(nm, expr)
+                    f.write(nm + ":" + res[nm] + "\n")
+            self.get_logger().debug(f"Inverted actions saved to {fn}")
+            setattr(self,"inverted", fn)
+            setattr(self, "inverted_actions", res)
+        except Exception as e:
+            try:
+                if os.path.exists(fn):
+                    os.remove(fn)
+            except:
+                pass
+            raise e
+        return res
+
     def do_actions(self, cuuid, data_received):
         cnt = self.do_get_file(cuuid,
                                symaiconfig.SymAIConfig.BASE_ACTIONS.value,
@@ -161,8 +236,9 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             res = visitor.visit(tree)
             with open(fn, "w") as f:
                 f.write(res)
-            self.get_logger().info(f"actions command processed. The actions list saved to {fn}")
             setattr(self, "actions", fn)
+            self.invert_actions(cuuid, visitor, fn)
+            self.get_logger().info(f"actions command processed. The actions list saved to {fn}")
         except Exception as e:
             self.get_logger().error(f"actions command processing failed {str(e)}")
             try:
@@ -170,6 +246,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                     os.remove(fn)
             except:
                 pass
+            delattr(self, "actions")
             raise e
 
     def do_environment(self, cuuid, data_received):
@@ -310,7 +387,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             conn.request('POST', '/api/v1/expression/simplify', json.dumps(query), headers)
             response = conn.getresponse()
             if not (response.getcode() == HTTPStatus.OK):
-                raise Exception("Attempt simplify expression error Error code " + str(conn.getresponse()))
+                raise Exception("Attempt to simplify expression error Error code " + str(conn.getresponse()))
             rsp = json.loads(response.read().decode())
             r_env = rsp["formula"]
             self.get_logger().info(f"check_reachability ( {env}, {reach_property} ) command processed with {res}.")
@@ -320,13 +397,83 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
         return res, r_env
 
-    def step_modelling(self, x,y, inp_env,a):
-        env = inp_env
-        print(f"Step modelling x: {x} y: {y} env: {inp_env} a {a}")
-        return env
+    def prepare_condition(self, cnd:str):
+        p =  self.prepare_parser_expr(cnd)
+        tree = p.assignmentExpression()
+        v = ExtSEGrammarVisitor()
+        s = v.visit(tree)
+        vl = v.getVarList()
+        is_const = False
+        r = False
+        if vl is None or len(vl) <= 0:
+            is_const = True
+            if s == "True":
+                res = "True"
+            elif s == "False":
+                res = "False"
+            else:
+                res = "((" + cnd + ")" + "!= 0)"
+            r = eval(res)
+        else:
+            if cnd.find("=") >= 0 or cnd.find("!") >= 0 or cnd.find(">") >= 0 or cnd.find("<") >= 0:
+                res = "(" + cnd + ")"
+            else:
+                res = "((" + cnd + ")" + "!= 0)"
+        return res, is_const, r
+
+    def step_modelling(self, ctx, act):
+        act_visitor = ctx["act_visitor"]
+        cnd = ""
+        a = act_visitor.getResults()
+        for r in a:
+            if r[0] == act:
+                cnd = str(r[1])
+                break
+        s, is_const, r = self.prepare_condition(cnd)
+        # Here r is mark. If !r, we should continue calculations. Else we should change environment
+        b = False
+        if not is_const and not r:
+            #
+            # TODO: Here should be placed checking for linearity and call for approximation of source expr
+            #
+            b, s = self.check_reachability(ctx["environment"], cnd)
+        if b:
+            expr = ctx["inverted_actions"]
+            subsn = [{"name": act, "value": expr}]
+            p =  self.prepare_parser_expr(ctx["environment"])
+            tree = p.assignmentExpression()
+            v = ExtSEGrammarVisitor()
+            v.setSubstitution(subsn)
+            s = v.visit(tree)
+            headers = {'Content-type': 'application/json'}
+            try:
+                # Make an HTTP request for check
+                expression_host = str(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                                            symaiconfig.SymAIConfig.EXPRESSION_HOST.value))
+                expression_port = int(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                                            symaiconfig.SymAIConfig.EXPRESSION_PORT.value))
+                conn = http.client.HTTPConnection(expression_host, expression_port)
+                query = dict()
+                query["formula"] = expr
+                slvr = self.get_solver()
+                query["solver"] = slvr
+                query["formula"] = s
+                conn.request('POST', '/api/v1/expression/simplify', json.dumps(query), headers)
+                response = conn.getresponse()
+                if not (response.getcode() == HTTPStatus.OK):
+                    raise Exception("Attempt to simplify expression error Error code " + str(conn.getresponse()))
+                rsp = json.loads(response.read().decode())
+                s = rsp["formula"]
+            except Exception as e:
+                self.get_logger().error(
+                    f"step modelling processing failed {str(e)}")
+                raise e
+
+            ctx["environment"] = s
+        return ctx
 
     def do_load_traversal_data(self, cuuid, data_received):
-        # 1. Loading parameters, if any incoming were saved. Throwing an exception in case of error
+        # Loading parameters, if any incoming were saved. Throwing an exception in case of error
         # Returns the context dictionary in case of success. Raises an exception in case or error
         ctx = dict()
         ctx["cuuid"] = cuuid
@@ -341,6 +488,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         act, act_visitor = self.get_actions()
         ctx["actions"] = act
         ctx["act_visitor"] = act_visitor
+        ctx["inverted_actions"] = self.invert_actions(cuuid, act_visitor, "actions")
 
         prop = self.get_property()
         ctx["property"] = prop
@@ -362,7 +510,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 return behaviors[bh]
         return None
 
-    def append_trace(self, ctx, trace):
+    def append_trace(self, ctx, trace, env_trace):
+        fn = ""
         try:
             if "trace" not in ctx or ctx["trace"] is None or "trace_file" not in ctx:
                 if "trace_file" in ctx:
@@ -374,13 +523,17 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                        symaiconfig.SymAIConfig.BASE_TRACE_FILE.value)
                 ctx["trace_file"] = fn
                 ctx["trace"] = str(trace)
+                ctx["env_trace"] = str(env_trace)
                 with open(fn, "w") as f:
-                    f.write(str(trace) + "\n")
+                    f.write(str(trace) + "\n" + str(env_trace) + "\n")
             else:
                 fn = ctx["trace_file"]
                 ctx["trace"] = ctx["trace"] + "\n" + str(trace)
+                ctx["env_trace"] = ctx["env_trace"] + "\n" + str(env_trace)
+
                 with open(fn, "a+") as f:
-                    f.write(str(trace) + "\n")
+                    f.write(str(trace) + "\n" + str(env_trace))
+
             self.get_logger().info(f"trace saved to {fn}")
         except Exception as e:
             self.get_logger().error(f"saving trace processing failed {str(e)}")
@@ -402,16 +555,18 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         else:
             dr = dict()
 
-        yield "ok Traversal behaviors started"
+        yield "ok start traversal behaviors"
         try:
             ctx = self.do_load_traversal_data(cuuid, data_received)
-            yield "ok Input data retrieved"
+            yield "ok input data retrieved"
             # Processing
             self.get_logger().debug(f"traversal behaviors input data retrieved")
             behaviors = ctx["beh_visitor"].getBehaviors()
             actions = ctx["act_visitor"].getResults()
+            inv_actions = ctx["inverted_actions"]
 
             yield "ok trace start"
+            env_trace = []
             trace = []
             beh_stack = []
 
@@ -424,8 +579,9 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 cur_alt = 1
                 it = iter(behaviors[cur_beh])
                 it, cit = tee(it)
-                beh_stack.append([cur_beh,cit, behaviors[cur_beh], cur_alt])
+                beh_stack.append([cur_beh,cit, behaviors[cur_beh], cur_alt, ctx["environment"]])
                 trace.append(cur_beh)
+                env_trace.append(ctx["environment"])
                 is_print = True
                 while True:
                     try:
@@ -436,34 +592,44 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                             case "+":
                                 while len(trace) > cur_alt:
                                     trace.pop()
+                                    ctx["environment"] = env_trace.pop()
                                 is_print = False
                             case default:
                                 cb = self.find_behavior(behaviors, term)
                                 if self.is_action(actions, term):
                                     trace.append(term)
+                                    env_trace.append(ctx["environment"])
+                                    print(f"ACTION {term}")
+                                    ctx = self.step_modelling(ctx, term)
                                     res, r_env = self.check_reachability(ctx["environment"], ctx["property"])
                                     if res:
-                                        yield f"ok trace reached {trace}"
-                                        ctx = self.append_trace(ctx, trace)
+                                        yield f"ok trace {trace}"
+                                        yield f"ok environment trace {env_trace}"
+                                        yield "ok reached"
+                                        ctx = self.append_trace(ctx, trace, env_trace)
                                         break
                                 elif cb is not None:
                                     is_print = False
                                     it, cit = tee(it)
                                     if trace.count(term) > 1:
                                         trace.append(term)
+                                        env_trace.append(ctx["environment"])
                                         # Well. We're visited {term}
                                     else:
-                                        beh_stack.append([term, cit, behaviors[term], cur_alt])
+                                        beh_stack.append([term, cit, behaviors[term], cur_alt, ctx["environment"]])
                                         cb = term
                                         it = iter(behaviors[term])
                                         trace.append(term)
+                                        env_trace.append(ctx["environment"])
                                         cur_alt = len(trace)
                                 else:
                                     trace.append(term)
+                                    env_trace.append(ctx["environment"])
                                     raise Exception(f"Unknown term {term}")
                         if is_print:
                             yield f"ok trace {trace}"
-                            ctx = self.append_trace(ctx, trace)
+                            yield f"ok environment trace {env_trace}"
+                            ctx = self.append_trace(ctx, trace, env_trace)
                         is_print = True
                     except StopIteration:
                         if len(beh_stack) > 0:
@@ -472,15 +638,40 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                             it = r[1]
                             ctr = r[2]
                             cur_alt = r[3]
+                            ctx["environment"] = r[4]
                         else:
                             break
             # Finalizing
-            yield "ok trace stop"
-            yield "ok Traversal behaviors finished successful"
+            yield "ok trace end"
+            yield "ok end traversal behaviors"
             self.get_logger().info("traversal behaviors finished")
         except Exception as e:
             self.get_logger().error(f"traversal behaviors failed with {e}")
             yield f"nok Traversal behaviors failed {e}"
+
+    def do_trace(self, cuuid, data_received):
+        try:
+            r = ""
+            if data_received is not None:
+                s = data_received.trim()
+                if s != "remove":
+                    raise Exception(f"Incorrect trace command parameter {data_received}")
+                else:
+                    if hasattr(self, "trace_file"):
+                        path = getattr(self, "trace_file")
+                        if path is not None:
+                            if os.path.isfile(path):
+                                self.get_logger().debug(f"Deleting the '{path}' file.")
+                                os.remove(path)
+                            setattr(self, "trace_file", None)
+            else:
+                if hasattr(self, "trace"):
+                    r = getattr(self, "trace")
+                    if r is None:
+                        r = ""
+        except Exception as e:
+            raise e
+        return r
 
     def get_and_simplify(self, cuuid, data_received, infix):
         # Loading
@@ -690,30 +881,3 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             symaiconfig.create_config(symaiconfig.get_config_file(), symaiconfig.SymAIConfig.EXPRESSION.value, cfg)
         return str(b)
 
-    def do_symbolic_modelling_step(self, cuuid, environment, precondition, postcondition, prop):
-        fml = ""
-        if environment is not None and len(environment.strip()) > 0:
-            if precondition is None or len(precondition.strip() <= 0):
-                fml = environment
-            else:
-                fml = "(" + environment.strip() + ") && (" + precondition.strip() + "0"
-        self.do_calc_formula(fml)
-        self.do_calc_formula(prop)
-
-    def do_calc_formula(self, fml):
-        attr = dict()
-        if hasattr(self, "solver"):
-            b = getattr(self, "solver")
-        else:
-            b = symaiconfig.SymAISolvers.SYMPY.value
-            try:
-                s = self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value, symaiconfig.SymAIConfig.EXPRESSION_SOLVER.value)
-                if s in symaiconfig.SymAISolvers._value2member_map_:
-                    b = s
-            except:
-                b = symaiconfig.SymAISolvers.SYMPY.value
-        setattr(self, "solver", b)
-        attr["solver"] = b
-        attr["formula"] = fml
-
-        return

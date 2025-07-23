@@ -229,6 +229,24 @@ async def handle_client(websocket):
                         finally:
                             await websocket.send(res)
 
+                case "trace":
+                    sc.get_logger().info("trace command received")
+                    if connected_clients.get(websocket) is None:
+                        sc.get_logger().error("UUID not found.Cannot process " + message)
+                        await websocket.send("nok UUID not found.Cannot process " + message)
+                    else:
+                        res = "ok"
+                        try:
+                            sc.do_trace(str(connected_clients.get(websocket).get_uuid()),
+                                        str(message).strip()[12:])
+                        except Exception as e:
+                            sc.get_logger().error("trace command failed " + str(e))
+                            res = "nok " + str(e)
+                        else:
+                            sc.get_logger().info("trace command passed ok")
+                        finally:
+                            await websocket.send(res)
+
                 case _:
                     sc.get_logger().error("Unknown command " + message)
                     await websocket.send("Unknown command " + message)
