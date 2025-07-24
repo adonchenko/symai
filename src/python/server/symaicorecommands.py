@@ -465,8 +465,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 rsp = json.loads(response.read().decode())
                 s = rsp["formula"]
             except Exception as e:
-                self.get_logger().error(
-                    f"step modelling processing failed {str(e)}")
+                self.get_logger().error(f"step modelling processing failed {str(e)}")
                 raise e
 
             ctx["environment"] = s
@@ -563,7 +562,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             self.get_logger().debug(f"traversal behaviors input data retrieved")
             behaviors = ctx["beh_visitor"].getBehaviors()
             actions = ctx["act_visitor"].getResults()
-            inv_actions = ctx["inverted_actions"]
 
             yield "ok trace start"
             env_trace = []
@@ -599,7 +597,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                 if self.is_action(actions, term):
                                     trace.append(term)
                                     env_trace.append(ctx["environment"])
-                                    print(f"ACTION {term}")
                                     ctx = self.step_modelling(ctx, term)
                                     res, r_env = self.check_reachability(ctx["environment"], ctx["property"])
                                     if res:
