@@ -219,15 +219,22 @@ async def handle_client(websocket):
                     else:
                         res = "ok"
                         try:
-                            sc.do_traversalbeh(str(connected_clients.get(websocket).get_uuid()),
-                                               str(message).strip()[12:])
+                            s = None
+                            if len(message) > 11:
+                                s = str(message).strip()[12:]
+                            for res in sc.do_traversalbeh(
+                                    str(connected_clients.get(websocket).get_uuid()),
+                                    s):
+                                await websocket.send(res)
                         except Exception as e:
                             sc.get_logger().error("traversalbeh command failed " + str(e))
                             res = "nok " + str(e)
                         else:
-                            sc.get_logger().info("traversalbeh command passed ok")
+                            if len(res) > 2 and res[:2] == "ok":
+                                sc.get_logger().info("traversalbeh command passed ok")
                         finally:
-                            await websocket.send(res)
+                            if len(res) > 2 and res[:2] == "ok":
+                                await websocket.send(res)
 
                 case "trace":
                     sc.get_logger().info("trace command received")

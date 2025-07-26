@@ -547,14 +547,16 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         return ctx
 
     def do_traversalbeh(self, cuuid, data_received):
+        yield "ok start traversal behaviors"
         self.get_logger().info(f"traversal behaviors started {data_received}")
         # Parsing incoming data
         if data_received is not None and len(data_received) > 0:
             dr = json.loads(data_received)
         else:
+            if data_received is None:
+                data_received = ""
             dr = dict()
 
-        yield "ok start traversal behaviors"
         try:
             ctx = self.do_load_traversal_data(cuuid, data_received)
             yield "ok input data retrieved"
