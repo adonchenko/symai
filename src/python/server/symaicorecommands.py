@@ -556,7 +556,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             if data_received is None:
                 data_received = ""
             dr = dict()
-
+        slvr = None
         try:
             ctx = self.do_load_traversal_data(cuuid, data_received)
             yield "ok input data retrieved"
@@ -565,17 +565,37 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             behaviors = ctx["beh_visitor"].getBehaviors()
             actions = ctx["act_visitor"].getResults()
 
+            # Parsing incoming data
+            is_first = True
+            if data_received is not None and len(data_received) > 0:
+                try:
+                    dr = json.loads(data_received.replace("'", '"'))
+                except Exception as e:
+                    self.get_logger().error("Incorrect input JSON data " + data_received + " " + str(e))
+                    raise Exception("Incorrect input JSON data " + data_received)
+                if "behavior" in dr:
+                    if dr["behavior"] in behaviors:
+                        is_first = False
+                if "solver" in dr:
+                    slvr = self.get_solver()
+                    self.do_solver(cuuid, dr["solver"])
+            else:
+                dr = dict()
+            if len(behaviors) > 0 and is_first:
+                dr["behavior"] = next(iter(behaviors))
+
             yield "ok trace start"
             env_trace = []
             trace = []
             beh_stack = []
 
-            if len(behaviors) > 0:
+            if len(behaviors) <= 0:
+                raise Exception("No behaviors were defined")
+            else:
                 # Selecting an appropriate behavior to process.
                 # AI can be used here for initial cur_beh selection
                 # Now choosing the first behavior by default
-                it_beh = iter(behaviors)
-                cur_beh = next(it_beh)
+                cur_beh = dr["behavior"]
                 cur_alt = 1
                 it = iter(behaviors[cur_beh])
                 it, cit = tee(it)
@@ -647,6 +667,9 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         except Exception as e:
             self.get_logger().error(f"traversal behaviors failed with {e}")
             yield f"nok Traversal behaviors failed {e}"
+        finally:
+            if slvr is not None:
+                self.do_solver(cuuid, slvr)
 
     def do_trace(self, cuuid, data_received):
         try:
