@@ -24,7 +24,19 @@ class SymAIExpression:
         self.max_models = m
 
     def postprocess(self, args):
-        return (" " + args + " ").replace("&", "&&").replace("|", "||").replace("_d_o_t_", ".").replace("__d__o__t__", "_d_o_t_").replace(" not ", "!").replace(" _n_o_t_ ", " not ").strip(" ")
+        lexer = ExpressionGrammarLexer(InputStream(args))
+        errorListener = SymbolicExpressionGrammarErrorListener()
+        lexer.removeErrorListeners()
+        lexer.addErrorListener(errorListener)
+        stream = CommonTokenStream(lexer)
+        parser = ExpressionGrammarParser(stream)
+        parser.removeErrorListeners()
+        parser.addErrorListener(errorListener)
+        visitor = SymbolicExpressionGrammarVisitor()
+        tree = parser.expression()
+        fml = visitor.visit(tree)
+
+        return (" " + fml + " ").replace("&", "&&").replace("|", "||").replace("_d_o_t_", ".").replace("__d__o__t__", "_d_o_t_").replace(" not ", "!").replace(" _n_o_t_ ", " not ").strip(" ")
 
     def preprocess(self, args):
         expr_n = (" " + args + " ").replace(" not ", " _n_o_t_ ").replace("_d_o_t_", "__d__o__t__").strip(" ")

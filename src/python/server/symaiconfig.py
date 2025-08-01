@@ -14,6 +14,7 @@ class SymAISolvers(Enum):
 class SymAIConfig(Enum):
     EXPRESSION = "Expression"
     SYMAICORE = "SymAI"
+    SYMAIFRONT = "Frontend"
     TEMP = "tempdir"
     EXPRESSION_HOST="expression_host"
     EXPRESSION_PORT="expression_port"
@@ -22,6 +23,13 @@ class SymAIConfig(Enum):
     AI='AI'
     HOST = "host"
     PORT = "port"
+
+    SYMAIFRONT_HOST="frontend_host"
+    SYMAIFRONT_PORT="frontend_port"
+    SYMAIFRONT_BASEDIR="basedir"
+    SYMAICORE_HOST="symaicore_host"
+    SYMAICORE_PORT="symaicore_port"
+
     LOGGERS = "loggers"
     KEYS = "keys"
     HANDLERS = "handlers"
@@ -30,6 +38,7 @@ class SymAIConfig(Enum):
     LEVEL = "level"
     LOGGER_EXPRESSION = "logger_expression"
     LOGGER_SYMAICORE = "logger_symaicore"
+    LOGGER_FRONTEND = "logger_frontend"
     QUALNAME = "qualname"
     PROPAGATE = "propagate"
     HANDLER_CONSOLEHANDLER = "handler_consoleHandler"
@@ -42,6 +51,7 @@ class SymAIConfig(Enum):
     HANDLER_FILE_SYMAICORE = "handler_file_symaicore"
     INTERVAL = "interval"
     BACKUP_COUNT = "backupCount"
+    HANDLER_FILE_FRONTEND = "handler_file_frontend"
 
     BASE_TEMP = "/tmpdir"
     BASE_PROPERTIES = "properties"
@@ -87,11 +97,19 @@ def create_config(cfg_file, section, cfg:ConfigParser):
         c.set(SymAIConfig.EXPRESSION.value, SymAIConfig.EXPRESSION_SOLVER.value, SymAISolvers.Z3.value)
         c.set(SymAIConfig.EXPRESSION.value,SymAIConfig.SOLVER_MAX_MODELS.value, str(10))
 
+        #Frontend
+        c.add_section(SymAIConfig.SYMAIFRONT.value)
+        c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAIFRONT_HOST.value,"localhost")
+        c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAIFRONT_PORT.value,str(8000))
+        c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAIFRONT_BASEDIR.value, "pages")
+        c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAICORE_PORT.value, str(12345))
+        c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAICORE_HOST.value, "localhost")
+
         #Loggers
         c.add_section(SymAIConfig.LOGGERS.value)
-        c.set(SymAIConfig.LOGGERS.value, SymAIConfig.KEYS.value, "root, expression, symaicore")
+        c.set(SymAIConfig.LOGGERS.value, SymAIConfig.KEYS.value, "root, expression, symaicore, frontend")
         c.add_section(SymAIConfig.HANDLERS.value)
-        c.set(SymAIConfig.HANDLERS.value, SymAIConfig.KEYS.value, "consoleHandler,file,file_symaicore")
+        c.set(SymAIConfig.HANDLERS.value, SymAIConfig.KEYS.value, "consoleHandler,file,file_symaicore, file_frontend")
         c.add_section(SymAIConfig.FORMATTERS.value)
         c.set(SymAIConfig.FORMATTERS.value, SymAIConfig.KEYS.value, "simpleFormatter")
         c.add_section(SymAIConfig.LOGGER_ROOT.value)
@@ -108,6 +126,12 @@ def create_config(cfg_file, section, cfg:ConfigParser):
         c.set(SymAIConfig.LOGGER_SYMAICORE.value, SymAIConfig.HANDLERS.value, "consoleHandler,file_symaicore")
         c.set(SymAIConfig.LOGGER_SYMAICORE.value, SymAIConfig.QUALNAME.value, "symaicore")
         c.set(SymAIConfig.LOGGER_SYMAICORE.value, SymAIConfig.PROPAGATE.value, "0")
+
+        c.add_section(SymAIConfig.LOGGER_FRONTEND.value)
+        c.set(SymAIConfig.LOGGER_FRONTEND.value, SymAIConfig.LEVEL.value, "DEBUG")
+        c.set(SymAIConfig.LOGGER_FRONTEND.value, SymAIConfig.HANDLERS.value, "consoleHandler,file_frontend")
+        c.set(SymAIConfig.LOGGER_FRONTEND.value, SymAIConfig.QUALNAME.value, "frontend")
+        c.set(SymAIConfig.LOGGER_FRONTEND.value, SymAIConfig.PROPAGATE.value, "0")
 
         c.add_section(SymAIConfig.HANDLER_CONSOLEHANDLER.value)
         c.set(SymAIConfig.HANDLER_CONSOLEHANDLER.value, SymAIConfig.CLASS.value, "StreamHandler")
@@ -131,6 +155,14 @@ def create_config(cfg_file, section, cfg:ConfigParser):
         c.set(SymAIConfig.HANDLER_FILE_SYMAICORE.value, SymAIConfig.LEVEL.value, "DEBUG")
         c.set(SymAIConfig.HANDLER_FILE_SYMAICORE.value, SymAIConfig.FORMATTER.value, "simpleFormatter")
         c.set(SymAIConfig.HANDLER_FILE_SYMAICORE.value, SymAIConfig.ARGS.value, "('/logdir/symaicore.log',)")
+
+        c.add_section(SymAIConfig.HANDLER_FILE_FRONTEND.value)
+        c.set(SymAIConfig.HANDLER_FILE_FRONTEND.value, SymAIConfig.CLASS.value, "handlers.TimedRotatingFileHandler")
+        c.set(SymAIConfig.HANDLER_FILE_FRONTEND.value, SymAIConfig.INTERVAL.value, "midnight")
+        c.set(SymAIConfig.HANDLER_FILE_FRONTEND.value, SymAIConfig.BACKUP_COUNT.value, "5")
+        c.set(SymAIConfig.HANDLER_FILE_FRONTEND.value, SymAIConfig.LEVEL.value, "DEBUG")
+        c.set(SymAIConfig.HANDLER_FILE_FRONTEND.value, SymAIConfig.FORMATTER.value, "simpleFormatter")
+        c.set(SymAIConfig.HANDLER_FILE_FRONTEND.value, SymAIConfig.ARGS.value, "('/logdir/frontend.log',)")
 
     # merge input data
     if not c.has_section(section):

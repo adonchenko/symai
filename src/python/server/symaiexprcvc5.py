@@ -21,7 +21,7 @@ class SymAIExpressionCVC5(symaiexpr.SymAIExpression):
         for n in lst:
             expr = expr + n + "=Real(\"" + n + "\")\n"
         expr = expr + "res=simplify(" + fml + ")\n"
-        exec(expr, {}, simplify_vars)
+        exec(expr, {"And": And, "Or": Or, "Not": Not, "Eq": eq}, simplify_vars)
         res = simplify_vars["res"]
 
         p = self.preprocess(self.postprocess(str(res)))
@@ -63,7 +63,7 @@ class SymAIExpressionCVC5(symaiexpr.SymAIExpression):
 
         for n in lst:
             check_vars[n] = Real(n)
-        glob_vars = {"And": And, "Or": Or, "Not": Not, "solver": solver }
+        glob_vars = {"And": And, "Or": Or, "Not": Not, "solver": solver, "Eq": eq}
 
         b = False
         lst = []

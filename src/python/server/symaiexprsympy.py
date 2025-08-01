@@ -14,64 +14,40 @@ class SymAIExpressionSymPy(symaiexpr.SymAIExpression):
 
     def process_body_simplify(self, args):
         visitor = SymbolicExpressionGrammarVisitor()
+        visitor.setIsEq(True)
         tree = args.expression()
         fml = visitor.visit(tree)
-        lst = visitor.getVarList()
-        check_vars = dict()
-
-        for n in lst:
-            check_vars[n] = sympy.Symbol(n, real=True)
-        glob_vars = dict()
-        glob_vars["And"] = sympy.And
-        glob_vars["Or"] = sympy.Or
-        glob_vars["Not"] = sympy.Not
-
-        f2 = eval(fml, glob_vars, check_vars)
-
-        return str(sympy.simplify(f2))
+        s = str(sympy.simplify(sympy.parse_expr(fml)))
+        r = self.preprocess_simplify(s.replace("&", "&&").replace("|", "||").replace("_d_o_t_", ".").replace("__d__o__t__", "_d_o_t_").replace(" not ", "!").replace(" _n_o_t_ ", " not ").strip(" "))
+        visitor = SymbolicExpressionGrammarVisitor()
+        visitor.setIsEq(True)
+        tree = r.expression()
+        res = visitor.visit(tree)
+        return res
 
     def process_body_check(self, args):
         visitor = args.get("visitor")
+        visitor.setIsEq(True)
         tree = args.get("tree")
-
         if tree is None or visitor is None or visitor is None:
             raise Exception("Error: process_body_check incorrect arguments")
         fml = visitor.visit(tree)
-        models = sympy.satisfiable(fml)
-
-        lst = []
-        if models and len(models) > 0:
-            lst = visitor.getVarList()
+        args["satisfiable"] = False
+        lst = visitor.getVarList()
+        if len(lst) > 0:
             check_vars = dict()
-            s = ""
-            if len(lst) > 0:
-                s = "("
-                b = False
-                for n in lst:
-                    if b:
-                        s = s + ","
-                    s = s + n
-                    b = True
-                    check_vars[n] = sympy.symbols(n, real=True)
-                s = s + ")"
+            for n in lst:
+                check_vars[n] = sympy.Symbol(n, real=True)
             glob_vars = dict()
             glob_vars["And"] = sympy.And
             glob_vars["Or"] = sympy.Or
-            glob_vars["Not"] = sympy.Not
-            glob_vars["solve"] = sympy.solveset
-            f2 = eval(fml, glob_vars, check_vars)
-            sm = eval(s, glob_vars, check_vars)
-            solutions = sympy.solve(f2, sm, dict=True)
-
-            dc = dict()
-            for it in solutions:
-                for jj in it:
-                    dc[str(jj)] = str(it[jj])
-            lst.append(dc)
-            args["satisfiable"] = True
-        else:
-            args["satisfiable"] = False
-        args["model"] = lst
+            glob_vars["Eq"] = sympy.Eq
+            glob_vars["Ne"] = sympy.Ne
+            glob_vars["simplify"] = sympy.simplify
+            s = "simplify(" + fml + ")"
+            f2 = eval(s, glob_vars, check_vars)
+            if str(type(f2)) != "<class 'sympy.logic.boolalg.BooleanFalse'>" and str(type(f2)) != "<class 'sympy.logic.boolalg.BooleanTrue'>":
+                args["satisfiable"] = True
         return args
 
     def process_body_inverse(self, args):

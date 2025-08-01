@@ -346,7 +346,9 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 cnt = f.read()
                 tree = self.prepare_parser_expr(cnt).expression()
                 visitor = ExtSEGrammarVisitor()
-                res = visitor.visit(tree)
+                s = visitor.visit(tree)
+                tree = self.prepare_parser_expr(s).expression()
+                res = visitor.visit(tree).replace("&", "&&").replace("|", "||").replace("_d_o_t_", ".").replace("__d__o__t__", "_d_o_t_").replace(" not ", "!").replace(" _n_o_t_ ", " not ").strip(" ")
                 self.get_logger().debug(f"environment successful retrieved. File {fn}")
             except Exception as e:
                 self.get_logger().error(f"retrieving environment failed {str(e)} file {fn}")

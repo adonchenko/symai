@@ -27,3 +27,17 @@ services:
         - ${PROPERTIES}:/properties
         - ${LOGDIR}:/logdir
         - ${TMPDIR}:/tmpdir
+  frontend:
+    image: docker/symai-front.0.0.1
+    container_name: symai-front.0.0.1
+    build:
+      context: ..
+      dockerfile: docker/Frontend
+    ports:
+      - 8000:8000
+    working_dir: /app
+    network_mode: host
+    volumes:
+        - ${PROPERTIES}:/properties
+        - ${LOGDIR}:/logdir
+        - ${TMPDIR}:/tmpdir

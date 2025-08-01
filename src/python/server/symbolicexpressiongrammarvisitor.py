@@ -30,7 +30,17 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         self.var_list = []
         self.hasTrigonometric = False
         self.hasNonLinear = False
+        self.replEQ = False
         super().__init__()
+
+    def isEQ(self):
+        if self.replEQ is None:
+            self.replEQ = False
+
+        return self.replEQ
+
+    def setIsEq(self, val):
+        self.replEQ = val
 
     def isNonLinear(self):
         return self.hasNonLinear or self.hasTrigonometric
@@ -76,22 +86,32 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         elif result.lower().strip() in nl_funct and len(ctx.children) > 1:
             if ctx.getChild(1).getText() == '(':
                 self.hasNonLinear = True
-        # CVC5: Here should be if And, Or Xor or Not
-        # Z3: and or xor not
-        # sympy: and or not
+        # CVC5: Here should be if And, Or Xor or Not eq
+        # Z3: and or xor not eq
+        # sympy: and or not eq ne
         elif  result.lower().strip() == "or" and  ctx.getChild(1).getText() == '(':
-            self.arg_list_start = "("
-            self.arg_list_cnt = ") | ("
-            self.arg_list_fin = ")"
+            self.arg_list_start = ""
+            self.arg_list_cnt = " | "
+            self.arg_list_fin = ""
             result = ""
         elif result.lower().strip() == "and" and ctx.getChild(1).getText() == '(':
-            self.arg_list_start = "("
-            self.arg_list_cnt = ") & ("
-            self.arg_list_fin = ")"
+            self.arg_list_start = ""
+            self.arg_list_cnt = " & "
+            self.arg_list_fin = ""
+            result = ""
+        elif result.lower().strip() == "eq" and ctx.getChild(1).getText() == '(':
+            self.arg_list_start = ""
+            self.arg_list_cnt = " == "
+            self.arg_list_fin = ""
+            result = ""
+        elif result.lower().strip() == "ne" and ctx.getChild(1).getText() == '(':
+            self.arg_list_start = ""
+            self.arg_list_cnt = " != "
+            self.arg_list_fin = ""
             result = ""
         elif result.lower().strip() == "not" and ctx.getChild(1).getText() == '(':
-            self.arg_list_start = "! ("
-            self.arg_list_cnt = ") & ! ("
+            self.arg_list_start = "!("
+            self.arg_list_cnt = ") & !("
             self.arg_list_fin = ")"
             result = ""
 
@@ -144,7 +164,7 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         if ctx.unaryOperator() is not None:
             op = ctx.unaryOperator().getText()
             if op == '!':
-                result = " Not (" + result + ")"
+                result = " Not(" + result + ")"
             else:
                 result = op + result
         return result
@@ -205,10 +225,15 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             if i > 1:
                 result = "(" + result + ")"
             op = ctx.getChild(2 * (i - 1) + 1).getText()
+            pref = ""
+            postf = ""
             if op == "!=":
-                result = " not ((" + result + ")==(" + self.visit(ctx.relationalExpression(i)) + "))"
+                pref = "Not("
+                postf = ")"
+            if self.isEQ():
+                result = pref + "Eq(" + result + "," + self.visit(ctx.relationalExpression(i) ) + ")" + postf
             else:
-                result = result + op + self.visit(ctx.relationalExpression(i))
+                result = pref + result + "==" + self.visit(ctx.relationalExpression(i))  + postf
             i = i + 1
         return result
 

@@ -25,6 +25,7 @@ class SymAIExpressionZ3(symaiexpr.SymAIExpression):
         glob_vars["And"] = And
         glob_vars["Or"] = Or
         glob_vars["Not"] = Not
+        glob_vars["Eq"] = z3.eq
         glob_vars["simplify"] = z3.simplify
         res = eval("simplify(" + fml + ")", glob_vars, simplify_vars)
 
@@ -79,6 +80,7 @@ class SymAIExpressionZ3(symaiexpr.SymAIExpression):
         glob_vars["And"] = And
         glob_vars["Or"] = Or
         glob_vars["Not"] = Not
+        glob_vars["Eq"] = z3.eq
         glob_vars["solver"] = solver
 
         f2 = eval(fml, glob_vars, check_vars)
