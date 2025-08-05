@@ -4,6 +4,7 @@ FROM python:3.12-slim
 VOLUME /properties 
 VOLUME /logdir
 VOLUME /tmpdir
+VOLUME /app/resources
 # Set the working directory in the container
 WORKDIR /app
 # Copy the current directory contents into the container at /app
@@ -12,10 +13,11 @@ COPY ./symaiconfig.py /app/symaiconfig.py
 COPY ./symaicommands.py /app/symaicommands.py
 COPY ./symaifrontcommands.py /app/symaifrontcommands.py
 COPY ./bash/run.sh /app/run.sh
+ADD  ./resources/  /app/resources
 
 # Install any needed dependencies specified in requirements.txt
 #RUN pip3 install --no-cache-dir -r requirements.txt
 # Make port 8000 available to the world outside this container
 EXPOSE 8000
 # Run symaifront.py when the container launches
-CMD ["bash", "run.sh", "python", "symaifront.py"]
+CMD ["bash", "run.sh", "python", "symaifront.py -r /app/resources"]

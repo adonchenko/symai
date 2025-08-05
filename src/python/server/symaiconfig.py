@@ -4,8 +4,6 @@ from configparser import ConfigParser
 from enum import Enum
 config_file:str = ""
 
-
-
 class SymAISolvers(Enum):
     SYMPY = "SymPy"
     Z3 = "Z3"
@@ -24,9 +22,9 @@ class SymAIConfig(Enum):
     HOST = "host"
     PORT = "port"
 
-    SYMAIFRONT_HOST="frontend_host"
-    SYMAIFRONT_PORT="frontend_port"
-    SYMAIFRONT_BASEDIR="basedir"
+    SYMAIFRONT_HOST="host"
+    SYMAIFRONT_PORT="port"
+    SYMAIFRONT_RESOURCES="resources"
     SYMAICORE_HOST="symaicore_host"
     SYMAICORE_PORT="symaicore_port"
 
@@ -101,20 +99,24 @@ def create_config(cfg_file, section, cfg:ConfigParser):
         c.add_section(SymAIConfig.SYMAIFRONT.value)
         c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAIFRONT_HOST.value,"localhost")
         c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAIFRONT_PORT.value,str(8000))
-        c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAIFRONT_BASEDIR.value, "pages")
         c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAICORE_PORT.value, str(12345))
         c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAICORE_HOST.value, "localhost")
+        c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAIFRONT_RESOURCES.value, "/resources")
 
         #Loggers
         c.add_section(SymAIConfig.LOGGERS.value)
         c.set(SymAIConfig.LOGGERS.value, SymAIConfig.KEYS.value, "root, expression, symaicore, frontend")
+
         c.add_section(SymAIConfig.HANDLERS.value)
         c.set(SymAIConfig.HANDLERS.value, SymAIConfig.KEYS.value, "consoleHandler,file,file_symaicore, file_frontend")
+
         c.add_section(SymAIConfig.FORMATTERS.value)
         c.set(SymAIConfig.FORMATTERS.value, SymAIConfig.KEYS.value, "simpleFormatter")
+
         c.add_section(SymAIConfig.LOGGER_ROOT.value)
         c.set(SymAIConfig.LOGGER_ROOT.value, SymAIConfig.LEVEL.value, "DEBUG")
         c.set(SymAIConfig.LOGGER_ROOT.value, SymAIConfig.HANDLERS.value, "consoleHandler")
+
         c.add_section(SymAIConfig.LOGGER_EXPRESSION.value)
         c.set(SymAIConfig.LOGGER_EXPRESSION.value, SymAIConfig.LEVEL.value, "DEBUG")
         c.set(SymAIConfig.LOGGER_EXPRESSION.value, SymAIConfig.HANDLERS.value, "consoleHandler,file")
@@ -140,6 +142,7 @@ def create_config(cfg_file, section, cfg:ConfigParser):
         c.set(SymAIConfig.HANDLER_CONSOLEHANDLER.value, SymAIConfig.ARGS.value, "(sys.stdout,)")
         c.add_section(SymAIConfig.FORMATTER_SIMPLEFORMATTER.value)
         c.set(SymAIConfig.FORMATTER_SIMPLEFORMATTER.value, SymAIConfig.FORMAT.value, "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
         c.add_section(SymAIConfig.HANDLER_FILE.value)
         c.set(SymAIConfig.HANDLER_FILE.value, SymAIConfig.CLASS.value, "handlers.TimedRotatingFileHandler")
         c.set(SymAIConfig.HANDLER_FILE.value,SymAIConfig.INTERVAL.value, "midnight")
