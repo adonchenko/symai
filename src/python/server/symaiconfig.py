@@ -101,7 +101,7 @@ def create_config(cfg_file, section, cfg:ConfigParser):
         c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAIFRONT_PORT.value,str(8000))
         c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAICORE_PORT.value, str(12345))
         c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAICORE_HOST.value, "localhost")
-        c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAIFRONT_RESOURCES.value, "/resources")
+        c.set(SymAIConfig.SYMAIFRONT.value, SymAIConfig.SYMAIFRONT_RESOURCES.value, "/app/resources")
 
         #Loggers
         c.add_section(SymAIConfig.LOGGERS.value)

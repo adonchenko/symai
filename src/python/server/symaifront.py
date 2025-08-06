@@ -55,15 +55,14 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                 self.end_headers()
             except Exception as e:
                 pass
-        elif re.search("/symai/*", self.path):
+        elif re.search("/symai/*", self.path) or re.search("/favicon.ico", self.path):
             try:
-                s  = self.sc.do_get(self, self.path)
-                print(f"{s}")
+                s, ct  = self.sc.do_get(self, self.path)
                 self.send_response(HTTPStatus.OK)
-                self.send_header("Content-Type", "text/html")
+                self.send_header("Content-Type", ct)
                 self.end_headers()
-                self.wfile.write(s.encode('utf-8'))
-                self.sc.get_logger().info(f"Processed GET {self.path}")
+                self.wfile.write(s)
+                self.sc.get_logger().info(f"Processed GET {self.path} result OK")
             except Exception as e:
                 self.sc.get_logger().error(f"Error {e}")
                 self.do_send_err_rsp(f"Error {e}")
@@ -84,7 +83,7 @@ def main():
     parser.add_argument("-c", "--config", dest="config", default="/properties/symai.ini", required=False, help="Configuration file name of frontend HTTP Server")
     parser.add_argument("-ch", "--corehost", dest="core_host", default="localhost", required=False, help="A SymAI Core host name or IP address")
     parser.add_argument("-cp", "--coreport", dest="core_port", default=12345, required = False, type=int, help="A SymAI Core port no")
-    parser.add_argument("-r", "--resources", dest="resources", default="/resources", required=False, help="Frontend HTTP server resources path")
+    parser.add_argument("-r", "--resources", dest="resources", default="/app/resources", required=False, help="Frontend HTTP server resources path")
 
     args = parser.parse_args()
 
