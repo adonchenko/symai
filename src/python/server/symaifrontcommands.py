@@ -41,6 +41,9 @@ class SymAIFrontendCommands(symaicommands.SymAICommands):
                     elif fext == ".ico":
                         ct = "image/x-icon"
                         is_binary = True
+                    elif fext == ".pdf":
+                        ct = "application/pdf"
+                        is_binary = True
                     elif fext == ".svg":
                         ct = "image/svg+xml"
                         is_binary = True
@@ -49,7 +52,7 @@ class SymAIFrontendCommands(symaicommands.SymAICommands):
                     elif fext == ".csv":
                         ct = "text/csv"
                     elif fext == ".js":
-                        ct = "text/javascript"
+                        ct = "application/javascript"
                     elif fext == ".text" or fext == ".txt":
                         ct = "text/plain"
                     elif fext == ".xml":
@@ -59,6 +62,7 @@ class SymAIFrontendCommands(symaicommands.SymAICommands):
             else:
                 fn = "index.html"
                 ct = "text/html"
+                is_binary = False
 
         fn = Path(os.path.join(base_path, fn))
         if fn.exists() and fn.is_file():
@@ -68,6 +72,7 @@ class SymAIFrontendCommands(symaicommands.SymAICommands):
             ct = "text/html"
             is_binary = False
         if not is_binary:
+            # Formatting variables
             subs = dict()
             subs["FRONTEND_HOST"] = self.get_config().get(symaiconfig.SymAIConfig.SYMAIFRONT.value,
                                                           symaiconfig.SymAIConfig.SYMAIFRONT_HOST.value)
@@ -80,7 +85,20 @@ class SymAIFrontendCommands(symaicommands.SymAICommands):
 
             f = open(filename, "r")
             cnt = f.read()
-            cnt.format(**subs)
+            cnt =  cnt.replace("\n", "\\n").replace("\"", "\\\"")
+            g_vars = dict()
+            l_vars = dict()
+            l_vars["cnt"] = cnt
+            b = False
+            cmd = "cnt.format("
+            for st in subs.keys():
+                if b:
+                    cmd = cmd + ","
+                cmd = cmd + st
+                cmd = cmd + "=\"" + subs[st].replace("\"", "\\\"") + "\""
+                b = True
+            cmd = cmd + ")"
+            cnt = eval(cmd , g_vars, l_vars).replace("\\n","\n")
             cnt = bytes(cnt, 'utf-8')
         else:
             f = open(filename, "rb")
