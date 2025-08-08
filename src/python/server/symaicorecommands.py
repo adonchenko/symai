@@ -474,6 +474,13 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         return ctx
 
     def do_load_traversal_data(self, cuuid, data_received):
+        if data_received is not None and len(data_received) > 0:
+            dr = json.loads(data_received)
+        else:
+            if data_received is None:
+                data_received = ""
+            dr = dict()
+
         # Loading parameters, if any incoming were saved. Throwing an exception in case of error
         # Returns the context dictionary in case of success. Raises an exception in case or error
         ctx = dict()
@@ -496,6 +503,15 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
         env = self.get_environment()
         ctx["environment"] = env
+
+        try:
+            if "reenter_count" in dr:
+                ctx["reenter_count"] = dr["reenter_count"]
+            else:
+                ctx["reenter_count"] = self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.BEHAVIORS_REENTER_COUNT.value)
+            ctx["reenter_count"] = int(ctx["reenter_count"])
+        except:
+            ctx["reenter_count"] = 1
 
         return ctx
 
@@ -632,7 +648,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                 elif cb is not None:
                                     is_print = False
                                     it, cit = tee(it)
-                                    if trace.count(term) > 1:
+                                    if trace.count(term) > ctx["reenter_count"]  > 0: # TODO: Set counter of re-entering to beh here!!!
                                         trace.append(term)
                                         env_trace.append(ctx["environment"])
                                         # Well. We're visited {term}

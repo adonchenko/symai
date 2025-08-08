@@ -21,6 +21,7 @@ class SymAIConfig(Enum):
     AI='AI'
     HOST = "host"
     PORT = "port"
+    BEHAVIORS_REENTER_COUNT = "reenter_count" # Behaviors Reentering counter. Sets the behaviors reentering limitation. If the value is less than 1, no limitations are assumed
 
     SYMAIFRONT_HOST="host"
     SYMAIFRONT_PORT="port"
@@ -87,6 +88,7 @@ def create_config(cfg_file, section, cfg:ConfigParser):
         c.set(SymAIConfig.SYMAICORE.value,SymAIConfig.EXPRESSION_HOST.value, "localhost")
         c.set(SymAIConfig.SYMAICORE.value, SymAIConfig.EXPRESSION_PORT.value, str(8080))
         c.set(SymAIConfig.SYMAICORE.value,SymAIConfig.AI.value, str(False))
+        c.set(SymAIConfig.SYMAICORE.value, SymAIConfig.BEHAVIORS_REENTER_COUNT.value, str(1))
 
         #Expression
         c.add_section(SymAIConfig.EXPRESSION.value)
