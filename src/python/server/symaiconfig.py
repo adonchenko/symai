@@ -54,8 +54,6 @@ class SymAIConfig(Enum):
 
     BASE_TEMP = "/tmpdir"
     BASE_PROPERTIES = "properties"
-    BASE_PRECONDITION = "precondition"
-    BASE_POSTCONDITION = "postcondition"
     BASE_ENVIRONMENT = "environment"
     BASE_BEHAVIORS = "behaviors"
     BASE_ACTIONS = "actions"

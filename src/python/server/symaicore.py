@@ -106,6 +106,22 @@ async def handle_client(websocket):
                             await websocket.send(res)
                         except:
                             pass
+                case "reenter_count":
+                    sc.get_logger().info("reenter_count command received")
+                    if connected_clients.get(websocket) is None:
+                        sc.get_logger().error("UUID not found.Cannot process " + message)
+                        await websocket.send("nok UUID not found.Cannot process " + message)
+                    else:
+                        try:
+                            res = "ok " + sc.do_reenter_count(str(connected_clients.get(websocket).get_uuid()),
+                                                           str(message))
+                        except Exception as e:
+                            sc.get_logger().error(f"reenter_count command error {str(e)}")
+                            res = f"nok {str(e)}"
+                        try:
+                            await websocket.send(res)
+                        except:
+                            pass
                 case "behaviors":
                     sc.get_logger().info("behaviors command received")
                     if connected_clients.get(websocket) is None:
@@ -176,41 +192,6 @@ async def handle_client(websocket):
                         finally:
                             await websocket.send(res)
 
-                case "precondition":
-                    sc.get_logger().info("precondition command received")
-                    if connected_clients.get(websocket) is None:
-                        sc.get_logger().error("UUID not found.Cannot process " + message)
-                        await websocket.send("nok UUID not found.Cannot process " + message)
-                    else:
-                        res = "ok"
-                        try:
-                            sc.do_precondition(str(connected_clients.get(websocket).get_uuid()),
-                                           str(message).strip()[12:])
-                        except Exception as e:
-                            sc.get_logger().error(str(e))
-                            res = "nok " + str(e)
-                        else:
-                            sc.get_logger().info("precondition command passed ok")
-                        finally:
-                            await websocket.send(res)
-                case "postcondition":
-                    sc.get_logger().info("postcondition command received")
-                    if connected_clients.get(websocket) is None:
-                        sc.get_logger().error("UUID not found.Cannot process " + message)
-                        await websocket.send("nok UUID not found.Cannot process " + message)
-                    else:
-                        res = "ok"
-                        try:
-                            sc.do_get_file(str(connected_clients.get(websocket).get_uuid()),
-                                           symaiconfig.SymAIConfig.BASE_POSTCONDITION.value,
-                                           str(message).strip()[13:])
-                        except Exception as e:
-                            sc.get_logger().error(str(e))
-                            res = "nok " + str(e)
-                        else:
-                            sc.get_logger().info("postcondition command passed ok")
-                        finally:
-                            await websocket.send(res)
                 case "traversalbeh":
                     sc.get_logger().info("traversalbeh command received")
                     if connected_clients.get(websocket) is None:
@@ -285,7 +266,7 @@ async def main():
     parser.add_argument("-t", "--temp", dest="tempdir", default="/tmpdir/temp", required=False, help="SymAI Core Websockets Server Temporary Directory")
     parser.add_argument("-eh", "--exprhost", dest="exprhost", default="localhost", required=False, help="SymAI Expression Server Host IP")
     parser.add_argument("-ep", "--exprport", dest="exprport", default=8080, required=False, help="SymAI Expression Server Port No")
-    parser.add_argument("-rc", "--reentercount", dest="reentercount", default=1, required=False, help="SymAI Symbolic Calculations reentering counter")
+    parser.add_argument("-rc", "--reentercount", dest="reentercount", default=str(1), required=False, help="SymAI Symbolic Calculations reentering counter")
 
     args = parser.parse_args()
 

@@ -103,9 +103,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 raise Exception("Cannot write content to file '" + str(filename) + "'")
         return res
 
-    def do_precondition(self, cuuid, data_received):
-        self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_PRECONDITION.value)
-
     def prepare_parser_expr(self, inp : str)->ExpressionGrammarParser :
         lexer = ExpressionGrammarLexer(InputStream(inp))
         error_listener = SymbolicExpressionGrammarErrorListener()
@@ -508,7 +505,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             if "reenter_count" in dr:
                 ctx["reenter_count"] = dr["reenter_count"]
             else:
-                ctx["reenter_count"] = self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.BEHAVIORS_REENTER_COUNT.value)
+                ctx["reenter_count"] = self.get_reenter_count()
             ctx["reenter_count"] = int(ctx["reenter_count"])
         except:
             ctx["reenter_count"] = 1
@@ -921,3 +918,63 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             symaiconfig.create_config(symaiconfig.get_config_file(), symaiconfig.SymAIConfig.EXPRESSION.value, cfg)
         return str(b)
 
+    def get_reenter_count(self)->int:
+        b = 1  # default value of reenter count
+        if hasattr(self, "reenter_count"):
+            b = getattr(self, "reenter_count")
+        else:
+            try:
+                s = self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                          symaiconfig.SymAIConfig.BEHAVIORS_REENTER_COUNT.value)
+                if s.isnumeric():
+                    b = int(s)
+            except:
+                b = 1
+        return b
+
+    def do_reenter_count(self, cuuid, msg:str):
+        b = self.get_reenter_count()
+
+        is_flush = False
+        s = msg.strip().split()
+        if len(s) == 1:
+            if hasattr(self, "reenter_count"):
+                b = getattr(self, "reenter_count")
+        elif len(s) == 2:
+            if s[1].lower() == "flush":
+                is_flush = True
+                try:
+                    int(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                          symaiconfig.SymAIConfig.BEHAVIORS_REENTER_COUNT.value))
+                except:
+                    b = 1
+            else:
+                try:
+                    b = int(s[1])
+                except:
+                    raise Exception(f"Incorrect value {s[1]}")
+        elif len(s) == 3:
+            if s[1].lower() == "flush":
+                is_flush = True
+                try:
+                    b = str(int(s[2]))
+                except:
+                    raise Exception(f"Incorrect command format {msg}")
+            elif s[2].lower() == "flush":
+                is_flush = True
+                try:
+                    b = str(int(s[1]))
+                except:
+                    raise Exception(f"Incorrect command format {msg}")
+            else:
+                raise Exception(f"Incorrect command format {msg}")
+        else:
+            raise Exception(f"Incorrect command format {msg}")
+
+        setattr(self, "reenter_count", b)
+        if is_flush:
+            cfg = self.get_config()
+            cfg.set(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                  symaiconfig.SymAIConfig.BEHAVIORS_REENTER_COUNT.value, str(b))
+            symaiconfig.create_config(symaiconfig.get_config_file(), symaiconfig.SymAIConfig.SYMAICORE.value, cfg)
+        return str(b)
