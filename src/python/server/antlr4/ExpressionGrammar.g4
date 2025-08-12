@@ -78,8 +78,12 @@ expression
     : assignmentExpression (',' assignmentExpression)*
     ;
 
+assignmentExpressionList
+    : assignmentExpression (';' assignmentExpression)*
+    ;
+
 actionsList
-    : (postfixExpression ':' logicalOrExpression '->'  assignmentExpression ',')+
+    : (postfixExpression ':' logicalOrExpression '->'  assignmentExpressionList ',')+
     ;
 
 behavior

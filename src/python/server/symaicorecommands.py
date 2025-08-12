@@ -177,9 +177,12 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 if not (response.getcode() == HTTPStatus.OK):
                     raise Exception(f"Attempt to inverse expression error {str(conn.getresponse())}")
                 rsp = json.loads(response.read().decode())
-                rs = rsp["formula"]
+                rs = rsp["inverse"]
+                it = iter(rs)
+                inv = (next(it))
+                inv = l + "=" + rs[inv]
                 subsn = [{"name": nm, "value": l}]
-                tr = self.prepare_parser_expr(rs).assignmentExpression()
+                tr = self.prepare_parser_expr(inv).assignmentExpression()
                 v = ExtSEGrammarVisitor()
                 v.setSubstitution(subsn)
                 res = v.visit(tr)
@@ -200,13 +203,16 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                               fname + ".inv")
         try:
             rs = visitor.getResults()
-            r = dict()
             with open(fn, "w") as f:
                 for act in rs:
                     nm = act[0]
                     expr = act[2]
-                    res[nm]  = self.invert_one_action(nm, expr)
-                    f.write(nm + ":" + res[nm] + "\n")
+                    ra = expr.split(";")
+                    r = []
+                    for s in ra:
+                        r.append(self.invert_one_action(nm, s))
+                    res[nm]  = r
+                    f.write(f"{nm}:{res[nm]}\n")
             self.get_logger().debug(f"Inverted actions saved to {fn}")
             setattr(self,"inverted", fn)
             setattr(self, "inverted_actions", res)
@@ -437,8 +443,13 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             #
             b, s = self.check_reachability(ctx["environment"], cnd)
         if b:
-            expr = ctx["inverted_actions"]
-            subsn = [{"name": act, "value": expr}]
+            expr = ctx["inverted_actions"][act]
+            subsn = []
+            for s in expr:
+                st = s.split("=")
+                nm = st[0]
+                val = s[len(nm)+1:]
+                subsn.append({"name":nm, "value":val})
             p =  self.prepare_parser_expr(ctx["environment"])
             tree = p.assignmentExpression()
             v = ExtSEGrammarVisitor()
@@ -453,7 +464,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                                             symaiconfig.SymAIConfig.EXPRESSION_PORT.value))
                 conn = http.client.HTTPConnection(expression_host, expression_port)
                 query = dict()
-                query["formula"] = expr
                 slvr = self.get_solver()
                 query["solver"] = slvr
                 query["formula"] = s
@@ -639,7 +649,10 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                     if res:
                                         yield f"ok trace {trace}"
                                         yield f"ok environment trace {env_trace}"
-                                        yield "ok reached"
+                                        trace.append("reached")
+                                        env_trace.append(ctx["environment"])
+                                        yield f"ok trace {trace}"
+                                        yield f"ok environment trace {env_trace}"
                                         ctx = self.append_trace(ctx, trace, env_trace)
                                         break
                                 elif cb is not None:
