@@ -122,6 +122,22 @@ async def handle_client(websocket):
                             await websocket.send(res)
                         except:
                             pass
+                case "debug":
+                    sc.get_logger().info("debug command received")
+                    if connected_clients.get(websocket) is None:
+                        sc.get_logger().error("UUID not found.Cannot process " + message)
+                        await websocket.send("nok UUID not found.Cannot process " + message)
+                    else:
+                        try:
+                            res = "ok " + sc.do_debug(str(connected_clients.get(websocket).get_uuid()),
+                                                              str(message))
+                        except Exception as e:
+                            sc.get_logger().error(f"reenter_count command error {str(e)}")
+                            res = f"nok {str(e)}"
+                        try:
+                            await websocket.send(res)
+                        except:
+                            pass
                 case "behaviors":
                     sc.get_logger().info("behaviors command received")
                     if connected_clients.get(websocket) is None:
@@ -266,7 +282,8 @@ async def main():
     parser.add_argument("-t", "--temp", dest="tempdir", default="/tmpdir/temp", required=False, help="SymAI Core Websockets Server Temporary Directory")
     parser.add_argument("-eh", "--exprhost", dest="exprhost", default="localhost", required=False, help="SymAI Expression Server Host IP")
     parser.add_argument("-ep", "--exprport", dest="exprport", default=8080, required=False, help="SymAI Expression Server Port No")
-    parser.add_argument("-rc", "--reentercount", dest="reentercount", default=str(1), required=False, help="SymAI Symbolic Calculations reentering counter")
+    parser.add_argument("-rc", "--reentercount", dest="reentercount", default=str(1), required=False, help="SymAI Symbolic Calculations Reentering Counter")
+    parser.add_argument("-d", "--debug", dest="debug", default=str(False), required=False, help="SymAI Symbolic Calculations Debugging Mode On/OFF Flag")
 
     args = parser.parse_args()
 
@@ -277,7 +294,6 @@ async def main():
     cfg.set(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.TEMP.value, args.tempdir)
     cfg.set(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.EXPRESSION_HOST.value, args.exprhost)
     cfg.set(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.EXPRESSION_PORT.value, str(args.exprport))
-    #TODO: change to command line argument below
     cfg.set(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.BEHAVIORS_REENTER_COUNT.value, args.reentercount)
 
     cfg = symaiconfig.create_config(args.config, symaiconfig.SymAIConfig.SYMAICORE.value, cfg)
