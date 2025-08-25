@@ -223,6 +223,11 @@ async def handle_client(websocket):
                                     str(connected_clients.get(websocket).get_uuid()),
                                     s):
                                 await websocket.send(res)
+                                if bool(sc.get_debug()):
+                                    await next(message)
+                                    r = sc.do_rsp_traversalbeh(str(connected_clients.get(websocket).get_uuid()), message)
+                                    # TODO: Here should be processing of next, stop, run directives
+
                         except Exception as e:
                             sc.get_logger().error("traversalbeh command failed " + str(e))
                             res = "nok " + str(e)

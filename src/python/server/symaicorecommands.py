@@ -13,6 +13,12 @@ from antlr4.InputStream import InputStream
 from extsegammarvisitor import *
 from ExpressionGrammar.ExpressionGrammarLexer import ExpressionGrammarLexer
 from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
+from enum import Enum
+
+class SymAIDebugStatus(Enum):
+    NEXT = "next"
+    STOP = "stop"
+    RUN = "run"
 
 class SymAICoreParam:
 
@@ -140,6 +146,32 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 pass
             raise e
 
+    def get_debug(self):
+        if hasattr(self, "debug"):
+            fn = getattr(self, "debug")
+        else:
+            try:
+                fn = self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.SYMAICORE_DEBUG.value)
+                try:
+                    fn = bool(fn)
+                except:
+                    try:
+                        i = int(fn)
+                        if i == 1:
+                            fn = True
+                        else:
+                            fn = False
+                    except:
+                        fn = False
+            except:
+                fn = False
+            c = self.get_config()
+            c.set(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.SYMAICORE_DEBUG.value, str(fn))
+            self.set_config(c)
+        setattr(self,"debug", fn)
+
+        return fn
+
     def invert_one_action(self, name, expr):
         tree = self.prepare_parser_expr(expr).assignmentExpression()
         visitor = ExtSEGrammarVisitor()
@@ -210,7 +242,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                     ra = expr.split(";")
                     r = []
                     for s in ra:
-                        r.append(self.invert_one_action(nm, s)) # TODO: No inversions needed!!!
+                        r.append(self.invert_one_action(nm, s)) # TODO: What if no inversions needed!!!
                         #r.append(s)
                     res[nm]  = r
                     f.write(f"{nm}:{res[nm]}\n")
@@ -631,8 +663,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 try:
                     dr = json.loads(data_received.replace("'", '"'))
                 except Exception as e:
-                    self.get_logger().error("Incorrect input JSON data " + data_received + " " + str(e))
-                    raise Exception("Incorrect input JSON data " + data_received)
+                    self.get_logger().error(f"Incorrect input `{data_received}` JSON data {str(e)}`")
+                    raise Exception(f"Incorrect input `{data_received}` JSON data {str(e)}`")
                 if "behavior" in dr:
                     if dr["behavior"] in behaviors:
                         is_first = False
@@ -725,6 +757,15 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         finally:
             if slvr is not None:
                 self.do_solver(cuuid, slvr)
+
+    def do_rsp_traversalbeh(self, cuuid, data_received):
+        if not self.get_debug():
+            return False
+        else:
+            s = str(data_received).strip(" \t").lower()
+            return True
+        # TODO: process message!!!
+        return False
 
     def do_trace(self, cuuid, data_received):
         try:
