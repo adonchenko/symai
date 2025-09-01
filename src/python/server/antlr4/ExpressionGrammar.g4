@@ -115,6 +115,7 @@ postfix_item
 
 additive_item
     : postfix_item ('+' postfix_item)*
+    | '(' additive_item ')' ('.' additive_item)?
     ;
 
 items_list

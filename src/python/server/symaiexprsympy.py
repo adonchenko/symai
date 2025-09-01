@@ -1,5 +1,3 @@
-from sympy import solve
-
 from symbolicexpressiongrammarvisitor import *
 
 import sympy

@@ -1,3 +1,4 @@
+from collections import deque
 from http import HTTPStatus
 
 import symaicommands
@@ -15,7 +16,7 @@ from ExpressionGrammar.ExpressionGrammarLexer import ExpressionGrammarLexer
 from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
 from enum import Enum
 
-class SymAIDebugStatus(Enum):
+class SymAIDebugCommands(Enum):
     NEXT = "next"
     STOP = "stop"
     RUN = "run"
@@ -66,7 +67,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         self.remove_directory_tree(os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
                                     str(cuuid)))
 
-    """ Loads and saves file
+    """ Loads and saves the file
      The file path $TEPM_PATH/pref/mid/<filename> will be created, if it is not present
      Here $TEMP_PATH is a base temporary catalogue path; pref and mid are strings.
      data_received is a JSON structure in following format:
@@ -400,8 +401,9 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             env = ""
 
         expr, ic, r = self.prepare_condition(env)
-        s, ic, r = self.prepare_condition(reach_property)
-        expr = expr + " && " + s
+        if reach_property is not None and len(reach_property) > 0:
+            s, ic, r = self.prepare_condition(reach_property)
+            expr = expr + " && " + s
 
         headers = {'Content-type': 'application/json'}
         try:
@@ -422,6 +424,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             rsp = json.loads(response.read().decode())
             res = rsp["satisfiable"]
             query.pop("formula")
+            # Simplifying formula of environment
             query["formula"] = env
             conn = http.client.HTTPConnection(expression_host,expression_port)
             conn.request('POST', '/api/v1/expression/simplify', json.dumps(query), headers)
@@ -483,7 +486,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             exec(fml, glob_vars, int_vars)
 
             i = False
-
+            env_exp  = ""
             for it in int_vars:
                 if i:
                     env_exp = env_exp + " && "
@@ -523,6 +526,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                     is_const = True
                     vars = next(iter(rsp["model"]))
                     env = self.do_recalc_const(expr, vars)
+                # else:
                 # TODO: Add replacements for other cases else !!!
 
         except Exception as e:
@@ -671,15 +675,33 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 if "solver" in dr:
                     slvr = self.get_solver()
                     self.do_solver(cuuid, dr["solver"])
+                if "debug" in dr:
+                    try:
+                        fn = dr["debug"]
+                        try:
+                            fn = bool(fn)
+                        except:
+                            try:
+                                i = int(fn)
+                                if i == 1:
+                                    fn = True
+                                else:
+                                    fn = False
+                            except:
+                                fn = False
+                    except:
+                        fn = False
+
+                    setattr(self, "debug", fn)
             else:
                 dr = dict()
             if len(behaviors) > 0 and is_first:
                 dr["behavior"] = next(iter(behaviors))
 
             yield "ok trace start"
-            env_trace = []
-            trace = []
-            beh_stack = []
+            env_trace = deque([])
+            trace = deque([])
+            beh_stack = deque([])
 
             if len(behaviors) <= 0:
                 raise Exception("No behaviors were defined")
@@ -694,7 +716,9 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 beh_stack.append([cur_beh,cit, behaviors[cur_beh], cur_alt, ctx["environment"]])
                 trace.append(cur_beh)
                 env_trace.append(ctx["environment"])
-                while True:
+                setattr(self, "stop", False)
+                is_reached = False
+                while not getattr(self, "stop"):
                     try:
                         term = next(it)
                         match term:
@@ -704,36 +728,77 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                 while len(trace) > cur_alt:
                                     trace.pop()
                                     ctx["environment"] = env_trace.pop()
+                                continue
+                            case "(":
+                                beh_stack.append([term, cit, behaviors[term], cur_alt, ctx["environment"]])
+                                it = iter(behaviors[term])
+                                trace.append(term)
+                                env_trace.append(ctx["environment"])
+                                cur_alt = len(trace)
+                                continue
+                            case ")":
+                                if len(beh_stack) > 1:
+                                    r = beh_stack.pop()
+                                    cb = r[0]
+                                    it = r[1]
+                                    ctr = r[2]
+                                    cur_alt = r[3]
+                                    e = r[4]  ## TODO: HERE IS IT! Environment SHOULD NOT BE CHANGED
+                                else:
+                                    setattr(self, "stop", True)
+                                    break
                             case default:
                                 cb = self.find_behavior(behaviors, term)
                                 if self.is_action(actions, term):
                                     ctx, is_sat = self.step_modelling(ctx, term)
                                     if is_sat:
                                         trace.append(term)
+                                        res, ctx["environment"] = self.check_reachability(ctx["environment"], ctx["property"])
                                         env_trace.append(ctx["environment"])
-                                        res, r_env = self.check_reachability(ctx["environment"], ctx["property"])
                                         cur_alt = len(trace)
+                                        if res:
+                                            is_reached = True
+                                        else:
+                                            is_reached = False
+                                        """
                                         if res:
                                             trace.append("REACHED")
                                             env_trace.append(ctx["environment"])
                                             # if trace.count("REACHED") > 2:
                                             #    break
+                                        """
+                                    else:
+                                        continue
                                 elif cb is not None:
                                     it, cit = tee(it)
                                     if trace.count(term) > ctx["reenter_count"]  > 0: # TODO: Set counter of re-entering to beh here!!!
                                         trace.append(term)
                                         env_trace.append(ctx["environment"])
+                                        trace.append("REENTERED")
+                                        env_trace.append(ctx["environment"])
+                                        cur_alt = len(trace)
                                         # Well. We're visited {term}
+                                        continue
                                     else:
                                         beh_stack.append([term, cit, behaviors[term], cur_alt, ctx["environment"]])
                                         it = iter(behaviors[term])
                                         trace.append(term)
                                         env_trace.append(ctx["environment"])
                                         cur_alt = len(trace)
+                                        continue
                                 else:
                                     trace.append(term)
                                     env_trace.append(ctx["environment"])
                                     raise Exception(f"Unknown term {term}")
+                        if is_reached:
+                            try:
+                                idx = trace.index("REACHED")
+                                del trace[idx]
+                                del env_trace[idx]
+                            except ValueError:
+                                pass
+                            trace.append("REACHED")
+                            env_trace.append(ctx["environment"])
                         yield f"ok trace {trace}"
                         yield f"ok environment trace {env_trace}"
                         ctx = self.append_trace(ctx, trace, env_trace)
@@ -746,6 +811,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                             cur_alt = r[3]
                             e = r[4] ## TODO: HERE IS IT! Environment SHOULD NOT BE CHANGED
                         else:
+                            setattr(self, "stop", True)
                             break
             # Finalizing
             yield "ok trace end"
@@ -759,13 +825,19 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 self.do_solver(cuuid, slvr)
 
     def do_rsp_traversalbeh(self, cuuid, data_received):
-        if not self.get_debug():
-            return False
-        else:
+        if data_received is not None and len(data_received) > 0 and self.get_debug():
             s = str(data_received).strip(" \t").lower()
-            return True
-        # TODO: process message!!!
-        return False
+            match s:
+                case SymAIDebugCommands.NEXT.value:
+                    return False
+                case SymAIDebugCommands.STOP.value:
+                    setattr(self, "stop", True)
+                    return True
+                case SymAIDebugCommands.RUN.value:
+                    setattr(self, "debug", False)
+                    return False
+        else:
+            return self.get_debug()
 
     def do_trace(self, cuuid, data_received):
         try:
