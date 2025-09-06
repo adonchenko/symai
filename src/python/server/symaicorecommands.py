@@ -179,7 +179,10 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         a = visitor.visit(tree)
         i = a.strip().find("=")
         if i == -1:
-            raise Exception(f"Incorrect action description {a}")
+            if a != "1":
+                raise Exception(f"Incorrect action description {a}")
+            else:
+                res = a
         else:
             headers = {'Content-type': 'application/json'}
             l = a[:i].strip()
@@ -220,7 +223,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 v.setSubstitution(subsn)
                 res = v.visit(tr)
             else:
-                res = expr
+                res = a
+            res = a
         return res
 
     def invert_actions(self, cuuid, visitor, fname):
@@ -451,7 +455,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         if vl is None or len(vl) <= 0:
             is_const = True
             s = str(eval(s))
-            if s == "True":
+            if s == "True" or s == "1":
                 r = True
             elif s == "False":
                 r = False
@@ -462,7 +466,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                         r = False
                     else:
                         r = True
-                except ValueError as v:
+                except ValueError:
                     r = False
 
             res = str(r)
@@ -477,13 +481,17 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         env_exp = ""
         for fml in expr:
             int_vars = dict()
-            glob_vars = dict()
-            s = fml.split("=")
-            int_vars[s[0]] = s[1]
-            for it in subst:
-                int_vars[it] = float(subst[it])
+            if fml != "1":
+                glob_vars = dict()
+                s = fml.split("=")
+                int_vars[s[0]] = s[1]
+                for it in subst:
+                    int_vars[it] = float(subst[it])
 
-            exec(fml, glob_vars, int_vars)
+                exec(fml, glob_vars, int_vars)
+            else:
+                for it in subst:
+                    int_vars[it] = float(subst[it])
 
             i = False
             env_exp  = ""
@@ -498,7 +506,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
     def do_sm_substitution(self, env, expr):
 
         is_const = False
-        vars = ""
+        variables = ""
         headers = {'Content-type': 'application/json'}
         try:
             # Make an HTTP request for check
@@ -524,15 +532,28 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 if len(rsp["model"]) == 1:
                     # We have only one model. So it is const solution
                     is_const = True
-                    vars = next(iter(rsp["model"]))
-                    env = self.do_recalc_const(expr, vars)
-                # else:
-                # TODO: Add replacements for other cases else !!!
+                    variables = next(iter(rsp["model"]))
+                    env = self.do_recalc_const(expr, variables)
+                else:
+                    p = self.prepare_parser_expr(env)
+                    tree = p.assignmentExpression()
+                    v = ExtSEGrammarVisitor()
+                    s =  expr.split("=")
+                    if len(s) > 1:
+                        d = dict()
+                        d[s[0]] = s[1]
+                        v.setSubstitution(d)
+                        s = v.visit(tree)
+                        p = self.prepare_parser_expr(s)
+                        tree = p.assignmentExpression()
+                        v = ExtSEGrammarVisitor()
+                        env = v.visit(tree)
+                        # TODO: Add replacements for other cases else !!!
 
         except Exception as e:
             self.get_logger().error(f"do_sm_substitution method processing failed {str(e)}")
             raise e
-        return env, is_const, vars
+        return env, is_const, variables
 
     def step_modelling(self, ctx, act):
         act_visitor = ctx["act_visitor"]
@@ -545,7 +566,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         s, is_const, r = self.prepare_condition(cnd)
         # Here r is mark. If !r, we should continue calculations. Else we should change the environment
         b = False
-        if (not is_const and not (r or s == True)) or (is_const and s == "True"):
+        if (not is_const and not (r or s == True)) or (is_const and (s == "True" or s == "1")):
             #
             # TODO: Here should be placed checking for linearity and call for approximation of source expr
             # if (not is_const and not (r or s == True))
@@ -554,7 +575,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             b, s = self.check_reachability(ctx["environment"], cnd)
         if b:
             expr = ctx["inverted_actions"][act]
-            ctx["environment"], is_const, vars = self.do_sm_substitution(ctx["environment"], expr)
+            ctx["environment"], is_const, variables = self.do_sm_substitution(ctx["environment"], expr)
 
         return ctx, b
 
@@ -563,7 +584,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             dr = json.loads(data_received)
         else:
             if data_received is None:
-                data_received = ""
+                pass
             dr = dict()
 
         # Loading parameters, if any incoming were saved. Throwing an exception in case of error
@@ -649,6 +670,17 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             raise e
         return ctx
 
+    def dump_trace(self, trace) -> str:
+        res = "["
+        b =  False
+        for it in trace:
+            if b:
+                res = res + ","
+            res = res + " " + str(it)
+            b = True
+        res = res + " ]"
+        return res
+
     def do_traversalbeh(self, cuuid, data_received):
         yield "ok start traversal behaviors"
         self.get_logger().info(f"traversal behaviors started {data_received}")
@@ -730,11 +762,28 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                     ctx["environment"] = env_trace.pop()
                                 continue
                             case "(":
-                                beh_stack.append([term, cit, behaviors[term], cur_alt, ctx["environment"]])
-                                it = iter(behaviors[term])
-                                trace.append(term)
+                                cnt_in = 0
+                                beh_inner = [term]
+                                nm = term
+                                while True:
+                                    term = next(it)
+                                    beh_inner.append(term)
+                                    nm = nm + term
+                                    if term == "(":
+                                        cnt_in = cnt_in + 1
+                                        continue
+                                    if term == ")":
+                                        if cnt_in <= 0:
+                                            break
+                                        cnt_in = cnt_in - 1
+
+                                it, cit = tee(it)
+                                it = iter(beh_inner)
+                                term = next(it)
+                                trace.append(nm)
                                 env_trace.append(ctx["environment"])
                                 cur_alt = len(trace)
+                                beh_stack.append([nm, cit, beh_inner, cur_alt, ctx["environment"]])
                                 continue
                             case ")":
                                 if len(beh_stack) > 1:
@@ -743,7 +792,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                     it = r[1]
                                     ctr = r[2]
                                     cur_alt = r[3]
-                                    e = r[4]  ## TODO: HERE IS IT! Environment SHOULD NOT BE CHANGED
+                                    e = r[4]
                                 else:
                                     setattr(self, "stop", True)
                                     break
@@ -771,7 +820,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                         continue
                                 elif cb is not None:
                                     it, cit = tee(it)
-                                    if trace.count(term) > ctx["reenter_count"]  > 0: # TODO: Set counter of re-entering to beh here!!!
+                                    if trace.count(term) > ctx["reenter_count"]  > 0:
                                         trace.append(term)
                                         env_trace.append(ctx["environment"])
                                         trace.append("REENTERED")
@@ -799,8 +848,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                 pass
                             trace.append("REACHED")
                             env_trace.append(ctx["environment"])
-                        yield f"ok trace {trace}"
-                        yield f"ok environment trace {env_trace}"
+                        yield f"ok trace {self.dump_trace(trace)}"
+                        yield f"ok environment trace {self.dump_trace(env_trace)}"
                         ctx = self.append_trace(ctx, trace, env_trace)
                     except StopIteration:
                         if len(beh_stack) > 1:
