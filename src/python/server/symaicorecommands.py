@@ -645,17 +645,17 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                        symaiconfig.SymAIConfig.BASE_TRACE.value,
                                        symaiconfig.SymAIConfig.BASE_TRACE_FILE.value)
                 ctx["trace_file"] = fn
-                ctx["trace"] = str(trace)
-                ctx["env_trace"] = str(env_trace)
+                ctx["trace"] = str(self.dump_trace(trace))
+                ctx["env_trace"] = str(self.dump_trace(env_trace))
                 with open(fn, "w") as f:
-                    f.write(str(trace) + "\n" + str(env_trace) + "\n")
+                    f.write(str(self.dump_trace(trace)) + "\n" + str(self.dump_trace(env_trace)) + "\n")
             else:
                 fn = ctx["trace_file"]
-                ctx["trace"] = ctx["trace"] + "\n" + str(trace)
-                ctx["env_trace"] = ctx["env_trace"] + "\n" + str(env_trace)
+                ctx["trace"] = ctx["trace"] + "\n" + str(self.dump_trace(trace))
+                ctx["env_trace"] = ctx["env_trace"] + "\n" + str(self.dump_trace(env_trace))
 
                 with open(fn, "a+") as f:
-                    f.write(str(trace) + "\n" + str(env_trace))
+                    f.write(str(self.dump_trace(trace)) + "\n" + str(self.dump_trace(env_trace)))
 
             self.get_logger().info(f"trace saved to {fn}")
         except Exception as e:
@@ -848,6 +848,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                 pass
                             trace.append("REACHED")
                             env_trace.append(ctx["environment"])
+                            is_reached = False
                         yield f"ok trace {self.dump_trace(trace)}"
                         yield f"ok environment trace {self.dump_trace(env_trace)}"
                         ctx = self.append_trace(ctx, trace, env_trace)
