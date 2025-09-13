@@ -645,14 +645,18 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                        symaiconfig.SymAIConfig.BASE_TRACE.value,
                                        symaiconfig.SymAIConfig.BASE_TRACE_FILE.value)
                 ctx["trace_file"] = fn
-                ctx["trace"] = str(self.dump_trace(trace))
-                ctx["env_trace"] = str(self.dump_trace(env_trace))
+                if type(ctx["trace"]) == "<class 'str'>":
+                    ctx["trace"] = str(self.dump_trace(trace))
+                if type(ctx["environment_trace"]) == "<class 'str'>":
+                    ctx["environment_trace"] = str(self.dump_trace(env_trace))
                 with open(fn, "w") as f:
                     f.write(str(self.dump_trace(trace)) + "\n" + str(self.dump_trace(env_trace)) + "\n")
             else:
                 fn = ctx["trace_file"]
-                ctx["trace"] = ctx["trace"] + "\n" + str(self.dump_trace(trace))
-                ctx["env_trace"] = ctx["env_trace"] + "\n" + str(self.dump_trace(env_trace))
+                if type(ctx["trace"]) == "<class 'str'>":
+                    ctx["trace"] = ctx["trace"] + "\n" + str(self.dump_trace(trace))
+                if type(ctx["environment_trace"]) == "<class 'str'>":
+                    ctx["environment_trace"] = ctx["environment_trace"] + "\n" + str(self.dump_trace(env_trace))
 
                 with open(fn, "a+") as f:
                     f.write(str(self.dump_trace(trace)) + "\n" + str(self.dump_trace(env_trace)))
@@ -680,199 +684,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             b = True
         res = res + " ]"
         return res
-
-    def do_traversalbeh(self, cuuid, data_received):
-        yield "ok start traversal behaviors"
-        self.get_logger().info(f"traversal behaviors started {data_received}")
-        slvr = None
-        try:
-            ctx = self.do_load_traversal_data(cuuid, data_received)
-            yield "ok input data retrieved"
-            # Processing
-            self.get_logger().debug(f"traversal behaviors input data retrieved")
-            behaviors = ctx["beh_visitor"].getBehaviors()
-            actions = ctx["act_visitor"].getResults()
-
-            # Parsing incoming data
-            is_first = True
-            if data_received is not None and len(data_received) > 0:
-                try:
-                    dr = json.loads(data_received.replace("'", '"'))
-                except Exception as e:
-                    self.get_logger().error(f"Incorrect input `{data_received}` JSON data {str(e)}`")
-                    raise Exception(f"Incorrect input `{data_received}` JSON data {str(e)}`")
-                if "behavior" in dr:
-                    if dr["behavior"] in behaviors:
-                        is_first = False
-                if "solver" in dr:
-                    slvr = self.get_solver()
-                    self.do_solver(cuuid, dr["solver"])
-                if "debug" in dr:
-                    try:
-                        fn = dr["debug"]
-                        try:
-                            fn = bool(fn)
-                        except:
-                            try:
-                                i = int(fn)
-                                if i == 1:
-                                    fn = True
-                                else:
-                                    fn = False
-                            except:
-                                fn = False
-                    except:
-                        fn = False
-
-                    setattr(self, "debug", fn)
-            else:
-                dr = dict()
-            if len(behaviors) > 0 and is_first:
-                dr["behavior"] = next(iter(behaviors))
-
-            yield "ok trace start"
-            env_trace = deque([])
-            trace = deque([])
-            beh_stack = deque([])
-
-            if len(behaviors) <= 0:
-                raise Exception("No behaviors were defined")
-            else:
-                # Selecting an appropriate behavior to process.
-                # AI can be used here for initial cur_beh selection
-                # Now choosing the first behavior by default
-                cur_beh = dr["behavior"]
-                cur_alt = 1
-                it = iter(behaviors[cur_beh])
-                it, cit = tee(it)
-                beh_stack.append([cur_beh,cit, behaviors[cur_beh], cur_alt, ctx["environment"]])
-                trace.append(cur_beh)
-                env_trace.append(ctx["environment"])
-                setattr(self, "stop", False)
-                is_reached = False
-                while not getattr(self, "stop"):
-                    try:
-                        term = next(it)
-                        match term:
-                            case ".":
-                                continue
-                            case "+":
-                                while len(trace) > cur_alt:
-                                    trace.pop()
-                                    ctx["environment"] = env_trace.pop()
-                                continue
-                            case "(":
-                                cnt_in = 0
-                                beh_inner = [term]
-                                nm = term
-                                while True:
-                                    term = next(it)
-                                    beh_inner.append(term)
-                                    nm = nm + term
-                                    if term == "(":
-                                        cnt_in = cnt_in + 1
-                                        continue
-                                    if term == ")":
-                                        if cnt_in <= 0:
-                                            break
-                                        cnt_in = cnt_in - 1
-
-                                it, cit = tee(it)
-                                it = iter(beh_inner)
-                                term = next(it)
-                                trace.append(nm)
-                                env_trace.append(ctx["environment"])
-                                cur_alt = len(trace)
-                                beh_stack.append([nm, cit, beh_inner, cur_alt, ctx["environment"]])
-                                continue
-                            case ")":
-                                if len(beh_stack) > 1:
-                                    r = beh_stack.pop()
-                                    cb = r[0]
-                                    it = r[1]
-                                    ctr = r[2]
-                                    cur_alt = r[3]
-                                    e = r[4]
-                                else:
-                                    setattr(self, "stop", True)
-                                    break
-                            case default:
-                                cb = self.find_behavior(behaviors, term)
-                                if self.is_action(actions, term):
-                                    ctx, is_sat = self.step_modelling(ctx, term)
-                                    if is_sat:
-                                        trace.append(term)
-                                        res, ctx["environment"] = self.check_reachability(ctx["environment"], ctx["property"])
-                                        env_trace.append(ctx["environment"])
-                                        cur_alt = len(trace)
-                                        if res:
-                                            is_reached = True
-                                        else:
-                                            is_reached = False
-                                        """
-                                        if res:
-                                            trace.append("REACHED")
-                                            env_trace.append(ctx["environment"])
-                                            # if trace.count("REACHED") > 2:
-                                            #    break
-                                        """
-                                    else:
-                                        continue
-                                elif cb is not None:
-                                    it, cit = tee(it)
-                                    if trace.count(term) > ctx["reenter_count"]  > 0:
-                                        trace.append(term)
-                                        env_trace.append(ctx["environment"])
-                                        trace.append("REENTERED")
-                                        env_trace.append(ctx["environment"])
-                                        cur_alt = len(trace)
-                                        # Well. We're visited {term}
-                                        continue
-                                    else:
-                                        beh_stack.append([term, cit, behaviors[term], cur_alt, ctx["environment"]])
-                                        it = iter(behaviors[term])
-                                        trace.append(term)
-                                        env_trace.append(ctx["environment"])
-                                        cur_alt = len(trace)
-                                        continue
-                                else:
-                                    trace.append(term)
-                                    env_trace.append(ctx["environment"])
-                                    raise Exception(f"Unknown term {term}")
-                        if is_reached:
-                            try:
-                                idx = trace.index("REACHED")
-                                del trace[idx]
-                                del env_trace[idx]
-                            except ValueError:
-                                pass
-                            trace.append("REACHED")
-                            env_trace.append(ctx["environment"])
-                            is_reached = False
-                        yield f"ok trace {self.dump_trace(trace)}"
-                        yield f"ok environment trace {self.dump_trace(env_trace)}"
-                        ctx = self.append_trace(ctx, trace, env_trace)
-                    except StopIteration:
-                        if len(beh_stack) > 1:
-                            r = beh_stack.pop()
-                            cb = r[0]
-                            it = r[1]
-                            ctr = r[2]
-                            cur_alt = r[3]
-                            e = r[4] ## TODO: HERE IS IT! Environment SHOULD NOT BE CHANGED
-                        else:
-                            setattr(self, "stop", True)
-                            break
-            # Finalizing
-            yield "ok trace end"
-            yield "ok end traversal behaviors"
-            self.get_logger().info("traversal behaviors finished")
-        except Exception as e:
-            self.get_logger().error(f"traversal behaviors failed with {e}")
-            yield f"nok Traversal behaviors failed {e}"
-        finally:
-            if slvr is not None:
-                self.do_solver(cuuid, slvr)
 
     def do_rsp_traversalbeh(self, cuuid, data_received):
         if data_received is not None and len(data_received) > 0 and self.get_debug():
@@ -1237,3 +1048,229 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                   symaiconfig.SymAIConfig.BEHAVIORS_REENTER_COUNT.value, str(b))
             symaiconfig.create_config(symaiconfig.get_config_file(), symaiconfig.SymAIConfig.SYMAICORE.value, cfg)
         return str(b)
+
+    def parse_traversalbeh_data(self, cuuid, data_received, ctx):
+        if "behaviors" not in ctx or len(ctx["behaviors"]) <= 0:
+            raise Exception("No behaviors were defined")
+        behaviors = ctx["beh_visitor"].getBehaviors()
+        beh = None
+        slvr = self.get_solver()
+
+        if data_received is not None and len(data_received) > 0:
+            try:
+                dr = json.loads(data_received.replace("'", '"'))
+            except Exception as e:
+                self.get_logger().error(f"Incorrect input `{data_received}` JSON data {str(e)}`")
+                raise Exception(f"Incorrect input `{data_received}` JSON data {str(e)}`")
+            if "behavior" in dr:
+                beh = dr["behavior"]
+                if dr["behavior"] not in behaviors:
+                    raise Exception(f"Incorrect behavior {beh}")
+            if "solver" in dr:
+                self.do_solver(cuuid, dr["solver"])
+            if "debug" in dr:
+                try:
+                    fn = dr["debug"]
+                    try:
+                        fn = bool(fn)
+                    except:
+                        try:
+                            i = int(fn)
+                            if i == 1:
+                                fn = True
+                            else:
+                                fn = False
+                        except:
+                            fn = False
+                except:
+                    fn = False
+
+                setattr(self, "debug", fn)
+        if beh is None:
+            beh = next(iter(behaviors))
+        return ctx, beh, slvr
+
+    def do_traversalbeh(self, cuuid, data_received):
+        yield "ok start traversal behaviors"
+        self.get_logger().info(f"traversal behaviors started {data_received}")
+        slvr = None
+        try:
+            ctx = self.do_load_traversal_data(cuuid, data_received)
+            yield "ok input data retrieved"
+            # Processing
+            self.get_logger().debug(f"traversal behaviors input data retrieved")
+            behaviors = ctx["beh_visitor"].getBehaviors()
+            actions = ctx["act_visitor"].getResults()
+
+            # Parsing incoming data
+            ctx, cur_beh, slvr = self.parse_traversalbeh_data(cuuid, data_received, ctx)
+
+            yield "ok trace start"
+            env_trace = deque([])
+            trace = deque([])
+            beh_stack = deque([])
+
+            # Selecting an appropriate behavior to process.
+            # AI can be used here for initial cur_beh selection
+            # Now choosing the first behavior by default
+            trace.append(cur_beh)
+            env_trace.append(ctx["environment"])
+
+            # Setting up start trace values and context
+            ctx["trace"] = trace
+            ctx["environment_trace"] = env_trace
+
+            setattr(self, "stop", False)
+            # ctx["stop"] = False
+            is_reached = False
+
+            for s in self.process_one_behavior(behaviors[cur_beh], ctx, None):
+                yield s
+
+            # Finalizing
+            yield "ok trace end"
+            yield "ok end traversal behaviors"
+            self.get_logger().info("traversal behaviors finished")
+        except Exception as e:
+            self.get_logger().error(f"traversal behaviors failed with {e}")
+            yield f"nok Traversal behaviors failed {e}"
+        finally:
+            if slvr is not None:
+                self.do_solver(cuuid, slvr)
+
+    def process_one_behavior(self, beh, ctx, it_tail):
+        environment = ctx["environment"]
+        prop = ctx["property"]
+        trace = ctx["trace"].copy()
+        env_trace = ctx["environment_trace"].copy()
+        behaviors = ctx["beh_visitor"].getBehaviors()
+        actions = ctx["act_visitor"].getResults()
+        tail = []
+        if not (it_tail is None):
+            it_tail, it = tee(it_tail)
+            while True:
+                try:
+                    term = next(it)
+                    tail.append(term)
+                except StopIteration:
+                    # Now we are breaking here. But we should somehow process all alternatives
+                    break
+        # Split behavior to set of alternates
+        alts = []
+        sentence = []
+        cnt_b = 0
+        for term in beh:
+            match term:
+                case "+":
+                    if cnt_b == 0:
+                        # Append tail to sentence here!!!
+                        sentence = sentence + tail
+                        alts.append(sentence)
+                        sentence = []
+                        continue
+                    sentence.append(term)
+                case "(":
+                    cnt_b = cnt_b + 1
+                    sentence.append(term)
+                case ")":
+                    if cnt_b > 0:
+                        cnt_b = cnt_b - 1
+                case default:
+                    sentence.append(term)
+        if len(sentence) > 0:
+            # Append tail to sentence here!!!
+            sentence = sentence + tail
+            alts.append(sentence)
+
+        # Process each behavior alternate and make trace
+        for a_beh in alts:
+            sentence = []
+            state = 0
+            cnt_b = 0
+            i = iter(a_beh)
+            ctx["trace"] = trace.copy()
+            ctx["environment_trace"] = env_trace.copy()
+
+            while True:
+                try:
+                    term = next(i)
+                    if getattr(self, "stop"):
+                        break
+                    if state == 1:
+                        # "(" was found previously
+                        if term == ")":
+                            if cnt_b > 0:
+                                cnt_b = cnt_b - 1
+                            else:
+                                state = 0
+                                continue
+                        elif term == "(":
+                            cnt_b = cnt_b + 1
+                        sentence.append(term)
+                    else:
+                        match term:
+                            case "(":
+                                state = 0
+                                cnt_b = 0
+                                continue
+                            case "+":
+                                # Here should be a trace rollback
+                                ctx["trace"] = trace
+                                ctx["environment_trace"] = env_trace
+                                continue
+                            case ".":
+                                continue
+                            case default:
+                                if self.is_action(actions, term):
+                                    ctx, is_sat = self.step_modelling(ctx, term)
+                                    if is_sat:
+                                        tr = ctx["trace"].copy()
+                                        env_tr = ctx["environment_trace"].copy()
+                                        tr.append(term)
+                                        env_tr.append(ctx["environment"])
+                                        res, ctx["environment"] = self.check_reachability(ctx["environment"], ctx["property"])
+                                        if res:
+                                            is_reached = True
+                                            try:
+                                                idx = tr.index("REACHED")
+                                                del tr[idx]
+                                                del env_tr[idx]
+                                            except ValueError:
+                                                pass
+                                            tr.append("REACHED")
+                                            env_tr.append(ctx["environment"])
+                                        else:
+                                            is_reached = False
+                                        yield f"ok trace {self.dump_trace(tr)}"
+                                        yield f"ok environment trace {self.dump_trace(env_tr)}"
+                                        ctx = self.append_trace(ctx, tr, env_tr)
+                                        ctx["trace"] = tr
+                                        ctx["environment_trace"] = env_tr
+                                    else:
+                                        break
+                                else :
+                                    cb = self.find_behavior(behaviors, term)
+                                    if cb is not None:
+                                        tr = ctx["trace"].copy()
+                                        env_tr = ctx["environment_trace"].copy()
+                                        tr.append(term)
+                                        env_tr.append(ctx["environment"])
+
+                                        if trace.count(term) > ctx["reenter_count"] > 0:
+                                            tr.append("REENTERED")
+                                            env_tr.append(ctx["environment"])
+                                            # Well. We're visited {term}
+                                        else:
+                                            ctx["trace"] = tr.copy()
+                                            ctx["environment_trace"] = env_tr.copy()
+
+                                            for s in self.process_one_behavior(behaviors[term], ctx, i):
+                                                yield s
+                                    else:
+                                        raise Exception(f"Unknown term {term}")
+                                    ctx["trace"] = tr
+                                    ctx["environment_trace"] = env_tr
+                except StopIteration:
+                    # Now we are breaking here. But we should somehow process all alternatives
+                    break
+
