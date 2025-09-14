@@ -478,28 +478,34 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
     def do_recalc_const(self, expr, subst):
 
-        env_exp = ""
+        glob_vars = dict()
+        int_vars = dict()
+        res_vars = dict()
+        if subst is not None:
+            for it in subst:
+                int_vars[it] = float(subst[it])
+                res_vars[it] = float(subst[it])
+
         for fml in expr:
-            int_vars = dict()
             if fml != "1":
-                glob_vars = dict()
                 s = fml.split("=")
-                int_vars[s[0]] = s[1]
-                for it in subst:
-                    int_vars[it] = float(subst[it])
-
                 exec(fml, glob_vars, int_vars)
-            else:
-                for it in subst:
-                    int_vars[it] = float(subst[it])
+                res_vars[s[0].strip()] = int_vars[s[0].strip()]
+                if subst is not None:
+                    int_vars = dict()
+                    for it in subst:
+                        int_vars[it] = float(subst[it])
 
-            i = False
-            env_exp  = ""
-            for it in int_vars:
-                if i:
-                    env_exp = env_exp + " && "
-                env_exp = env_exp + "(" + str(it) + " == " +  str(int_vars[it]) + ")"
-                i = True
+        for v in res_vars.keys():
+            int_vars[v] = res_vars[v]
+
+        i = False
+        env_exp  = ""
+        for it in int_vars:
+            if i:
+                env_exp = env_exp + " && "
+            env_exp = env_exp + "(" + str(it) + " == " +  str(int_vars[it]) + ")"
+            i = True
 
         return env_exp
 
@@ -1175,6 +1181,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 case ")":
                     if cnt_b > 0:
                         cnt_b = cnt_b - 1
+                    sentence.append(term)
                 case default:
                     sentence.append(term)
         if len(sentence) > 0:
@@ -1190,9 +1197,30 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             i = iter(a_beh)
             ctx["trace"] = trace.copy()
             ctx["environment_trace"] = env_trace.copy()
-
+            ctx["environment"] = env_trace[-1]
+            term = ""
             while True:
                 try:
+                    if state == 2:
+                        tr = ctx["trace"].copy()
+                        env_tr = ctx["environment_trace"].copy()
+                        tr.append(term)
+                        env_tr.append(ctx["environment"])
+
+                        if tr.count(term) > ctx["reenter_count"] > 0:
+                            tr.append("REENTERED")
+                            env_tr.append(ctx["environment"])
+                            # Well. We're visited this {term} term more than expected number of times
+                        else:
+                            ctx["trace"] = tr.copy()
+                            ctx["environment_trace"] = env_tr.copy()
+                            ctx["environment"] = env_tr[-1]
+                            for s in self.process_one_behavior(sentence, ctx, i):
+                                yield s
+                        ctx["trace"] = tr.copy()
+                        ctx["environment_trace"] = env_tr.copy()
+                        ctx["environment"] = env_tr[-1]
+                        state = 0
                     term = next(i)
                     if getattr(self, "stop"):
                         break
@@ -1202,21 +1230,28 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                             if cnt_b > 0:
                                 cnt_b = cnt_b - 1
                             else:
-                                state = 0
-                                continue
+                                state = 2
                         elif term == "(":
                             cnt_b = cnt_b + 1
-                        sentence.append(term)
+                        if state != 2:
+                            sentence.append(term)
+                        else:
+                            term = "("
+                            for s in sentence:
+                                term = term + s
+                            term = term + ")"
                     else:
                         match term:
                             case "(":
-                                state = 0
+                                state = 1
                                 cnt_b = 0
+                                # Behaviors processing would be here
                                 continue
                             case "+":
                                 # Here should be a trace rollback
-                                ctx["trace"] = trace
-                                ctx["environment_trace"] = env_trace
+                                ctx["trace"] = trace.copy()
+                                ctx["environment_trace"] = env_trace.copy()
+                                ctx["environment"] = env_trace[-1]
                                 continue
                             case ".":
                                 continue
@@ -1244,32 +1279,17 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                         yield f"ok trace {self.dump_trace(tr)}"
                                         yield f"ok environment trace {self.dump_trace(env_tr)}"
                                         ctx = self.append_trace(ctx, tr, env_tr)
-                                        ctx["trace"] = tr
-                                        ctx["environment_trace"] = env_tr
+                                        ctx["trace"] = tr.copy()
+                                        ctx["environment_trace"] = env_tr.copy()
+                                        ctx["environment"] = env_tr[-1]
                                     else:
                                         break
                                 else :
-                                    cb = self.find_behavior(behaviors, term)
-                                    if cb is not None:
-                                        tr = ctx["trace"].copy()
-                                        env_tr = ctx["environment_trace"].copy()
-                                        tr.append(term)
-                                        env_tr.append(ctx["environment"])
-
-                                        if trace.count(term) > ctx["reenter_count"] > 0:
-                                            tr.append("REENTERED")
-                                            env_tr.append(ctx["environment"])
-                                            # Well. We're visited {term}
-                                        else:
-                                            ctx["trace"] = tr.copy()
-                                            ctx["environment_trace"] = env_tr.copy()
-
-                                            for s in self.process_one_behavior(behaviors[term], ctx, i):
-                                                yield s
+                                    sentence = self.find_behavior(behaviors, term)
+                                    if sentence is not None:
+                                        state = 2
                                     else:
                                         raise Exception(f"Unknown term {term}")
-                                    ctx["trace"] = tr
-                                    ctx["environment_trace"] = env_tr
                 except StopIteration:
                     # Now we are breaking here. But we should somehow process all alternatives
                     break
