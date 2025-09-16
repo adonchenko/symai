@@ -8,7 +8,7 @@ import symaiexprcvc5
 
 class SymAIExpressionCommands(symaicommands.SymAICommands):
 
-    def do_check_solver(self, solver_name : str)->symaiexpr.SymAIExpression():
+    def do_check_solver(self, solver_name : str)->symaiexpr.SymAIExpression:
         max_models =  int(self.get_config().get(symaiconfig.SymAIConfig.EXPRESSION.value,symaiconfig.SymAIConfig.SOLVER_MAX_MODELS.value))
         match solver_name:
             case symaiconfig.SymAISolvers.SYMPY.value:
@@ -23,7 +23,8 @@ class SymAIExpressionCommands(symaicommands.SymAICommands):
                 res = symaiexprz3.SymAIExpressionZ3()
                 res.set_max_models(max_models)
                 return res
-            case default: raise Exception(f"Not implemented solver type {solver_name}")
+            case default:
+                raise Exception(f"Not implemented solver type {solver_name}")
 
     def do_shutdown(self):
         self.get_logger().info("Shutdown received")

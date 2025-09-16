@@ -224,7 +224,7 @@ async def handle_client(websocket):
                                     s):
                                 await websocket.send(res)
                                 if bool(sc.get_debug()):
-                                    await next(message)
+                                    message = await websocket.recv()
                                     is_cnt = sc.do_rsp_traversalbeh(str(connected_clients.get(websocket).get_uuid()), message)
                                     if is_cnt:
                                         break
