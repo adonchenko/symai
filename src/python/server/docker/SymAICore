@@ -13,6 +13,8 @@ COPY ./symaicommands.py /app/symaicommands.py
 COPY ./symaicorecommands.py /app/symaicorecommands.py
 COPY ./symbolicexpressiongrammarvisitor.py /app/symbolicexpressiongrammarvisitor.py
 COPY ./extsegammarvisitor.py /app/extsegammarvisitor.py
+COPY ./treeedit.py /app/treeedit.py
+COPY ./treeutils.py /app/treeutils.py
 COPY ./ExpressionGrammar/ExpressionGrammarLexer.py /app/ExpressionGrammar/ExpressionGrammarLexer.py
 COPY ./ExpressionGrammar/ExpressionGrammarListener.py /app/ExpressionGrammar/ExpressionGrammarListener.py
 COPY ./ExpressionGrammar/ExpressionGrammarParser.py /app/ExpressionGrammar/ExpressionGrammarParser.py

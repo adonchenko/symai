@@ -1,3 +1,5 @@
+from antlr4.tree.Tree import TerminalNodeImpl
+
 from ExpressionGrammar.ExpressionGrammarVisitor import ExpressionGrammarVisitor
 from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
 
@@ -60,7 +62,9 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
     # Visit a parse tree produced by ExpressionGrammarParser#primaryExpression.
     def visitPrimaryExpression(self, ctx:ExpressionGrammarParser.PrimaryExpressionContext):
         if ctx.LeftParen() is not None:
-            result = "(" + self.visit(ctx.expression()) + ")"
+            result = self.visit(ctx.expression())
+            if len(result) > 0:
+                result = "(" + result + ")"
         else:
             if ctx.Identifier() is not None:
                 result = ctx.Identifier().getText()
@@ -79,7 +83,9 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         self.arg_list_cnt = ","
         self.arg_list_fin = ")"
 
-        result = self.visit(ctx.primaryExpression())
+        if ctx.getChildCount() < 1:
+            return ""
+        result = self.visit(ctx.getChild(0))
         if result.lower().strip() in trig_funct and len(ctx.children) > 1:
             if ctx.getChild(1).getText() == '(':
                 self.hasTrigonometric = True
@@ -89,7 +95,7 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         # CVC5: Here should be if And, Or Xor or Not eq
         # Z3: and or xor not eq
         # sympy: and or not eq ne
-        elif  result.lower().strip() == "or" and  ctx.getChild(1).getText() == '(':
+        elif  result.lower().strip() == "or" and len(ctx.children) > 1 and  ctx.getChild(1).getText() == '(':
             self.arg_list_start = ""
             self.arg_list_cnt = " | "
             self.arg_list_fin = ""
@@ -109,26 +115,50 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             self.arg_list_cnt = " != "
             self.arg_list_fin = ""
             result = ""
-        elif result.lower().strip() == "not" and ctx.getChild(1).getText() == '(':
+        elif result.lower().strip() == "not" and len(ctx.children) > 1 and ctx.getChild(1).getText() == '(':
             self.arg_list_start = "!("
             self.arg_list_cnt = ") & !("
             self.arg_list_fin = ")"
             result = ""
+        elif ctx.getChildCount() > 1:
+            self.arg_list_start = "("
+            self.arg_list_cnt = ","
+            self.arg_list_fin = ")"
 
         i = 1
-        j = 0
-        while i < len(ctx.children):
-            if len(ctx.children) > i + 1:
-                if ctx.getChild(i).getText() == '.':
-                    result = result + '_d_o_t_'
+        while i < ctx.getChildCount():
+            t = type(ctx.getChild(i))
+            s = ctx.getChild(i)
+            if t == TerminalNodeImpl:
+                s = s.getText()
+                if s == ".":
                     i = i + 1
-                    result = result + ctx.getChild(i).getText()
-                else:
-                    if ctx.getChild(i).getText() == '(':
-                        result = result + self.arg_list_start + self.visit(ctx.argumentExpressionList(j)) + self.arg_list_fin
-                        j = j + 1
+                    s = ctx.getChild(i).getText()
+                    result = result + "." + s
+                elif s == "(":
+                    result = result + self.arg_list_start
+                    i = i + 1
+                    t = type(ctx.getChild(i))
+                    s = self.visit(ctx.getChild(i))
+                    if t == TerminalNodeImpl and s == ")":
+                        result = result + self.arg_list_fin
+                    else:
+                        result = result + s + self.arg_list_fin
                         i = i + 1
             i = i + 1
+        # var_list has to be updated
+        if result not in self.var_list and len(result) > 0:
+            self.var_list.append(result)
+        if self.substitution is not None and len(result) > 0:
+            i = 0
+            while i < len(self.substitution):
+                x = str(self.substitution[i]["name"])
+                y = str(self.substitution[i]["value"])
+                i = i + 1
+                if result.strip() == x:
+                    result = y
+                    i = len(self.substitution)
+
         self.arg_list_cnt = tmp_arg_list_cnt
         self.arg_list_start = tmp_arg_list_start
         self.arg_list_fin = tmp_arg_list_fin
@@ -146,20 +176,9 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
 
     # Visit a parse tree produced by ExpressionGrammarParser#unaryExpression.
     def visitUnaryExpression(self, ctx:ExpressionGrammarParser.UnaryExpressionContext):
+        if ctx.getChildCount() < 1:
+            return ""
         result = self.visit(ctx.postfixExpression()).strip()
-        # Variables and substitutions. Should be processed in unaryExpression
-        if not (result[0:1].isdigit()) and result.find("(") < 0 and result.find("_d_o_t_") < 0:
-            if result.strip() not in self.var_list and result.lower() != "true" and result.lower() != "false":
-                self.var_list.append(result.strip())
-            if self.substitution is not None:
-                i = 0
-                while i < len(self.substitution):
-                    x = str(self.substitution[i]["name"])
-                    y = str(self.substitution[i]["value"])
-                    i = i + 1
-                    if result.strip() == x:
-                        result = y
-                        i = len(self.substitution)
 
         if ctx.unaryOperator() is not None:
             op = ctx.unaryOperator().getText()
@@ -190,9 +209,10 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
 
     # Visit a parse tree produced by ExpressionGrammarParser#additiveExpression.
     def visitAdditiveExpression(self, ctx:ExpressionGrammarParser.AdditiveExpressionContext):
-        i = 0
-        result = self.visit(ctx.multiplicativeExpression(i))
-        i = i + 1
+        if ctx.getChildCount() < 1:
+            return ""
+        result = self.visit(ctx.getChild(0))
+        i = 1
         while ctx.getChild(2 * (i - 1) + 1) is not None:
             op = ctx.getChild(2 * (i - 1) + 1).getText()
             result = result + op
@@ -202,8 +222,10 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
 
     # Visit a parse tree produced by ExpressionGrammarParser#relationalExpression.
     def visitRelationalExpression(self, ctx:ExpressionGrammarParser.RelationalExpressionContext):
+        if ctx.getChildCount() < 1:
+            return ""
         i = 0
-        result = self.visit(ctx.additiveExpression(i))
+        result = self.visit(ctx.getChild(0))
         first = ""
         while i + 1 < len(ctx.additiveExpression()):
             if i > 0:
@@ -218,11 +240,13 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
 
     # Visit a parse tree produced by ExpressionGrammarParser#equalityExpression.
     def visitEqualityExpression(self, ctx:ExpressionGrammarParser.EqualityExpressionContext):
+        if ctx.getChildCount() < 1:
+            return ""
         i = 0
-        result = self.visit(ctx.relationalExpression(i))
+        result = self.visit(ctx.getChild(0))
         i = i + 1
         while ctx.getChild(2 * (i - 1) + 1) is not None:
-            if i > 1:
+            if i > 1 and len(result) > 0:
                 result = "(" + result + ")"
             op = ctx.getChild(2 * (i - 1) + 1).getText()
             pref = ""
@@ -230,33 +254,50 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             if op == "!=":
                 pref = "Not("
                 postf = ")"
-            if self.isEQ():
-                result = pref + "Eq(" + result + "," + self.visit(ctx.relationalExpression(i) ) + ")" + postf
-            else:
-                result = pref + result + "==" + self.visit(ctx.relationalExpression(i))  + postf
+            if len(result) > 0:
+                if self.isEQ():
+                    result = pref + "Eq(" + result + "," + self.visit(ctx.relationalExpression(i) ) + ")" + postf
+                else:
+                    result = pref + result + "==" + self.visit(ctx.relationalExpression(i))  + postf
             i = i + 1
         return result
 
     # Visit a parse tree produced by ExpressionGrammarParser#logicalAndExpression.
     def visitLogicalAndExpression(self, ctx:ExpressionGrammarParser.LogicalAndExpressionContext):
-        result = self.visit(ctx.equalityExpression(0))
+        if ctx.getChildCount() < 1:
+            return ""
+        result = self.visit(ctx.getChild(0))
         i = 1
         while i < len(ctx.equalityExpression()):
-            result = "And((" + result + "),(" + self.visit(ctx.equalityExpression(i)) + "))"
+            if len(result) > 0:
+                app = self.visit(ctx.equalityExpression(i))
+                if len(app) > 0:
+                    result = "And((" + result + "),(" + app + "))"
+            else:
+                result = self.visit(ctx.equalityExpression(i))
             i = i + 1
         return result
 
     # Visit a parse tree produced by ExpressionGrammarParser#logicalOrExpression.
     def visitLogicalOrExpression(self, ctx:ExpressionGrammarParser.LogicalOrExpressionContext):
-        result = self.visit(ctx.logicalAndExpression(0))
+        if ctx.getChildCount() < 1:
+            return ""
+        result = self.visit(ctx.getChild(0))
         i = 1
         while i < len(ctx.logicalAndExpression()):
-            result = "Or((" + result + "),(" + self.visit(ctx.logicalAndExpression(i)) + "))"
+            if len(result) > 0:
+                app = self.visit(ctx.logicalAndExpression(i))
+                if len(app) > 0:
+                    result = "Or((" + result + "),(" + app + "))"
+            else:
+                result = self.visit(ctx.logicalAndExpression(i))
             i = i + 1
         return result
 
     # Visit a parse tree produced by ExpressionGrammarParser#assignmentExpression.
     def visitAssignmentExpression(self, ctx:ExpressionGrammarParser.AssignmentExpressionContext):
+        if ctx.getChildCount() < 1:
+            return ""
         if ctx.logicalOrExpression() is not None:
             result = self.visit(ctx.logicalOrExpression())
         else:

@@ -37,11 +37,11 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
 
     # Visit a parse tree produced by ExpressionGrammarParser#assignmentExpressionList
     def visitAssignmentExpressionList(self, ctx:ExpressionGrammarParser.AssignmentExpressionListContext):
-        result = self.visit(ctx.assignmentExpression(0))
+        result = self.visit(ctx.getChild(0))
         i = 1
-        while i * 2 < ctx.getChildCount():
+        while i  < ctx.getChildCount():
             result = result + ";" + self.visit(ctx.assignmentExpression(i))
-            i = i + 1
+            i = i + 2
         return result
 
     # Visit a parse tree produced by ExpressionGrammarParser#actionsList.
@@ -57,6 +57,7 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
                 j = j + 1
             else:
                 t.append(None)
+            self.action_has_logical(ctx.assignmentExpressionList(i))
             t.append(self.visit(ctx.assignmentExpressionList(i)))
             i = i + 1
             self.results.append(t)
@@ -65,6 +66,18 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
                 result = result + str(t[1]) + "->"
             result = result + str(t[2]) + ","
             r.append(t)
+        i = 0
+        while i < len(r):
+            b = False
+            s = r[i][0]
+            j = 0
+            while not b and j < i - 1:
+                b = (s == r[j][0])
+                j = j + 1
+            if b:
+                msg = f"Actions. Syntax error. Duplicate action name `{s}`"
+                raise Exception(msg)
+            i = i + 1
         self.setResults(r)
 
         return result
@@ -87,6 +100,18 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
             head = (beh[:j]).strip()
             tail = (beh[j+1:]).strip()
             r.append([head, tail])
+        i = 0
+        while i < len(r):
+            b = False
+            s = r[i][0]
+            j = 0
+            while not b and j < i - 1:
+                b = (s == r[j][0])
+                j = j + 1
+            if b:
+                msg = f"Behaviors. Syntax error. Duplicate behavior name `{s}`"
+                raise Exception(msg)
+            i = i + 1
         self.setResults(r)
         return res
 
@@ -216,3 +241,38 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
             res = res + str(self.visit(it))
             b = True
         return res
+
+    """
+    Returns True if particular actions list has a logical expression at the end. 
+    Otherwise returns False
+    Raises an exception in case of syntax error
+    Note: may raise an Exception if logical expression appears more than one time in the list             
+    """
+    def action_has_logical(self, ctx:ExpressionGrammarParser.AssignmentExpressionListContext)->bool:
+        j = len(ctx.assignmentExpression())
+        i = 0
+        b = False
+        vr = []
+        v = self.var_list.copy()
+        while i  < j:
+            s = str(type(ctx.assignmentExpression(i).getChild(0)))
+            if s == "<class 'ExpressionGrammar.ExpressionGrammarParser.ExpressionGrammarParser.LogicalOrExpressionContext'>":
+                if b:
+                    raise Exception("Syntax error. Postcondition. Logical expression in action appeared two or more times")
+                b = True
+                if i > j - 1:
+                    raise Exception("Syntax error. Postcondition. Logical expression is not a last item")
+                self.var_list = []
+                for s in vr:
+                    if s in self.var_list:
+                        raise Exception("Syntax error. Variable '" + s + "' cannot appear both in left side of assignment and in the logical post epression")
+                self.var_list = v
+            else:
+                s = self.visit(ctx.assignmentExpression(i).getChild(0))
+                if s in vr:
+                    raise Exception("Syntax error. Duplicate name '" + s + "'}")
+                vr.append(s)
+            i = i + 1
+            self.var_list = v
+
+        return b
