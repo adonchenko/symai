@@ -44,7 +44,14 @@ ADD_CUSTOM_COMMAND(TARGET symai-core-docker-build
     COMMAND sudo LOGDIR=${BASE_PATH}/logdir PROPERTIES=${BASE_PATH}/properties TMPDIR=${BASE_PATH}/temp RESOURCES=${BASE_PATH}/resources docker compose build core
 )
 
-ADD_CUSTOM_TARGET(symai-frontend-docker-build DEPENDS make-work-dirs)
+ADD_CUSTOM_TARGET(symai-client DEPENDS make-work-dirs)
+ADD_CUSTOM_COMMAND(TARGET symai-client
+                   WORKING_DIRECTORY "$(PROJECT_SOURCE_DIR)/src/python/client/symaicli"
+    COMMAND ./build.sh
+)
+
+
+ADD_CUSTOM_TARGET(symai-frontend-docker-build DEPENDS make-work-dirs symai_client)
 ADD_CUSTOM_COMMAND(TARGET symai-frontend-docker-build
 		   WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/python/server/docker"
     COMMAND sudo LOGDIR=${BASE_PATH}/logdir PROPERTIES=${BASE_PATH}/properties TMPDIR=${BASE_PATH}/temp RESOURCES=${BASE_PATH}/resources docker compose build frontend
