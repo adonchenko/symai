@@ -16,6 +16,7 @@ import { delay } from 'rxjs/operators';
 import { Prefs } from './prefs/prefs';
 import { CtlPrefs } from './ctl-prefs';
 import { CtlWS } from './ctl-ws'; 
+import { CtlSyncWS } from './ctl-sync-ws';
 
 
 // ============================================ JS exports
@@ -43,7 +44,7 @@ export const SymAI_coreURL : string = "";
 
     Prefs
   ],
-  providers:  [ CtlWS, CtlPrefs, MessageService ],
+  providers:  [ CtlWS, CtlSyncWS, CtlPrefs, MessageService ],
 
   templateUrl: './app.html',
   styleUrl: './app.css'
@@ -56,6 +57,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     private messageSubscription: Subscription | undefined;
 
     constructor(private svcWS: CtlWS,
+                private svcSyncWS : CtlSyncWS,
                 private svcCtlPrefs: CtlPrefs, 
                 private svcMsg: MessageService,
                 private primeng: PrimeNG) {
@@ -113,8 +115,9 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         }
        
         // Subscribe to messages from the WebSocket
-        this.svcWS.connect(SymAI_coreURL); // Connect when the component initializes
+        this.svcSyncWS.connect(SymAI_coreURL); // Connect when the component initializes
 
+        /*
         this.messageSubscription = this.svcWS.getMessages()!.subscribe(
           (message) => {
             //this.messages.push(message);
@@ -132,18 +135,11 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             this.svcWS.connect(SymAI_coreURL); // Connect when the component initializes
           }
         );
-    }
-
-    private sleep(ms:number) : void {
-        const source = of(1, 2, 3);
-        source.pipe(
-            delay(ms) // Delay each emission by 1 second
-          ).subscribe(value => {}
-        );
+        */
     }
 
     public ngOnDestroy(): void {
-      this.svcWS.disconnect();
+      this.svcSyncWS.disconnect();
       console.log("ngOnDestroy");
     }
 
@@ -350,6 +346,13 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     cmdCtx : string[] = []; // = ['ldEnv', 'ldBeh', 'ldAct', 'ldTgt', 'stop'];
 
 
+    private sleep(ms:number) : void {
+        const source = of(1, 2, 3);
+        source.pipe(
+            delay(ms) // Delay each emission by 1 second
+          ).subscribe(value => {}
+        );
+    }
 
     showPrefsDialog() {
       console.log("Call showDialog");
@@ -366,50 +369,36 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     } 
 
     // ============================================ communication: 
+    startAsyncRecv() : void {
+        this.messageSubscription = this.svcWS.getMessages()!.subscribe(
+          (message) => {
+            //this.messages.push(message);
+            // Process message in some way
+
+            console.log('Received message:', message);
+            this.onReceiveMsg(message);
+          },
+          (error) => console.error('WebSocket error:', error),
+          () => { 
+            console.log('WebSocket completed.');
+
+            this.svcWS.disconnect();
+          }
+        );
+    }
+
     onReceiveMsg(msg : string) : void {
       if( msg === 'ok' || msg === 'nok' ) {
         if( this.cmdCtx.length > 0 ) {
           const ctx = this.cmdCtx.shift(); 
           switch(ctx) {
             case 'ldEnv':
-              if( msg === 'ok' ) {
-                console.log("Environment loaded");
-                diag("Environment loaded");
-              }
-              else {
-                console.log("Error loading Environment");
-                diag("Error loading Environment");
-              }
               break;
             case 'ldBeh':
-              if( msg === 'ok' ) {
-                console.log("Behavior loaded");
-                diag("Behavior loaded");
-              }
-              else {
-                console.log("Error loading Behavior");
-                diag("Error loading Behavior");
-              }
               break;
             case 'ldAct':
-              if( msg === 'ok' ) {
-                console.log("Actions loaded");
-                diag("Actions loaded");
-              }
-              else {
-                console.log("Error loading Actions");
-                diag("Error loading Actions");
-              }
               break;
             case 'ldTgt':
-              if( msg === 'ok' ) {
-                console.log("Property loaded");
-                diag("Property loaded");
-              }
-              else {
-                console.log("Error loading Property");
-                diag("Error loading Property");
-              }
               break;
           }
         }
@@ -419,35 +408,35 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     }
 
     doReconnect() : void {
-      this.svcWS.disconnect(); 
+      this.svcSyncWS.disconnect(); 
       this.sleep(2);
-      this.svcWS.connect(SymAI_coreURL);
-      this.sleep(4);  
-      if( !this.svcWS.isConnected )
+      this.svcSyncWS.connect(SymAI_coreURL);
+
+      if( !this.svcSyncWS.isConnected )
         this.msgBox('error', 'Error', 'Could not connect to '+ SymAI_coreURL);
       else
         this.msgBox('info', 'Information', 'Connected');
     }
     
     doShutdown() : void {
-      if( !this.svcWS.isConnected )
-        this.svcWS.connect(SymAI_coreURL);
-      if( this.svcWS.sendMessage("shutdown") )
+      if( !this.svcSyncWS.isConnected )
+        this.svcSyncWS.connect(SymAI_coreURL);
+      if( this.svcSyncWS.send("shutdown") )
         this.msgBox('info', 'Information', 'Command sent');
       else 
         this.msgBox('error', 'Error', 'Could not send command');
     }
     
     doStop() : void {
-      if( !this.svcWS.isConnected )
-        this.svcWS.connect(SymAI_coreURL);
-      if( this.svcWS.sendMessage("stop") )
+      if( !this.svcSyncWS.isConnected )
+        this.svcSyncWS.connect(SymAI_coreURL);
+      if( this.svcSyncWS.send("stop") )
         this.msgBox('info', 'Information', 'Command sent');
       else 
         this.msgBox('error', 'Error', 'Could not send command');
     }
 
-    doLoadEnv() : void {
+    async doLoadEnv() {
       if( this.cntEnv === "" ) {
         this.msgBox('error', 'Error', 'Environment is empty -- nothing to load');
         return;
@@ -460,15 +449,25 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         msg.concat(this.prefsComponent.selectedSolver);
       msg.concat('}');
 
-      if( !this.svcWS.isConnected )
-        this.svcWS.connect(SymAI_coreURL);
-      if( !this.svcWS.sendMessage(msg) )
-        this.msgBox('error', 'Error', 'Could not send command');
-      else
-        this.cmdCtx.push('ldEnv');
+      if( !this.svcSyncWS.isConnected )
+        this.svcSyncWS.connect(SymAI_coreURL);
+      
+      try {
+        const resp = await this.svcSyncWS.sendrecv(msg);
+        if( resp === 'ok' ) {
+          console.log("Environment loaded");
+          diag("Environment loaded");
+        }
+        else {
+          console.log("Error loading Environment");
+          diag("Error loading Environment");
+        }
+      } catch (error) {
+          console.log('Error during synchronous message exchange:', error);
+      }
     }
 
-    doLoadBeh() : void {
+    async doLoadBeh() {
       if( this.cntBeh === "" ) {
         this.msgBox('error', 'Error', 'Behavior is empty -- nothing to load');
         return;
@@ -476,15 +475,24 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       
       var msg : string = 'behaviors { "content":' + this.cntBeh + '}';
  
-      if( !this.svcWS.isConnected )
-        this.svcWS.connect(SymAI_coreURL);
-      if( !this.svcWS.sendMessage(msg) )
-        this.msgBox('error', 'Error', 'Could not send command');
-      else
-        this.cmdCtx.push('ldBeh');
+      if( !this.svcSyncWS.isConnected )
+        this.svcSyncWS.connect(SymAI_coreURL);
+      try {
+        const resp = await this.svcSyncWS.sendrecv(msg);
+        if( resp === 'ok' ) {
+          console.log("Behavior loaded");
+          diag("Behavior loaded");
+        }
+        else {
+          console.log("Error loading Behavior");
+          diag("Error loading Behavior");
+        }
+      } catch (error) {
+          console.log('Error during synchronous message exchange:', error);
+      }
     }
 
-    doLoadAct() : void {
+    async doLoadAct() {
       if( this.cntAct === "" ) {
         this.msgBox('error', 'Error', 'Actions  empty -- nothing to load');
         return;
@@ -492,15 +500,24 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       
       var msg : string = 'actions { "content":' + this.cntAct + '}';
 
-      if( !this.svcWS.isConnected )
-        this.svcWS.connect(SymAI_coreURL);
-      if( !this.svcWS.sendMessage(msg) )
-        this.msgBox('error', 'Error', 'Could not send command');
-      else
-        this.cmdCtx.push('ldAct');
+      if( !this.svcSyncWS.isConnected )
+        this.svcSyncWS.connect(SymAI_coreURL);
+      try {
+        const resp = await this.svcSyncWS.sendrecv(msg);
+        if( resp === 'ok' ) {
+          console.log("Actions loaded");
+          diag("Actions loaded");
+        }
+        else {
+          console.log("Error loading Actions");
+          diag("Error loading Actions");
+        }
+      } catch (error) {
+          console.log('Error during synchronous message exchange:', error);
+      }
     }
 
-    doLoadTgt() : void {
+    async doLoadTgt() {
       if( this.cntTgt === "" ) {
         this.msgBox('error', 'Error', 'Property is empty -- nothing to load');
         return;
@@ -513,12 +530,21 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         msg.concat(this.prefsComponent.selectedSolver);
       msg.concat('}');
 
-      if( !this.svcWS.isConnected )
-        this.svcWS.connect(SymAI_coreURL);
-      if( !this.svcWS.sendMessage(msg) )
-        this.msgBox('error', 'Error', 'Could not send command');
-      else 
-        this.cmdCtx.push('ldTgt');
+      try {
+        if( !this.svcSyncWS.isConnected )
+          this.svcSyncWS.connect(SymAI_coreURL);
+          const resp = await this.svcSyncWS.sendrecv(msg);
+          if( resp === 'ok' ) {
+            console.log("Property loaded");
+            diag("Property loaded");
+          }
+          else {
+            console.log("Error loading Property");
+            diag("Error loading Property");
+          }
+      } catch (error) {
+          console.log('Error during synchronous message exchange:', error);
+      }
     }
 
     doLoad() : void {
