@@ -53,7 +53,11 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
         while i < len(ctx.postfixExpression()):
             t = [self.visit(ctx.postfixExpression(i))]
             if ctx.getChild(i * 4 + j * 2 + 1).getText() == ":" and ctx.getChild(i * 4 + j * 2 + 3).getText() == "->":
-                t.append(self.visit(ctx.logicalOrExpression(j)))
+                st = self.visit(ctx.logicalOrExpression(j))
+                if self.is_float_const(st):
+                    if eval(st) == 1 or eval(st):
+                        st = "0<1"
+                t.append(st)
                 j = j + 1
             else:
                 t.append(None)

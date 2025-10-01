@@ -16,6 +16,10 @@ from ExpressionGrammar.ExpressionGrammarLexer import ExpressionGrammarLexer
 from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
 from enum import Enum
 
+from src.python.server.treeedit import TreeEdit
+from src.python.server.treeutils import TreeUtils
+
+
 class SymAIDebugCommands(Enum):
     NEXT = "next"
     STOP = "stop"
@@ -245,9 +249,19 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                     nm = act[0]
                     expr = act[2]
                     ra = expr.split(";")
+                    if len(ra) < 2:
+                        if len(ra) < 1:
+                            continue
+                        else:
+                            t, e = TreeUtils.check_const(ra[0])
+                            if t and e:
+                                del ra[0]
+                                continue
+
                     r = []
                     for s in ra:
-                        r.append(self.invert_one_action(nm, s)) # TODO: What if no inversions needed!!!
+                        if len(s) > 0:
+                            r.append(self.invert_one_action(nm, s)) # TODO: What if no inversions needed!!!
                         #r.append(s)
                     res[nm]  = r
                     f.write(f"{nm}:{res[nm]}\n")
@@ -435,7 +449,9 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             response = conn.getresponse()
             if not (response.getcode() == HTTPStatus.OK):
                 raise Exception("Attempt to simplify expression error Error code " + str(conn.getresponse()))
-            rsp = json.loads(response.read().decode())
+            rsp = response.read()
+            rsp = rsp.decode()
+            rsp = json.loads(rsp)
             r_env = rsp["formula"]
             self.get_logger().info(f"check_reachability ( {env}, {reach_property} ) command processed with {res}.")
         except Exception as e:
@@ -509,56 +525,186 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
         return env_exp
 
-    def do_sm_substitution(self, env, expr):
+    '''
+    Removes all vars included into vals vars list from expr expression
+    '''
+    def do_remove_vars(self, expr, vals):
+        is_cnt = True
+        while is_cnt:
+            is_cnt = False
+            if vals is None or len(vals) < 1 or expr is None or len(expr) < 1:
+                expr = ""
+                break
+            etr = self.prepare_parser_expr(expr).assignmentExpression()
+            tokens = TreeEdit.find_all_by_tokens(etr, ["<", ">", "=", "!=", "==", ">=", "<="])
+            it = 0
+            while it < len(tokens):
+                v = ExtSEGrammarVisitor()
+                v.visit(tokens[it].parentCtx)
+                vrs = v.var_list
+                b = False
+                if len(vrs) > 0:
+                    for vn in vals:
+                        if b:
+                            break
+                        for j in vrs:
+                            if vn == j:
+                                b = True
+                                break
+                    if b:
+                        # parent node of node it must be removed from tree
+                        p = tokens[it].parentCtx
+                        l = p.getChildCount()
+                        if l == 3:
+                            while p.getChildCount() > 0:
+                                p.children[0].parentCtx = None
+                                del p.children[0]
+                            TreeEdit.delete_node(p)
+                            is_cnt = True
+                        else:
+                            i = 1
+                            while i < l:
+                                if p.getChild(i) == tokens[it]:
+                                    is_cnt = True
+                                    TreeEdit.delete_node(tokens[it])
+                                    q = p.getChild(i)
+                                    TreeEdit.delete_node(q)
+                                    if i == 1:
+                                        q = p.getChild(0)
+                                        TreeEdit.delete_node(q)
+                                    if p.getChildCount() == 0:
+                                        TreeEdit.delete_node(p)
+                                    break
+                if is_cnt:
+                    break
+                it = it + 1
+            v = ExtSEGrammarVisitor()
+            expr = v.visit(etr).replace("&", "&&").replace("|", "||")
+            if expr is None:
+                expr = ""
+            else:
+                if len(expr) < 1:
+                    expr = ""
+                    break
+                etr = self.prepare_parser_expr(expr).assignmentExpression()
+                expr = v.visit(etr).replace("&", "&&").replace("|", "||")
 
-        is_const = False
-        variables = ""
-        headers = {'Content-type': 'application/json'}
-        try:
-            # Make an HTTP request for check
-            expression_host = str(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
-                                                        symaiconfig.SymAIConfig.EXPRESSION_HOST.value))
-            expression_port = int(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
-                                                        symaiconfig.SymAIConfig.EXPRESSION_PORT.value))
-            conn = http.client.HTTPConnection(expression_host, expression_port)
-            query = dict()
-            slvr = self.get_solver()
-            query["solver"] = slvr
-            query["formula"] = env
-            query["maxmodels"] = "10"
+        return expr
 
-            # TODO: Environment recalculation here !!!
-            conn.request('POST', '/api/v1/expression/check', json.dumps(query), headers)
-            response = conn.getresponse()
-            if not (response.getcode() == HTTPStatus.OK):
-                raise Exception(f"Attempt to recalculate environment error {str(conn.getresponse())} {response.reason}")
-            rsp = json.loads(response.read().decode())
-            env = rsp["formula"]
-            if rsp["satisfiable"]:
-                if len(rsp["model"]) == 1:
-                    # We have only one model. So it is const solution
-                    is_const = True
-                    variables = next(iter(rsp["model"]))
-                    env = self.do_recalc_const(expr, variables)
-                else:
-                    p = self.prepare_parser_expr(env)
-                    tree = p.assignmentExpression()
-                    v = ExtSEGrammarVisitor()
-                    s =  expr.split("=")
-                    if len(s) > 1:
-                        d = dict()
-                        d[s[0]] = s[1]
-                        v.setSubstitution(d)
-                        s = v.visit(tree)
-                        p = self.prepare_parser_expr(s)
-                        tree = p.assignmentExpression()
-                        v = ExtSEGrammarVisitor()
-                        env = v.visit(tree)
-                        # TODO: Add replacements for other cases else !!!
+    def do_replace(self, to_replace : str, subst = None):
+        res = to_replace
+        if res is None:
+            res = ""
+        if subst is not None and len(res) > 0:
+            tr = self.prepare_parser_expr(res).assignmentExpression()
+            v = ExtSEGrammarVisitor()
+            if subst is not None:
+                v.setSubstitution(subst)
+            s = v.visit(tr)
+            tr = self.prepare_parser_expr(s).assignmentExpression()
+            v = ExtSEGrammarVisitor()
+            res = v.visit(tr).replace("&", "&&").replace("|", "||")
+        return res
 
-        except Exception as e:
-            self.get_logger().error(f"do_sm_substitution method processing failed {str(e)}")
-            raise e
+    def do_replace_and_simplify(self, to_simplify: str, subst = None) -> str:
+        if to_simplify is None or len(to_simplify) < 1:
+            return ""
+        fml = self.do_replace(to_simplify, subst)
+        ic, vl = TreeUtils.check_const(fml)
+        if ic:
+            fml = str(vl)
+        elif fml != "":
+            headers = {'Content-type': 'application/json'}
+            try:
+                # Make an HTTP request for check
+                expression_host = str(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                                            symaiconfig.SymAIConfig.EXPRESSION_HOST.value))
+                expression_port = int(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                                            symaiconfig.SymAIConfig.EXPRESSION_PORT.value))
+                # Make an HTTP request for check
+                conn = http.client.HTTPConnection(expression_host, expression_port)
+                query = dict()
+                slvr = self.get_solver()
+                query["solver"] = slvr
+                query["formula"] = fml
+                conn.request('POST', '/api/v1/expression/simplify', json.dumps(query), headers)
+                response = conn.getresponse()
+                if not (response.getcode() == HTTPStatus.OK):
+                    raise Exception(
+                        f"Attempt to recalculate environment error {str(conn.getresponse())} {response.reason}")
+                rsp = json.loads(response.read().decode())
+                fml = rsp["formula"]
+            except Exception as e:
+                self.get_logger().error(f"do_simplify({to_simplify})  method processing failed {str(e)}")
+                raise e
+
+        return fml
+
+    def do_sm_substitution(self, env, expr, cnd):
+
+        has_log = False
+        nm = len(expr)
+        if nm > 0:
+            pe = self.prepare_parser_expr(expr[-1])
+            ev = ExtSEGrammarVisitor()
+            has_log = ev.action_has_logical(pe.assignmentExpressionList())
+            if has_log:
+                nm = nm - 1
+
+        cvals, vals, en = TreeUtils.get_vars_using_assignment(env)
+        cv = []
+        for n in cvals.keys():
+            cv.append({"name":n, "value":str(cvals[n])})
+
+        fml = self.do_replace_and_simplify(env, cv)
+        is_const, t = TreeUtils.check_const(fml)
+        if t == bool:
+            fml = ""
+        for it in vals.keys():
+            if len(fml) > 1:
+                fml = fml
+            s = it + " == " + str(vals[it])
+            s = self.do_replace_and_simplify(s, cv)
+            if len(fml) > 1:
+                fml = fml + "&& + (" + s + ")"
+            else:
+                fml = s
+
+        i = 0
+        nv = dict()
+        en = env
+        while i < nm:
+
+            a = expr[i].split("=")
+            if len(a) < 2:
+                i = i + 1
+                continue
+            tr = self.prepare_parser_expr(a[1]).assignmentExpression()
+            v = ExtSEGrammarVisitor()
+            v.visit(tr)
+
+            k = 0
+            while a[0] + str(k) in cvals.keys() or a[0] + str(k) in v.var_list:
+                k = k + 1
+            # Calculate direct expression
+            s = self.do_replace_and_simplify(a[0] + str(k) + "==" + a[1], cv).replace(a[0] + str(k), a[0])
+            s1 = s.split("==")
+            nv[a[0]] = s1[1]
+
+            # Start TODO
+            rmv = [a[0]]
+            st = en
+            en = self.do_remove_vars(st, rmv)
+            if len(en) > 0:
+                en = en + " && "
+            en = en +  s
+            # End TODO
+
+            i = i + 1
+
+        env = self.do_replace_and_simplify(en)
+
+        variables = vals
         return env, is_const, variables
 
     def step_modelling(self, ctx, act):
@@ -568,6 +714,19 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         for r in a:
             if r[0] == act:
                 cnd = str(r[1])
+                pe = self.prepare_parser_expr(r[2])
+                ev = ExtSEGrammarVisitor()
+                if ev.action_has_logical(pe.assignmentExpressionList()):
+                    st = r[2].split(";")
+                    lg = st[-1]
+                    if len(lg) > 0:
+                        ret, tt = TreeUtils.check_const(lg)
+                        if ret and tt:
+                           cnd = cnd
+                        elif len(cnd) > 0:
+                            cnd = "(" + lg + ") && (" + cnd + ")"
+                        else:
+                            cnd = lg
                 break
         s, is_const, r = self.prepare_condition(cnd)
         # Here r is mark. If !r, we should continue calculations. Else we should change the environment
@@ -577,11 +736,13 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             # TODO: Here should be placed checking for linearity and call for approximation of source expr
             # if (not is_const and not (r or s == True))
             #
-
             b, s = self.check_reachability(ctx["environment"], cnd)
         if b:
-            expr = ctx["inverted_actions"][act]
-            ctx["environment"], is_const, variables = self.do_sm_substitution(ctx["environment"], expr)
+            if act in ctx["inverted_actions"].keys():
+                expr = ctx["inverted_actions"][act]
+            else:
+                expr = []
+            ctx["environment"], is_const, variables = self.do_sm_substitution(ctx["environment"], expr, cnd)
 
         return ctx, b
 
@@ -1114,7 +1275,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             yield "ok trace start"
             env_trace = deque([])
             trace = deque([])
-            beh_stack = deque([])
 
             # Selecting an appropriate behavior to process.
             # AI can be used here for initial cur_beh selection

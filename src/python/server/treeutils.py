@@ -1,3 +1,4 @@
+from extsegammarvisitor import *
 from antlr4.CommonTokenStream import CommonTokenStream
 from antlr4.InputStream import InputStream
 from treeedit import *
@@ -5,6 +6,33 @@ from ExpressionGrammar.ExpressionGrammarLexer import ExpressionGrammarLexer
 from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
 
 class TreeUtils:
+
+    @staticmethod
+    def check_const(vl : str):
+
+        t = False
+        try:
+            s = str(eval(vl))
+            vl = s
+            ret = True
+        except :
+            ret = False
+        if vl == "True" or vl == "1":
+            t = True
+        elif vl == "False":
+            t = False
+        else:
+            try:
+                t = float(vl)
+                if t == 0:
+                    ret = False
+                else:
+                    ret = True
+            except ValueError:
+                ret = False
+
+        return ret, t
+
     @staticmethod
     def get_float(s: str):
         try:
@@ -141,11 +169,17 @@ class TreeUtils:
                 cval.update(concrete_values)
                 TreeEdit.delete_node(to_del)
                 v = ExtSEGrammarVisitor()
-                # tr = TreeUtils.skip_empty_or_and(tr)
                 s = v.visit(tr)
+                if s == "":
+                    res = ""
+                    break
                 tr1 = TreeUtils.prepare_parser_expr(s).assignmentExpressionList()
                 v1 = ExtSEGrammarVisitor()
                 s1 = v1.visit(tr1)
+                if s1 == "":
+                    res = ""
+                    break
+
                 res = s1.replace("&", "&&").replace("|", "||")
 
                 tr = TreeUtils.prepare_parser_expr(res).assignmentExpression()

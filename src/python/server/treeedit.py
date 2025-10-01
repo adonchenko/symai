@@ -1,5 +1,4 @@
 from collections import deque
-from extsegammarvisitor import *
 
 class TreeEdit:
     @staticmethod
@@ -14,6 +13,27 @@ class TreeEdit:
             if node.symbol.text == token:
                 return True
         return False
+
+    @staticmethod
+    def compare_tokens(node, args, kwargs):
+        tokens = []
+        for k, v in kwargs.items():
+            if k == "tokens":
+                tokens = v
+                break
+
+        if str(type(node)) == "<class 'antlr4.tree.Tree.TerminalNodeImpl'>":
+            if node.symbol.text in tokens:
+                return True
+        return False
+
+    @staticmethod
+    def find_all_by_tokens(tree, tok):
+        return TreeEdit.find_all_by_cond(tree, TreeEdit.compare_tokens, tokens=tok)
+
+    @staticmethod
+    def find_one_by_tokens(tree, tok):
+        return TreeEdit.find_one_by_cond(tree, TreeEdit.compare_tokens, tokens=tok)
 
     @staticmethod
     def find_by_token(tree, tok):
@@ -37,6 +57,44 @@ class TreeEdit:
                     stk.append(c)
 
         return None
+
+    @staticmethod
+    def find_all_by_cond(tree, cnd, *args, **kwargs):
+        res = []
+        if tree is not None:
+            stk = deque()
+            stk.append(tree)
+            while len(stk) > 0:
+                n = stk.pop()
+                if cnd(n, args, kwargs):
+                    res.append(n)
+                if str(type(n)) != "<class 'antlr4.tree.Tree.TerminalNodeImpl'>":
+                    i = n.getChildCount() - 1
+                    while i >= 0:
+                        c = n.getChild(i)
+                        i = i - 1
+                        stk.append(c)
+
+        return res
+
+    @staticmethod
+    def find_one_by_cond(tree, cnd, *args, **kwargs):
+        res = []
+        if tree is not None:
+            stk = deque()
+            stk.append(tree)
+            while len(stk) > 0:
+                n = stk.pop()
+                if cnd(n, args, kwargs):
+                    return n
+                if str(type(n)) != "<class 'antlr4.tree.Tree.TerminalNodeImpl'>":
+                    i = n.getChildCount() - 1
+                    while i >= 0:
+                        c = n.getChild(i)
+                        i = i - 1
+                        stk.append(c)
+
+        return res
 
     @staticmethod
     def delete_node(node):

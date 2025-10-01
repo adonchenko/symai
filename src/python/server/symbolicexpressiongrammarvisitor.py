@@ -35,6 +35,16 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         self.replEQ = False
         super().__init__()
 
+    def is_float_const(self, vl : str):
+        ret = True
+        if vl != "True" and vl != "1" and vl != "False":
+            try:
+                float(vl)
+            except ValueError:
+                ret = False
+
+        return ret
+
     def isEQ(self):
         if self.replEQ is None:
             self.replEQ = False
@@ -63,7 +73,7 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
     def visitPrimaryExpression(self, ctx:ExpressionGrammarParser.PrimaryExpressionContext):
         if ctx.LeftParen() is not None:
             result = self.visit(ctx.expression())
-            if len(result) > 0:
+            if result is not None and len(result) > 0:
                 result = "(" + result + ")"
         else:
             if ctx.Identifier() is not None:
@@ -86,6 +96,8 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         if ctx.getChildCount() < 1:
             return ""
         result = self.visit(ctx.getChild(0))
+        if result is None:
+            return ""
         if result.lower().strip() in trig_funct and len(ctx.children) > 1:
             if ctx.getChild(1).getText() == '(':
                 self.hasTrigonometric = True
@@ -148,7 +160,8 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             i = i + 1
         # var_list has to be updated
         if result not in self.var_list and len(result) > 0:
-            self.var_list.append(result)
+            if not self.is_float_const(result):
+                    self.var_list.append(result)
         if self.substitution is not None and len(result) > 0:
             i = 0
             while i < len(self.substitution):
@@ -244,7 +257,11 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             return ""
         i = 0
         result = self.visit(ctx.getChild(0))
+        if result is None:
+            return ""
         i = i + 1
+        if ctx.getChildCount() < i + 1:
+            return result
         while ctx.getChild(2 * (i - 1) + 1) is not None:
             if i > 1 and len(result) > 0:
                 result = "(" + result + ")"
@@ -269,10 +286,10 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         result = self.visit(ctx.getChild(0))
         i = 1
         while i < len(ctx.equalityExpression()):
-            if len(result) > 0:
+            if result is not None and len(result) > 0:
                 app = self.visit(ctx.equalityExpression(i))
-                if len(app) > 0:
-                    result = "And((" + result + "),(" + app + "))"
+                if app is not None and len(app) > 0:
+                    result = "And(" + result + "," + app + ")"
             else:
                 result = self.visit(ctx.equalityExpression(i))
             i = i + 1
@@ -285,10 +302,10 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         result = self.visit(ctx.getChild(0))
         i = 1
         while i < len(ctx.logicalAndExpression()):
-            if len(result) > 0:
+            if result is not None and len(result) > 0:
                 app = self.visit(ctx.logicalAndExpression(i))
-                if len(app) > 0:
-                    result = "Or((" + result + "),(" + app + "))"
+                if app is not None and len(app) > 0:
+                    result = "Or(" + result + "," + app + ")"
             else:
                 result = self.visit(ctx.logicalAndExpression(i))
             i = i + 1
