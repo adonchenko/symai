@@ -78,6 +78,20 @@ export class CtlSyncWS {
       return true;
   }
 
+  public async recv() : Promise<string> {
+    return new Promise((resolve, reject) => {
+      if (this.ws!.readyState !== WebSocket.OPEN) {
+        return reject(new Error('WebSocket is not open.'));
+      }
+
+      const str = this.responseQueue.shift();
+      if( typeof(str) === 'string')
+        resolve(str);
+      else 
+        return reject(new Error('Error receiving data'));
+    });
+  }
+
   public close(): void {
     if( this.ws !== null )
       this.ws.close();

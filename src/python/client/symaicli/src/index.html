@@ -8,6 +8,13 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 <script language="JavaScript">
 
+function getItemText(id) {
+    const inp = document.getElementById(Id);
+    if(inp)
+      return inp.value;
+    return "";
+}  
+
 function adjustSizes() {
     console.log("AdjustSizes");
     if( window.myApp ) {

@@ -7,6 +7,8 @@ import { FormsModule } from '@angular/forms'
 import { TabsModule } from 'primeng/tabs';
 import { SplitterModule } from 'primeng/splitter';
 import { MenubarModule } from 'primeng/menubar';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import {MenuItem} from 'primeng/api';
 import { MessageService } from 'primeng/api';
 //import { FileSelectEvent } from 'primeng/fileupload';
@@ -17,6 +19,8 @@ import { Prefs } from './prefs/prefs';
 import { CtlPrefs } from './ctl-prefs';
 import { CtlWS } from './ctl-ws'; 
 import { CtlSyncWS } from './ctl-sync-ws';
+import { ChkMenuItem } from './chk-menu-item';
+import { TraversalbehCfg } from './traversalbeh-cfg';
 
 
 // ============================================ JS exports
@@ -27,6 +31,7 @@ declare function wsWidth(e:HTMLElement): any;
 declare function wsHeight(e:HTMLElement): any;
 declare function refreshItem(id: string): any;
 declare function diag(msg: string): any;
+declare function getItemText(id : string) : any;
 
 
 export const SymAI_coreURL : string = "";
@@ -41,6 +46,8 @@ export const SymAI_coreURL : string = "";
     TabsModule,
     SplitterModule,
     MenubarModule,
+    ButtonModule,
+    DialogModule,
 
     Prefs
   ],
@@ -65,7 +72,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     }
 
 
-    items: MenuItem[] = [];
+    items: ChkMenuItem[] = [];
+    itemsRun : ChkMenuItem[] = [];
     public ngOnInit() {
         console.log("ngOnInit");
         this.items = [
@@ -96,17 +104,34 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         },
         { label:'Run', icon:'pi pi-fw pi-file',
           items:[
-              { label:'Run', icon:'pi pi-fw' },
+              { label:'Run', icon:'pi pi-fw', command : () => this.doRun() },
               { separator:true },
-              { label:'One Step', icon:'pi pi-fw' },
+              { label:'Debug', icon:'pi pi-fw', checked : this.isDebug, 
+                items : [
+                  { label:'Start', icon:'pi pi-fw', checked : this.isDebug, command : () => this.doDebug(false) },
+                  { label:'Next', icon:'pi pi-fw', checked : this.isDebug, command : () => this.doDebug(true) },
+                ]
+              },
               { separator:true },
-              { label:'Stop', icon:'pi pi-fw' },
+              { label:'Stop', icon:'pi pi-fw', command : () => this.doStop() },
           ]  
         },
         { label: 'Preferences', icon:'pi pi-fw pi-file', command: () => this.showPrefsDialog() }
         //{ separator:true },
         //{ label: 'Server: ', icon:'pi pi-fw pi-file' }
 
+        ];
+        this.itemsRun = [
+              { label:'Run', icon:'pi pi-fw', command : () => this.doRun() },
+              { separator:true },
+              { label:'Debug', icon:'pi pi-fw', checked: this.isDebug, 
+                items : [
+                  { label:'Start', icon:'pi pi-fw', checked : this.isDebug, command : () => this.doDebug(false) },
+                  { label:'Next', icon:'pi pi-fw', checked : this.isDebug, command : () => this.doDebug(true) },
+                ]
+              },
+              { separator:true },
+              { label:'Stop', icon:'pi pi-fw', disabled: this.isRunning, command : () => this.doStop() },
         ];
 
         if (typeof window !== 'undefined') {
@@ -156,7 +181,20 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
           this.msgBox('error', 'Error', 'prefsComponent undefined')
     }
 
-    // =================================== Splitter
+    // =================================== Interface menu
+    private checkMenu(menu : ChkMenuItem[], lbl : string, chk : boolean ) {
+        const itm = menu.find(item => item.label === lbl);
+        if(itm)
+          itm.checked = chk;
+    }
+
+    private disableMenu(menu : MenuItem[], lbl : string, dis : boolean ) {
+        const itm = menu.find(item => item.label === lbl);
+        if(itm)
+          itm.disabled = dis;
+    }
+
+    // =================================== Interface Splitter
       private splitterTop : number = 75;
       private splitterBottom : number = 25;
 
@@ -343,6 +381,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
 
     dlgVisible : boolean = false;
     isRunning : boolean = false;
+    isDebug : boolean = false;
     cmdCtx : string[] = []; // = ['ldEnv', 'ldBeh', 'ldAct', 'ldTgt', 'stop'];
 
 
@@ -366,26 +405,14 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     msgBox(sev: string, hdr: string, msg: string) : void {
       console.log(hdr + ' : ' + msg);
       this.svcMsg.add({severity:sev, summary:hdr, detail:msg});
-    } 
+    }
+    
+    Diag(msg : string) : void {
+      console.log(msg);
+      diag(msg);
+    }
 
     // ============================================ communication: 
-    startAsyncRecv() : void {
-        this.messageSubscription = this.svcWS.getMessages()!.subscribe(
-          (message) => {
-            //this.messages.push(message);
-            // Process message in some way
-
-            console.log('Received message:', message);
-            this.onReceiveMsg(message);
-          },
-          (error) => console.error('WebSocket error:', error),
-          () => { 
-            console.log('WebSocket completed.');
-
-            this.svcWS.disconnect();
-          }
-        );
-    }
 
     onReceiveMsg(msg : string) : void {
       if( msg === 'ok' || msg === 'nok' ) {
@@ -434,6 +461,15 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         this.msgBox('info', 'Information', 'Command sent');
       else 
         this.msgBox('error', 'Error', 'Could not send command');
+
+      this.disableMenu(this.items, "Start", false);
+      this.disableMenu(this.itemsRun, "Start", false);
+
+      this.checkMenu(this.items, "Debug", false);
+      this.checkMenu(this.itemsRun, "Debug", false);
+      
+      this.isDebug = false;
+      this.isRunning = false;
     }
 
     async doLoadEnv() {
@@ -455,15 +491,13 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       try {
         const resp = await this.svcSyncWS.sendrecv(msg);
         if( resp === 'ok' ) {
-          console.log("Environment loaded");
-          diag("Environment loaded");
+          this.Diag("Environment loaded");
         }
         else {
-          console.log("Error loading Environment");
-          diag("Error loading Environment");
+          this.Diag("Error loading Environment");
         }
       } catch (error) {
-          console.log('Error during synchronous message exchange:', error);
+          this.Diag('Error during synchronous message exchange:' + error);
       }
     }
 
@@ -480,15 +514,14 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       try {
         const resp = await this.svcSyncWS.sendrecv(msg);
         if( resp === 'ok' ) {
-          console.log("Behavior loaded");
-          diag("Behavior loaded");
+          this.Diag("Behavior loaded");
         }
         else {
-          console.log("Error loading Behavior");
-          diag("Error loading Behavior");
+          this.Diag("Error loading Behavior");
         }
       } catch (error) {
-          console.log('Error during synchronous message exchange:', error);
+          this.Diag('Error during synchronous message exchange:' + error);
+          console.log()
       }
     }
 
@@ -505,15 +538,13 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       try {
         const resp = await this.svcSyncWS.sendrecv(msg);
         if( resp === 'ok' ) {
-          console.log("Actions loaded");
-          diag("Actions loaded");
+          this.Diag("Actions loaded");
         }
         else {
-          console.log("Error loading Actions");
-          diag("Error loading Actions");
+          this.Diag("Error loading Actions");
         }
       } catch (error) {
-          console.log('Error during synchronous message exchange:', error);
+          this.Diag('Error during synchronous message exchange:' + error);
       }
     }
 
@@ -535,15 +566,13 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
           this.svcSyncWS.connect(SymAI_coreURL);
           const resp = await this.svcSyncWS.sendrecv(msg);
           if( resp === 'ok' ) {
-            console.log("Property loaded");
-            diag("Property loaded");
+            this.Diag("Property loaded");
           }
           else {
-            console.log("Error loading Property");
-            diag("Error loading Property");
+            this.Diag("Error loading Property");
           }
       } catch (error) {
-          console.log('Error during synchronous message exchange:', error);
+          this.Diag('Error during synchronous message exchange:' + error);
       }
     }
 
@@ -552,5 +581,83 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.doLoadBeh();
       this.doLoadAct();
       this.doLoadTgt();
+    }
+
+    dlgStartBeh : boolean = false;
+    private startBeh : string = "";
+
+    startBehConfirm() : void {
+        this.dlgStartBeh = false;
+        this.startBeh = getItemText("start_beh");
+
+        var msg : string = "traversalbeh ";
+        var parm : TraversalbehCfg = { 
+          solver : this.prefsComponent!.selectedSolver,
+          behavior : this.startBeh,
+          reenter_count : this.prefsComponent!.reenterCount,
+          debug : this.isDebug
+        };
+        msg += JSON.stringify(parm);
+        this.svcSyncWS.send(msg);
+        this.isRunning = true;
+
+        this.recvOutput();
+    }
+
+    startBehCancel() : void {
+        this.dlgStartBeh = false;
+    }
+
+    doRun() : void {
+      if( !this.svcSyncWS.isConnected )
+        this.svcSyncWS.connect(SymAI_coreURL);
+      
+      if( this.isDebug ) { // if Already debugging, just send "run" subcommand
+        this.isDebug = false;
+        
+        this.checkMenu(this.items, "Debug", false);
+        this.checkMenu(this.itemsRun, "Debug", false);
+
+        var msg : string = "traversalbeh run";
+        this.svcSyncWS.send(msg);
+        this.isRunning = true;
+
+        this.recvOutput();
+      }
+      else {
+        this.dlgStartBeh = true;
+        // ... and continue from startBehConfirm()
+      }
+    }
+
+    async doDebug(nxt : boolean) {
+      if( !nxt ) { // Very beginning
+        this.isDebug = true;
+        
+        this.checkMenu(this.items, "Debug", true );
+        this.checkMenu(this.itemsRun, "Debug", true );
+
+        this.dlgStartBeh = true;
+        // ... and continue from startBehConfirm()
+      }
+      else {
+        if( !this.isDebug ) {
+          this.doDebug( false );
+          return;
+        }
+
+        this.disableMenu(this.items, "Start", true);
+        this.disableMenu(this.itemsRun, "Start", true);
+      }     
+    }
+
+    async recvOutput() {
+      try {
+        if( !this.svcSyncWS.isConnected )
+          this.svcSyncWS.connect(SymAI_coreURL);
+          const resp = await this.svcSyncWS.recv();
+      } catch (error) {
+          console.log('Error during synchronous message exchange:', error);
+      }
     }
 }

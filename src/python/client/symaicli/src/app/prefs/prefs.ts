@@ -75,15 +75,15 @@ export class Prefs implements OnInit, OnDestroy {
     //    console.log(changes);
     //}
 
-    flagUseAI : boolean = false;
+    public flagUseAI : boolean = false;
 
-    selectedSolver: string = "SymPy";
-    maxModels : number = 1;
-    reenterCount : number = 1;
-    flushSelSolver : boolean = false;
-    flushUseAI : boolean = false;
-    flushMaxModels : boolean = false;
-    flushReenterCount : boolean = false; 
+    public selectedSolver: string = "SymPy";
+    public maxModels : number = 1;
+    public reenterCount : number = 1;
+    public flushSelSolver : boolean = false;
+    public flushUseAI : boolean = false;
+    public flushMaxModels : boolean = false;
+    public flushReenterCount : boolean = false; 
 
     public showDialog() { this.dlgVisible = true; }
 
