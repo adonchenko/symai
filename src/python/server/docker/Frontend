@@ -13,8 +13,9 @@ COPY ./symaiconfig.py /app/symaiconfig.py
 COPY ./symaicommands.py /app/symaicommands.py
 COPY ./symaifrontcommands.py /app/symaifrontcommands.py
 COPY ./bash/run.sh /app/run.sh
-ADD  ./resources/  /app/resources
-COPY ../client/symaicli/dist/ app/resources
+#ADD  ./resources/  /app/resources
+#COPY ../client/symaicli/dist/ app/resources
+ADD   app/resources ../client/symaicli/dist/
 
 # Install any needed dependencies specified in requirements.txt
 #RUN pip3 install --no-cache-dir -r requirements.txt

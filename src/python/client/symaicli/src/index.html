@@ -122,11 +122,19 @@ function refreshItem(id) {
 }
 
 function diag(msg) {
-    var element = document.getElementById(id);
+    var element = document.getElementById("diag");
     var n = document.createTextNode(msg);
     if(element)
       element.appendChild(n);
 }
+
+function output(msg) {
+    var element = document.getElementById("runOutput");
+    var n = document.createTextNode(msg);
+    if(element)
+      element.appendChild(n);
+}
+
 
 </script>
 </head>
