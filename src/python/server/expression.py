@@ -68,7 +68,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                 except Exception as e:
                     self.do_send_err_rsp(f"Bad request: {str(e)}")
                 else:
-                    self.do_send_ok_rsp(res, "inverse", res["formula"])
+                    self.do_send_ok_rsp(res, "inverse", res["inverse"])
             else:
                 self.do_send_err_rsp("Bad Request: must give data")
         elif re.search("/api/v1/expression/check", self.path):

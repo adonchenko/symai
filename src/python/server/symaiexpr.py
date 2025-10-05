@@ -125,7 +125,10 @@ class SymAIExpression:
     def postprocess_inverse(self, args):
         args.pop("visitor")
         args.pop("tree")
-        args.pop("target")
+        inv = args.pop("inverse")
+        k = args.get("target")
+        s = k + " = " + inv.get(k)
+        args["inverse"] = s
         return args
 
     def process_body_inverse(self, args):
@@ -142,7 +145,8 @@ class SymAIExpression:
             parser = self.preprocess_inverse(t + '-' + s)
             source_expr.pop("formula")
             source_expr["formula"] = t
-            source_expr["target"] = s
+            if "target" not in source_expr.keys():
+                source_expr["target"] = s
 
             subs = source_expr.get("substitution")
             if subs is None:
@@ -153,7 +157,8 @@ class SymAIExpression:
             visitor.visit(tree)
             vars = visitor.getVarList()
             if vars is None or len(vars) > 0:
-                source_expr["target"] = vars[0]
+                if "target" not in source_expr.keys():
+                    source_expr["target"] = vars[0]
             source_expr["tree"] = tree
             source_expr["visitor"] = visitor
 
