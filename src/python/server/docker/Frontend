@@ -1,16 +1,9 @@
 # Use an official Python runtime as a parent image
 #FROM python:3.12-slim
-#voumes
+#volumes
 #VOLUME /properties 
 #VOLUME /logdir
 #VOLUME /tmpdir
-
-FROM nginx:latest
-# Find a NGINX conf file and replace it with ours
-RUN cp ./resources/nginx-conf/nginx.conf $(nginx -V 2>&1 | grep -o '\-\-conf-path=\(.*conf\)' | cut -d '=' -f2)
-RUN cp ./resources/nginx-cong/default /etc/nginx/sites-available/
-# exact location of NGINX Web Root defined in the config. Let it be /usr/share/nginx/html
-COPY ./resources/client/dist/app2/browser /usr/share/nginx/html
 
 #VOLUME /app/resources
 # Set the working directory in the container
@@ -38,10 +31,25 @@ COPY ./resources/client/dist/app2/browser /usr/share/nginx/html
 #FROM nginx:stable AS final
 #EXPOSE 80
 #COPY --from=build dist/app2/browser  /usr/share/nginx/html
+
+# Run symaifront.py when the container launches
+# CMD ["bash", "run.sh", "python", "symaifront.py -r /app/resources"]
+
 # ==============================================================
+
+FROM nginx:latest
+# Find a NGINX conf file and replace it with ours
+VOLUME /properties 
+VOLUME /logdir
+VOLUME /tmpdir
+
+COPY ./resources/nginx-conf /app
+RUN cp -f /app/nginx.conf $(nginx -V 2>&1 | grep -o '\-\-conf-path=\(.*conf\)' | cut -d '=' -f2)
+RUN mkdir -p /etc/nginx/sites-available
+RUN cp -f /app/default /etc/nginx/sites-available/default
+# exact location of NGINX Web Root defined in the config. Let it be /usr/share/nginx/html
+COPY ./resources/client/dist/app2/browser /usr/share/nginx/html
 
 
 # Make port 8000 available to the world outside this container
 EXPOSE 8000
-# Run symaifront.py when the container launches
-CMD ["bash", "run.sh", "python", "symaifront.py -r /app/resources"]
