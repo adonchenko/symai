@@ -64,7 +64,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     messages: string[] = [];
     private messageSubscription: Subscription | undefined;
 
-    constructor(private svcWS: CtlWS,
+    constructor(//private svcWS: CtlWS,
                 private svcSyncWS : CtlSyncWS,
                 private svcCtlPrefs: CtlPrefs, 
                 private svcMsg: MessageService,
