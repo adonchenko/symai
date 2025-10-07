@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en" data-beasties-container>
+<head>
+  <meta charset="utf-8">
+  <title>App2</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+<script language="JavaScript">
+
+function getItemText(id) {
+    const inp = document.getElementById(Id);
+    if(inp)
+      return inp.value;
+    return "";
+}  
+
+function adjustSizes() {
+    console.log("AdjustSizes");
+    if( window.myApp ) {
+        var idx = window.myApp.getTabValue();
+        var id="";
+        switch(idx) {
+          case 0: id="txtEnv"; break;
+          case 1: id="txtBeh"; break;
+          case 2: id="txtAct"; break;
+          case 3: id="txtTgt"; break;
+        }
+        setTextareaSizes(id);
+    }
+}  
+
+function setTextareaSizes( taId ) {
+    const inp = document.getElementById(taId);
+    console.log("setTextareaSizes for "+ taId);
+    if(inp) {
+      var inpParent = inp.parentElement;
+
+      while( inpParent && inpParent.width === undefined)
+        inpParent = inpParent.parentElement;
+      //console.log("inpParent is" + inpParent.tagName + 
+      //            ", sizeClient: " + inpParent.clientWidth + " x " + inpParent.clientHeight +
+      //            ", size: " + inpParent.width + " x " + inpParent.height);
+
+      inp.style.top = '50px';
+      inp.style.left = '4px';
+      inp.style.width = String(inpParent.width-24) + "px";
+      inp.width = String(inpParent.width-24) + "px";
+      
+      if( window.myApp ) {
+        console.log("SplitterTop:" + window.myApp.getSplitterTop());
+        var t1 =  Math.trunc((inpParent.height * Math.trunc(window.myApp.getSplitterTop()))  / 100) - 36;
+        inp.style.height = String(t1) + "px";
+        inp.height =  String(t1) + "px";
+      }            
+      else {
+        console.log("theApp not accessible");              
+        //inpEnv.style.height = String(inpEnvParent.clientHeight-256) + "px";
+        //inpEnv.height =  String(inpEnvParent.clientHeight-256) + "px";
+      }
+      console.log("Element sizes: " + inp.width + " x " + inp.height);
+    }
+    else
+      console.log("Element not found: " + taId);
+}
+
+function wsWidth(ws) {
+  return window.innerWidth;
+} 
+
+function wsHeight(ws) {
+  return window.innerHeight-48;
+}
+
+function setSizes() {
+  var w = window.innerWidth;
+  var h = window.innerHeight;
+  const menuBar = document.getElementById("menuBar");
+  const ws = document.getElementById("workspace");
+  console.log("SET SIZES, window: "  + w + " x " + h );
+  if(ws) {
+    ws.width = w;
+    if(menuBar && menuBar.height)
+      ws.height = h - menuBar.height;
+    else
+      ws.height = h - 48;
+    console.log("Workspace size: " + ws.width + " x " + ws.height);
+
+    const diagPanel =  document.getElementById("diag");
+    if(diagPanel) {
+      const dPanel = diagPanel.parentElement;  
+      diagPanel.height =  ws.height / 4;
+      diagPanel.width =  ws.width - 8;
+      dPanel.clientHeight = ws.height / 4;
+      dPanel.clientWidth = ws.width -8;
+    }
+    else
+      console.log("diagPanel not found");
+
+    setTextareaSizes("txtEnv");
+    setTextareaSizes("txtBeh");
+    setTextareaSizes("txtAct");
+    setTextareaSizes("txtTgt");
+  }
+  else
+    console.log("Workspace not found");
+}
+
+function refreshItem(id) {
+  var element = document.getElementById(id);
+  //var content = element.innerHTML;
+  //element.innerHTML= content; 
+  var n = document.createTextNode(' ');
+  var disp = element.style.display;  // don't worry about previous display style
+  element.appendChild(n);
+  element.style.display = 'none';
+
+  setTimeout(function(){
+      n.parentNode.removeChild(n);
+      element.style.display = disp;
+    },20);
+}
+
+function diag(msg) {
+    var element = document.getElementById("diag");
+    var n = document.createTextNode(msg);
+    if(element)
+      element.appendChild(n);
+}
+
+function output(msg) {
+    var element = document.getElementById("runOutput");
+    var n = document.createTextNode(msg);
+    if(element)
+      element.appendChild(n);
+}
+
+
+</script>
+<link rel="stylesheet" href="styles-5INURTSO.css"></head>
+<body onload="setSizes()" onresize="setSizes()">
+  <app-root></app-root>
+<link rel="modulepreload" href="chunk-HOQYSINP.js"><script src="main-6VMQ3ZBI.js" type="module"></script></body>
+</html>

@@ -1,24 +1,46 @@
 # Use an official Python runtime as a parent image
-FROM python:3.12-slim
+#FROM python:3.12-slim
 #voumes
-VOLUME /properties 
-VOLUME /logdir
-VOLUME /tmpdir
-VOLUME /app/resources
-# Set the working directory in the container
-WORKDIR /app
-# Copy the current directory contents into the container at /app
-COPY ./symaifront.py /app/symaifront.py
-COPY ./symaiconfig.py /app/symaiconfig.py
-COPY ./symaicommands.py /app/symaicommands.py
-COPY ./symaifrontcommands.py /app/symaifrontcommands.py
-COPY ./bash/run.sh /app/run.sh
-#ADD  ./resources/  /app/resources
-#COPY ../client/symaicli/dist/ app/resources
-ADD   app/resources ../client/symaicli/dist/
+#VOLUME /properties 
+#VOLUME /logdir
+#VOLUME /tmpdir
 
-# Install any needed dependencies specified in requirements.txt
-#RUN pip3 install --no-cache-dir -r requirements.txt
+FROM nginx:latest
+# Find a NGINX conf file and replace it with ours
+RUN cp ./resources/nginx-conf/nginx.conf $(nginx -V 2>&1 | grep -o '\-\-conf-path=\(.*conf\)' | cut -d '=' -f2)
+RUN cp ./resources/nginx-cong/default /etc/nginx/sites-available/
+# exact location of NGINX Web Root defined in the config. Let it be /usr/share/nginx/html
+COPY ./resources/client/dist/app2/browser /usr/share/nginx/html
+
+#VOLUME /app/resources
+# Set the working directory in the container
+
+#WORKDIR /app
+# ============================================================== 2-stage build commented
+# Copy the current directory contents into the container at /app
+#FROM node:lts-slim as build
+#COPY ./symaifront.py /app/symaifront.py
+#COPY ./symaiconfig.py /app/symaiconfig.py
+#COPY ./symaicommands.py /app/symaicommands.py
+#COPY ./symaifrontcommands.py /app/symaifrontcommands.py
+#COPY ./bash/run.sh /app/run.sh
+# ====== /src is a Docker directory
+#WORKDIR /src
+#RUN npm install -g @angular/cli@20.3.4
+#RUN npm install -g primeng@20.1.1 --save
+#RUN npm install -g primeicons --save
+#RUN npm install -g rxjs@7.8.0 --save
+#COPY ./resources ./
+#WORKDIR /src/client
+#RUN npm ci --legacy-peer-deps
+#RUN ng build --configuration=production
+
+#FROM nginx:stable AS final
+#EXPOSE 80
+#COPY --from=build dist/app2/browser  /usr/share/nginx/html
+# ==============================================================
+
+
 # Make port 8000 available to the world outside this container
 EXPOSE 8000
 # Run symaifront.py when the container launches
