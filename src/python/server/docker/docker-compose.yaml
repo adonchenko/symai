@@ -41,4 +41,4 @@ services:
         - ${PROPERTIES}:/properties
         - ${LOGDIR}:/logdir
         - ${TMPDIR}:/tmpdir
-        - ${RESOURCES}:/resources
+
