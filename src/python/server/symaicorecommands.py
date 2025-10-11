@@ -525,8 +525,29 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
         return env_exp
 
+    def negate_relational_expr(self, expr: str)->str :
+        tr = self.prepare_parser_expr(expr).assignmentExpression()
+        tokens = TreeEdit.find_all_by_tokens(tr, ["<", ">", "=", "!=", "==", ">=", "<="])
+        for it in tokens:
+            s = it.getText()
+            match s:
+                case "<": s = ">"
+                case "<=": s = ">="
+                case ">": s = "<"
+                case ">=": s = "<="
+                case default: s = s
+            it.symbol.text = s
+
+        v = ExtSEGrammarVisitor()
+        s = v.visit(tr)
+        tr = self.prepare_parser_expr(s).assignmentExpression()
+        v = ExtSEGrammarVisitor()
+        res = v.visit(tr).replace("&", "&&").replace("|", "||")
+
+        return res
+
     '''
-    Removes all vars included into vals vars list from expr expression
+    Removes all variables included into vals vars list from expr expression
     '''
     def do_remove_vars(self, expr, vals):
         is_cnt = True
@@ -621,7 +642,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                                             symaiconfig.SymAIConfig.EXPRESSION_HOST.value))
                 expression_port = int(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
                                                             symaiconfig.SymAIConfig.EXPRESSION_PORT.value))
-                # Make an HTTP request for check
+                # Make an HTTP request for simplifying expression
                 conn = http.client.HTTPConnection(expression_host, expression_port)
                 query = dict()
                 slvr = self.get_solver()
@@ -640,72 +661,181 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
         return fml
 
-    def do_sm_substitution(self, env, expr, cnd):
+    def do_inverse(self, expr:str, v :str = None) -> str:
+        nexpr = expr
+        res = v
+        if v is None:
+            i = expr.strip().find("=")
+            if i == -1:
+                if expr != "1":
+                    raise Exception(f"Incorrect expression {expr} for inverse ")
+                else:
+                    l = expr[:i].strip()
+                    res = l
+                    r = expr[i + 1:].strip()
+                    tr = self.prepare_parser_expr(r).assignmentExpression()
+                    v = ExtSEGrammarVisitor()
+                    v.visit(tr)
+                    vl = v.getVarList()
+                    if l in vl:
+                        i = 0
+                        nm = l + str(i)
+                        while nm in vl:
+                            i = i + 1
+                            nm = l + str(i)
+                        nexpr = nm + "=" + r
 
-        has_log = False
-        nm = len(expr)
-        if nm > 0:
-            pe = self.prepare_parser_expr(expr[-1])
-            ev = ExtSEGrammarVisitor()
-            has_log = ev.action_has_logical(pe.assignmentExpressionList())
-            if has_log:
-                nm = nm - 1
+        headers = {'Content-type': 'application/json'}
+        # Make an HTTP request to inverse equation
+        expression_host = str(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                                    symaiconfig.SymAIConfig.EXPRESSION_HOST.value))
+        expression_port = int(self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                                                    symaiconfig.SymAIConfig.EXPRESSION_PORT.value))
+        conn = http.client.HTTPConnection(expression_host, expression_port)
+        query = dict()
+        query["formula"] = nexpr
+        if res is not None:
+            query["target"] = res
+        slvr = self.get_solver()
+        query["solver"] = slvr
+        conn.request('POST', '/api/v1/expression/inverse', json.dumps(query), headers)
+        response = conn.getresponse()
+        if not (response.getcode() == HTTPStatus.OK):
+            raise Exception(f"Attempt to inverse expression error {str(conn.getresponse())}")
+        rsp = json.loads(response.read().decode())
+        rs = rsp["inverse"]
+        return rs
 
-        cvals, vals, en = TreeUtils.get_vars_using_assignment(env)
-        cv = []
+    def prep_replacement(self, cvals):
+        cvals_rpl = []
         for n in cvals.keys():
-            cv.append({"name":n, "value":str(cvals[n])})
+            cvals_rpl.append({"name": n, "value": str(cvals[n])})
+        return cvals_rpl
 
-        fml = self.do_replace_and_simplify(env, cv)
-        is_const, t = TreeUtils.check_const(fml)
-        if t == bool:
-            fml = ""
-        for it in vals.keys():
-            if len(fml) > 1:
-                fml = fml
-            s = it + " == " + str(vals[it])
-            s = self.do_replace_and_simplify(s, cv)
-            if len(fml) > 1:
-                fml = fml + "&& + (" + s + ")"
+    def do_sm_subst_step(self, env, expr, cnd):
+        if expr is not None and expr == "1":
+            return env
+
+        is_add = False
+        cvals, vals, en = TreeUtils.get_vars_using_assignment(env)
+
+        left = ""
+        right = ""
+        s = expr.split("=")
+        if len(s) > 1:
+            left = s[0]
+            right = s[1]
+
+        tr = self.prepare_parser_expr(right).assignmentExpression()
+        v = ExtSEGrammarVisitor()
+        s = v.visit(tr)
+        vl = v.getVarList()
+        if not left in vl:
+            is_add = True
+        if len(expr) > 0:
+            tr = self.prepare_parser_expr(expr).assignmentExpression()
+            v = ExtSEGrammarVisitor()
+            s = v.visit(tr)
+            vl = v.getVarList()
+        if len(expr) < 1 or not left in vl:
+            is_add = True
+
+        pref = ""
+        cv = cvals
+        if left in cvals.keys():
+            cv = dict()
+            if len(cvals.keys()) == 1:
+                pref = cnd
             else:
-                fml = s
+                for it in cvals.keys():
+                    if it != left:
+                        cv[it] = cvals[it]
 
-        i = 0
-        nv = dict()
-        en = env
-        while i < nm:
-
-            a = expr[i].split("=")
-            if len(a) < 2:
-                i = i + 1
-                continue
-            tr = self.prepare_parser_expr(a[1]).assignmentExpression()
+        # Doing inversions in vals, if any
+        vl = dict()
+        for k in vals.keys():
+            # Need to do:
+            # 1. Inversion by left, if any is possible
+            tr = self.prepare_parser_expr(k + "=" + vals[k]).assignmentExpression()
             v = ExtSEGrammarVisitor()
             v.visit(tr)
+            vls = v.getVarList()
+            if left in vls:
+                s = self.do_inverse(k + "=" + vals[k], left)
+                i = s.find("=")
+                vl[left] = s[i + 1:]
+            else:
+                vl[k] = vals[k]
+            # 2. Replacements by vl and then by cl, if any available
+            if len(en) > 0:
+                sen_rpl = self.prep_replacement(vl)
+                sen = self.do_replace(en, sen_rpl)
+                sen_rpl = self.prep_replacement(cv)
+                sen = self.do_replace(sen, sen_rpl)
+                # 3. replacements in en and check new en, if sat
+                should_remove, sen = self.check_reachability(sen, "")
+                should_remove = not should_remove
+                if not should_remove:
+                    en = sen
+                else:
+                    # 4. Remove left vars if new en is not sat and is not empty
+                    rmv = [left]
+                    st = en
+                    en = self.do_remove_vars(st, rmv)
 
-            k = 0
-            while a[0] + str(k) in cvals.keys() or a[0] + str(k) in v.var_list:
-                k = k + 1
-            # Calculate direct expression
-            s = self.do_replace_and_simplify(a[0] + str(k) + "==" + a[1], cv).replace(a[0] + str(k), a[0])
-            s1 = s.split("==")
-            nv[a[0]] = s1[1]
+        if len(pref):
+            pref = pref + " && "
 
-            # Start TODO
-            rmv = [a[0]]
-            st = en
-            en = self.do_remove_vars(st, rmv)
+        if is_add:
+            sen_rpl = self.prep_replacement(vl)
+            sen = self.do_replace(right, sen_rpl)
+            sen_rpl = self.prep_replacement(cv)
+            right = self.do_replace(sen, sen_rpl)
+            pref = pref + left + " == " + right
+
+        #
+        for it in cv.keys():
             if len(en) > 0:
                 en = en + " && "
-            en = en +  s
-            # End TODO
+            en = en + it + " == " + str(cv[it])
+        if len(pref):
+            if len(en) > 0:
+                en = en + " && "
 
-            i = i + 1
+            env = en + pref
 
-        env = self.do_replace_and_simplify(en)
+        env = self.do_replace_and_simplify(env)
 
-        variables = vals
-        return env, is_const, variables
+        return env
+
+    def do_sm_substitution(self, env, expr, cnd):
+
+       # Next 2 lines are going to be removed
+       cvals, vals, en = TreeUtils.get_vars_using_assignment(env)
+       is_const = True
+
+       has_log = False
+       num_expr = len(expr)
+       if num_expr > 0:
+           has_log = False
+           pe = self.prepare_parser_expr(expr[-1])
+           ev = ExtSEGrammarVisitor()
+           pe = self.prepare_parser_expr(expr[-1])
+           ev = ExtSEGrammarVisitor()
+           has_log = ev.action_has_logical(pe.assignmentExpressionList())
+           if has_log:
+               num_expr = num_expr - 1
+
+           i = 0
+           while i < num_expr:
+               env = self.do_sm_subst_step(env, expr[i], cnd)
+               i = i + 1
+
+       # Temporary!
+       for it in vals.keys():
+           vals[it] = str(vals[it])
+       return env, is_const, vals
+
 
     def step_modelling(self, ctx, act):
         act_visitor = ctx["act_visitor"]
