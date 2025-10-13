@@ -14,13 +14,15 @@ COPY ./symaiconfig.py /app/symaiconfig.py
 COPY ./symaicommands.py /app/symaicommands.py
 COPY ./symaifrontcommands.py /app/symaifrontcommands.py
 COPY ./bash/run.sh /app/run.sh
-ADD ./resources /app/resources
+
+ADD ./resources/client/dist/app2/browser /app/resources
+#ADD ./resources /app/resources
 #COPY  ./resources/index.html  /app/resources/index.html
 #COPY  ./resources/index.html  /app/resources/ind.html
-#COPY  ./resources/favicon.ico  /app/resources/favicon.ico
+COPY  ./resources/favicon.ico  /app/resources/favicon.ico
 # Install any needed dependencies specified in requirements.txt
 #RUN pip3 install --no-cache-dir -r requirements.txt
 # Make port 8000 available to the world outside this container
 EXPOSE 8000
 # Run symaifront.py when the container launches
- CMD ["bash", "run.sh", "python", "symaifront.py -r /app/resources"]
+CMD ["bash", "run.sh", "python", "symaifront.py -r /app/resources"]
