@@ -15,6 +15,8 @@ SET (PROPERTIES ${BASE_PATH}/properties)
 
 MESSAGE (STATUS "Project ${CMAKE_PROJECT_NAME} build ")
 
+find_package(Python COMPONENTS Interpreter Development)
+
 ADD_CUSTOM_TARGET(make-work-dirs)
 ADD_CUSTOM_COMMAND(TARGET make-work-dirs
           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/python/server"
@@ -30,6 +32,13 @@ ADD_CUSTOM_COMMAND(TARGET antlr4-generate-expression
           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/python/server"
     COMMAND java -jar ${PROJECT_SOURCE_DIR}/src/python/bin/antlr-4.13.1-complete.jar ${PROJECT_SOURCE_DIR}/src/python/server/antlr4/ExpressionGrammar.g4 -Dlanguage=Python3 -encoding UTF8 -package ExpressionGrammar -o ExpressionGrammar -visitor
     DEPENDS "${PROJECT_SOURCE_DIR}/src/python/antlr4/ExpressionGrammar.g4"
+)
+
+ADD_CUSTOM_TARGET(symai-test)
+ADD_CUSTOM_COMMAND(TARGET symai-test
+          WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/python/server"
+    COMMAND python3 ${PROJECT_SOURCE_DIR}/src/python/server/test_symai.py
+    DEPENDS antlr4-generate-expression
 )
 
 ADD_CUSTOM_TARGET(symai-expression-docker-build DEPENDS antlr4-generate-expression make-work-dirs)
