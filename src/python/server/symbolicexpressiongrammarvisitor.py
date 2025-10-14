@@ -141,6 +141,8 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         while i < ctx.getChildCount():
             t = type(ctx.getChild(i))
             s = ctx.getChild(i)
+            if s is None:
+                return ""
             if t == TerminalNodeImpl:
                 s = s.getText()
                 if s == ".":
@@ -155,7 +157,10 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
                     if t == TerminalNodeImpl and s == ")":
                         result = result + self.arg_list_fin
                     else:
-                        result = result + s + self.arg_list_fin
+                        if s is None:
+                            result = ""
+                        else:
+                            result = result + s + self.arg_list_fin
                         i = i + 1
             i = i + 1
         # var_list has to be updated
@@ -183,7 +188,11 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         result = self.visit(ctx.assignmentExpression(i))
         i = i + 1
         while i < len(ctx.assignmentExpression()):
-            result = result + self.arg_list_cnt + self.visit(ctx.assignmentExpression(i))
+            s = self.visit(ctx.assignmentExpression(i))
+            if len(result) > 0 and len(s) > 0:
+                result = result + self.arg_list_cnt + self.visit(ctx.assignmentExpression(i))
+            elif len(s) > 0:
+                result = s
             i = i + 1
         return result
 
@@ -257,7 +266,7 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             return ""
         i = 0
         result = self.visit(ctx.getChild(0))
-        if result is None:
+        if result is None or (len(result) == 1 and result not in self.var_list):
             return ""
         i = i + 1
         if ctx.getChildCount() < i + 1:

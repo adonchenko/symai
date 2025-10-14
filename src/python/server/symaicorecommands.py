@@ -754,7 +754,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         # Doing inversions in vals, if any
         vl = dict()
         for k in vals.keys():
-            # Need to do:
             # 1. Inversion by left, if any is possible
             tr = self.prepare_parser_expr(k + "=" + vals[k]).assignmentExpression()
             v = ExtSEGrammarVisitor()
@@ -814,12 +813,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
        cvals, vals, en = TreeUtils.get_vars_using_assignment(env)
        is_const = True
 
-       has_log = False
        num_expr = len(expr)
        if num_expr > 0:
-           has_log = False
-           pe = self.prepare_parser_expr(expr[-1])
-           ev = ExtSEGrammarVisitor()
            pe = self.prepare_parser_expr(expr[-1])
            ev = ExtSEGrammarVisitor()
            has_log = ev.action_has_logical(pe.assignmentExpressionList())
@@ -831,7 +826,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                env = self.do_sm_subst_step(env, expr[i], cnd)
                i = i + 1
 
-       # Temporary!
        for it in vals.keys():
            vals[it] = str(vals[it])
        return env, is_const, vals

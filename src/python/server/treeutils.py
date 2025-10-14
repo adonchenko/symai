@@ -49,8 +49,16 @@ class TreeUtils:
             if tree is not None:
                 i = 1
                 is_deleted = False
+                first_ctx = tree.getChild(0)
+
                 vt = ExtSEGrammarVisitor()
-                first_arg = vt.visit(tree.getChild(0))
+                first_arg = vt.visit(first_ctx)
+                is_left = False
+                while type(first_ctx) == ExpressionGrammarParser.RelationalExpressionContext and first_ctx.getChildCount() > 1 and first_arg.find(">") != -1 or first_arg.find("<") != -1 or first_arg.find("=") != -1:
+                    first_ctx = first_ctx.getChild(first_ctx.getChildCount() - 1)
+                    vtt = ExtSEGrammarVisitor()
+                    first_arg = vtt.visit(first_ctx)
+                    is_left = True
                 while i < tree.getChildCount():
                     pvt = vt.var_list
                     vt.var_list = []
@@ -76,16 +84,23 @@ class TreeUtils:
                             tree.getChild(i))) == "<class 'antlr4.tree.Tree.TerminalNodeImpl'>" and tree.getChild(
                             i).getText() == "==":
                         is_deleted = True
-                        tree.children[i - 1].parentCtx = None
-                        del tree.children[i - 1]
-                        tree.children[i - 1].parentCtx = None
-                        del tree.children[i - 1]
+                        if not is_left:
+                            tree.children[i - 1].parentCtx = None
+                            del tree.children[i - 1]
+                            tree.children[i - 1].parentCtx = None
+                            del tree.children[i - 1]
+                        else:
+                            tree.children[i].parentCtx = None
+                            del tree.children[i]
+                            tree.children[i].parentCtx = None
+                            del tree.children[i]
                     else:
                         i = i + 2
                         is_deleted = False
                     pvt = vt.var_list
-                    first_arg = second_arg
-                if is_deleted:
+                    if not is_left:
+                        first_arg = second_arg
+                if is_deleted and not is_left:
                     tree.children[i - 1].parentCtx = None
                     del tree.children[i - 1]
         return values, concrete_values
@@ -167,7 +182,6 @@ class TreeUtils:
                 values, concrete_values = TreeUtils.extract_eq_values_def(to_del)
                 val.update(values)
                 cval.update(concrete_values)
-                TreeEdit.delete_node(to_del)
                 v = ExtSEGrammarVisitor()
                 s = v.visit(tr)
                 if s == "":
@@ -186,32 +200,4 @@ class TreeUtils:
 
         return cval, val, res
 
-    @staticmethod
-    def find_vars_by_name(node, args, kwargs):
-        varlist = None
-        for k, v in kwargs.items():
-            if k == "varlist":
-                varlist = v
-                break
-        if varlist is None:
-            return False # Input parameter is absent, result is False
-        # Found or not found mark should be returned here
-        # inside postfixExpression:
-        # primaryExpression (should be Identifier) "(" argumentsExpressionList? ")"
-        return False
-
-    @staticmethod
-    def rm_all_vars(tree, varlist):
-
-        if varlist is not None and tree is not None:
-            n = TreeEdit.find_by_cond(tree, TreeUtils.find_var_by_name, varlist=varlist)
-            while n is not None:
-                node = n.parentCtx
-                t =  type(node)
-                while node is not None and hasattr(node, "parentCtx") and t != ExpressionGrammarParser.LogicalAndExpressionContext and t != ExpressionGrammarParser.LogicalOrExpressionContext:
-                    node = node.parentCtx
-                if hasattr(node, "children"):
-                    is_deleted = False
-                    # Checking children(s) for existing one of var and deleting ones those were found
-        return tree
 
