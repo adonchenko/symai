@@ -73,33 +73,23 @@ class SymAIFrontendCommands(symaicommands.SymAICommands):
             is_binary = False
         if not is_binary:
             # Formatting variables
-            subs = dict()
-            subs["FRONTEND_HOST"] = self.get_config().get(symaiconfig.SymAIConfig.SYMAIFRONT.value,
+            FRONTEND_HOST = self.get_config().get(symaiconfig.SymAIConfig.SYMAIFRONT.value,
                                                           symaiconfig.SymAIConfig.SYMAIFRONT_HOST.value)
-            subs["FRONTEND_PORT"] = self.get_config().get(symaiconfig.SymAIConfig.SYMAIFRONT.value,
+            FRONTEND_PORT = self.get_config().get(symaiconfig.SymAIConfig.SYMAIFRONT.value,
                                                           symaiconfig.SymAIConfig.SYMAIFRONT_PORT.value)
-            subs["CORE_HOST"] = self.get_config().get(symaiconfig.SymAIConfig.SYMAIFRONT.value,
+            CORE_HOST = self.get_config().get(symaiconfig.SymAIConfig.SYMAIFRONT.value,
                                                       symaiconfig.SymAIConfig.SYMAICORE_HOST.value)
-            subs["CORE_PORT"] = self.get_config().get(symaiconfig.SymAIConfig.SYMAIFRONT.value,
+            CORE_PORT = self.get_config().get(symaiconfig.SymAIConfig.SYMAIFRONT.value,
                                                       symaiconfig.SymAIConfig.SYMAICORE_PORT.value)
-
+            cnt = ""
             f = open(filename, "r")
-            cnt = f.read()
-            cnt =  cnt.replace("\n", "\\n").replace("\"", "\\\"")
-            g_vars = dict()
-            l_vars = dict()
-            l_vars["cnt"] = cnt
-            b = False
-            cmd = "cnt.format("
-            for st in subs.keys():
-                if b:
-                    cmd = cmd + ","
-                cmd = cmd + st
-                cmd = cmd + "=\"" + subs[st].replace("\"", "\\\"") + "\""
-                b = True
-            cmd = cmd + ")"
-            cnt = eval(cmd , g_vars, l_vars).replace("\\n","\n")
-            cnt = bytes(cnt, 'utf-8')
+            for line in f:
+                line = line.replace("{","{{").replace("}","}}")
+                line = re.sub(r"\{\s*FRONTEND_HOST\s*\}", "FRONTEND_HOST", line, flags=re.I)
+                line = re.sub(r"\{\s*FRONTEND_PORT\s*\}", "FRONTEND_PORT", line, flags=re.I)
+                line = re.sub(r"\{\s*CORE_HOST\s*\}", "CORE_HOST", line, flags=re.I)
+                line = re.sub(r"\{\s*CORE_PORT\s*\}", "CORE_PORT", line, flags=re.I)
+                cnt = cnt + line.format(FRONTEND_HOST=FRONTEND_HOST, FRONTEND_PORT=FRONTEND_PORT, CORE_HOST=CORE_HOST, CORE_PORT=CORE_PORT)
         else:
             f = open(filename, "rb")
             cnt = f.read()
