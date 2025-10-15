@@ -3,6 +3,7 @@ import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/")
 from symaicorecommands import *
 from extsegammarvisitor import *
+from treeedit import *
 import unittest
 
 class SymAITestCase(unittest.TestCase):
@@ -40,10 +41,10 @@ class SymAITestCase(unittest.TestCase):
             s = cc.do_remove_vars(it[0], it[1])
             self.assertEqual(s, it[2], "Incorrect result")
             p = TreeUtils.prepare_parser_expr(s)
-            self.assertTrue(p is not None, "Incorrect syntax of the result")
+            self.assertIsNotNone(p, "Incorrect syntax of the result")
             if len(s) > 0:
                 tr = p.assignmentExpression()
-                self.assertTrue(tr is not None, "Cannot parse result")
+                self.assertIsNotNone(tr, "Cannot parse result")
 
     def test_action_has_logical(self):
         test_data = [["a=345", False],

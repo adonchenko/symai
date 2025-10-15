@@ -37,7 +37,7 @@ ADD_CUSTOM_COMMAND(TARGET antlr4-generate-expression
 ADD_CUSTOM_TARGET(symai-test)
 ADD_CUSTOM_COMMAND(TARGET symai-test
           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/python/server"
-    COMMAND python3 ${PROJECT_SOURCE_DIR}/src/python/server/test_symai.py
+    COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/python/server/test_symai.py
     DEPENDS antlr4-generate-expression
 )
 

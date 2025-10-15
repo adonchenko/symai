@@ -16,9 +16,8 @@ from ExpressionGrammar.ExpressionGrammarLexer import ExpressionGrammarLexer
 from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
 from enum import Enum
 
-from src.python.server.treeedit import TreeEdit
-from src.python.server.treeutils import TreeUtils
-
+from treeedit import TreeEdit
+from treeutils import TreeUtils
 
 class SymAIDebugCommands(Enum):
     NEXT = "next"
