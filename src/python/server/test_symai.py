@@ -1,12 +1,12 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/")
-from treeutils import *
+from symaicorecommands import *
 import unittest
 
 class SymAITestCase(unittest.TestCase):
     def test_get_vars_using_assignment(self):
-        test_data = [["(a.d.f==3==b) && c(s) > d && e(125) == 22|| f == g + 125 && h <= i", [{'a.d.f': 3.0, 'b': 3.0, 'e(125)': 22.0}, {'f': 'g+125'}, "c(s)>d || h<=i"]],\
+        test_data = [["(a.d.f==3==b) && c(s) > d && e(125) == 22|| f == g + 125 && h <= i", [{'a.d.f': 3.0, 'b': 3.0, 'e(125)': 22.0}, {'f': 'g+125'}, "c(s)>d || h<=i"]],
                      ["(a.d.f>=3==b) && c(s) == d && e(125) > 22|| f != g + 125 && h <= i", [{'b': 3.0}, {'c(s)''' : 'd''', 'f': 'g+125' }, "(a.d.f>=3) && e(125)>22 || h<=i"]]]
         for it in test_data:
             a, b, c = TreeUtils.get_vars_using_assignment(it[0])
@@ -29,8 +29,19 @@ class SymAITestCase(unittest.TestCase):
                         break
                 self.assertEqual(f, True, f"Variable {i} must not be included to extracted symbolic expressions")
 
+    def test_do_remove_vars(self):
+        test_data = [["n<a && b > h", ['a'], "b>h"],
+                     ["n<a && b > h", ['a', 'h'],""],
+                     ["n<a && b > h", ['h'],"n<a"],
+                     ["((n<a) && (c == 10)) && (b > h)", ['b'],"((n<a) && (c==10))"]]
+        cc = SymAICoreCommands()
+        for it in test_data:
+            s = cc.do_remove_vars(it[0], it[1])
+            self.assertEqual(s, it[2], "Incorrect result")
+
 if __name__ == '__main__':
     suite = unittest.TestSuite()
     suite.addTest(SymAITestCase('test_get_vars_using_assignment'))
+    suite.addTest(SymAITestCase('test_do_remove_vars'))
     runner = unittest.TextTestRunner()
     runner.run(suite)
