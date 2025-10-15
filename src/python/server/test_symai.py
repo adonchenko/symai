@@ -38,6 +38,11 @@ class SymAITestCase(unittest.TestCase):
         for it in test_data:
             s = cc.do_remove_vars(it[0], it[1])
             self.assertEqual(s, it[2], "Incorrect result")
+            p = TreeUtils.prepare_parser_expr(s)
+            self.assertTrue(p is not None, "Incorrect syntax of the result")
+            if len(s) > 0:
+                tr = p.assignmentExpression()
+                self.assertTrue(tr is not None, "Cannot parse result")
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
