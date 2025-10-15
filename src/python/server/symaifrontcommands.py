@@ -11,7 +11,6 @@ class SymAIFrontendCommands(symaicommands.SymAICommands):
 
     def do_get(self, request_handler, resource_path):
         ct = "text/html"
-        fn = "index.html"
         is_binary = False
         base_path = self.get_config().get(symaiconfig.SymAIConfig.SYMAIFRONT.value,
                                           symaiconfig.SymAIConfig.SYMAIFRONT_RESOURCES.value)
@@ -84,12 +83,12 @@ class SymAIFrontendCommands(symaicommands.SymAICommands):
             cnt = ""
             f = open(filename, "r")
             for line in f:
-                line = line.replace("{","{{").replace("}","}}")
-                line = re.sub(r"\{\s*FRONTEND_HOST\s*\}", "FRONTEND_HOST", line, flags=re.I)
-                line = re.sub(r"\{\s*FRONTEND_PORT\s*\}", "FRONTEND_PORT", line, flags=re.I)
-                line = re.sub(r"\{\s*CORE_HOST\s*\}", "CORE_HOST", line, flags=re.I)
-                line = re.sub(r"\{\s*CORE_PORT\s*\}", "CORE_PORT", line, flags=re.I)
-                cnt = cnt + line.format(FRONTEND_HOST=FRONTEND_HOST, FRONTEND_PORT=FRONTEND_PORT, CORE_HOST=CORE_HOST, CORE_PORT=CORE_PORT)
+                s = line.replace("{","{{").replace("}","}}")
+                a = re.sub(r"\{\s*FRONTEND_HOST\s*\}", "FRONTEND_HOST", s, flags=re.I)
+                s = re.sub(r"\{\s*FRONTEND_PORT\s*\}", "FRONTEND_PORT", s, flags=re.I)
+                s = re.sub(r"\{\s*CORE_HOST\s*\}", "CORE_HOST", s, flags=re.I)
+                s = re.sub(r"\{\s*CORE_PORT\s*\}", "CORE_PORT", s, flags=re.I)
+                cnt = cnt + s.format(FRONTEND_HOST=FRONTEND_HOST, FRONTEND_PORT=FRONTEND_PORT, CORE_HOST=CORE_HOST, CORE_PORT=CORE_PORT)
         else:
             f = open(filename, "rb")
             cnt = f.read()
