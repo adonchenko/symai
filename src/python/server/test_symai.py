@@ -2,6 +2,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/")
 from symaicorecommands import *
+from extsegammarvisitor import *
 import unittest
 
 class SymAITestCase(unittest.TestCase):
@@ -44,9 +45,20 @@ class SymAITestCase(unittest.TestCase):
                 tr = p.assignmentExpression()
                 self.assertTrue(tr is not None, "Cannot parse result")
 
+    def test_action_has_logical(self):
+        test_data = [["a=345", False],
+                     ["a = a + 1; y = y + 1; c >= 10 && b == x", True],
+                     ["h = 123;((a > b && c > d || (e == f) && (a == 4 && c == g)))", True]]
+        for it in test_data:
+            tr = TreeUtils.prepare_parser_expr(it[0]).assignmentExpressionList()
+            v = ExtSEGrammarVisitor()
+            b = v.action_has_logical(tr)
+            self.assertEqual(b, it[1], "Incorrect result")
+
 if __name__ == '__main__':
     suite = unittest.TestSuite()
     suite.addTest(SymAITestCase('test_get_vars_using_assignment'))
     suite.addTest(SymAITestCase('test_do_remove_vars'))
+    suite.addTest(SymAITestCase('test_action_has_logical'))
     runner = unittest.TextTestRunner()
     runner.run(suite)
