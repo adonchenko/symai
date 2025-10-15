@@ -84,7 +84,7 @@ class SymAIFrontendCommands(symaicommands.SymAICommands):
             f = open(filename, "r")
             for line in f:
                 s = line.replace("{","{{").replace("}","}}")
-                a = re.sub(r"\{\s*FRONTEND_HOST\s*\}", "FRONTEND_HOST", s, flags=re.I)
+                s = re.sub(r"\{\s*FRONTEND_HOST\s*\}", "FRONTEND_HOST", s, flags=re.I)
                 s = re.sub(r"\{\s*FRONTEND_PORT\s*\}", "FRONTEND_PORT", s, flags=re.I)
                 s = re.sub(r"\{\s*CORE_HOST\s*\}", "CORE_HOST", s, flags=re.I)
                 s = re.sub(r"\{\s*CORE_PORT\s*\}", "CORE_PORT", s, flags=re.I)
