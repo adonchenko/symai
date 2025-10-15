@@ -23,6 +23,7 @@ class SymAIFrontendCommands(symaicommands.SymAICommands):
                 froot, fext = os.path.splitext(resource_path)
                 fext = fext.lower()
                 if len(fext) > 0:
+                    is_binary = False
                     if fext == ".html" or fext == ".htm":
                         ct = "text/html"
                     elif fext == ".gif":
@@ -89,6 +90,7 @@ class SymAIFrontendCommands(symaicommands.SymAICommands):
                 s = re.sub(r"\{\s*CORE_HOST\s*\}", "CORE_HOST", s, flags=re.I)
                 s = re.sub(r"\{\s*CORE_PORT\s*\}", "CORE_PORT", s, flags=re.I)
                 cnt = cnt + s.format(FRONTEND_HOST=FRONTEND_HOST, FRONTEND_PORT=FRONTEND_PORT, CORE_HOST=CORE_HOST, CORE_PORT=CORE_PORT)
+            cnt = bytes(cnt, 'utf-8')
         else:
             f = open(filename, "rb")
             cnt = f.read()
