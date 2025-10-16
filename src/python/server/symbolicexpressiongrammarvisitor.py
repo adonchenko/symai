@@ -153,10 +153,10 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
                     result = result + self.arg_list_start
                     i = i + 1
                     t = type(ctx.getChild(i))
-                    s = self.visit(ctx.getChild(i))
                     if t == TerminalNodeImpl and s == ")":
                         result = result + self.arg_list_fin
                     else:
+                        s = self.visit(ctx.getChild(i))
                         if s is None:
                             result = ""
                         else:
@@ -266,7 +266,7 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             return ""
         i = 0
         result = self.visit(ctx.getChild(0))
-        if result is None or (len(result) == 1 and result not in self.var_list):
+        if result is None or (len(result) == 1 and result not in self.var_list and not self.is_float_const(result)):
             return ""
         i = i + 1
         if ctx.getChildCount() < i + 1:
