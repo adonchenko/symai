@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/")
 from symaicorecommands import *
 from extsegammarvisitor import *
-from treeedit import *
+
 import unittest
 
 class SymAITestCase(unittest.TestCase):

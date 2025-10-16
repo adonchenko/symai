@@ -180,8 +180,10 @@ async def handle_client(websocket):
                     else:
                         res = "ok"
                         try:
-                            sc.do_environment(str(connected_clients.get(websocket).get_uuid()),
-                                              str(message).strip()[11:])
+                            s = sc.do_environment(str(connected_clients.get(websocket).get_uuid()),
+                                                  str(message).strip()[11:])
+                            if len(s) > 0:
+                                res = res + " " + s
                         except Exception as e:
                             sc.get_logger().error("environment command failed " + str(e))
                             res = "nok " + str(e)
