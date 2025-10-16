@@ -200,8 +200,10 @@ async def handle_client(websocket):
                     else:
                         res = "ok"
                         try:
-                            sc.do_property(str(connected_clients.get(websocket).get_uuid()),
-                                              str(message).strip()[8:])
+                            s = sc.do_property(str(connected_clients.get(websocket).get_uuid()),
+                                               str(message).strip()[8:])
+                            if len(s) > 0:
+                                res = res + " " + s
                         except Exception as e:
                             sc.get_logger().error("property command failed " + str(e))
                             res = "nok " + str(e)

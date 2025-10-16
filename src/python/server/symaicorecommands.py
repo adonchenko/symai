@@ -114,16 +114,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         return res
 
     def prepare_parser_expr(self, inp : str)->ExpressionGrammarParser :
-        lexer = ExpressionGrammarLexer(InputStream(inp))
-        error_listener = SymbolicExpressionGrammarErrorListener()
-        lexer.removeErrorListeners()
-        lexer.addErrorListener(error_listener)
-        stream = CommonTokenStream(lexer)
-        parser = ExpressionGrammarParser(stream)
-        parser.removeErrorListeners()
-        parser.addErrorListener(error_listener)
-
-        return parser
+        return TreeUtils.prepare_parser_expr(inp)
 
     def do_behaviors(self, cuuid, data_received):
         cnt = self.do_get_file(cuuid,
@@ -307,9 +298,19 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         if data_received is None or len(data_received.strip()) < 1:
             res = dict()
             cnt = ""
+            fname = ""
             if hasattr(self, "environment"):
                 cnt = self.get_environment()
-            res["environment"] = cnt
+                fname = getattr(self, "environment")
+            res["content"] = cnt
+            pref = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+                              cuuid,
+                              symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value,
+                              "")
+            i = len(pref)
+            if i < len(fname):
+                fname = fname[i:]
+                res["filename"] = fname
             res = json.dumps(res)
         else:
             try:
@@ -343,24 +344,53 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         return res
 
     def do_property(self, cuuid, data_received):
-        res = self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_PROPERTIES.value)
-        fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
-                          cuuid,
-                          symaiconfig.SymAIConfig.BASE_PROPERTIES.value,
-                          res["filename"])
-        try:
-            with open(fn, "w") as f:
-                f.write(res["content"])
-            self.get_logger().info(f"property command processed. The property saved to {fn}")
-            setattr(self, "property", fn)
-        except Exception as e:
-            self.get_logger().error(f"property command processing failed {str(e)}")
+        if data_received is None or len(data_received.strip()) < 1:
+            res = dict()
+            cnt = ""
+            fname = ""
+            if hasattr(self, "property"):
+                cnt = self.get_property()
+                fname = getattr(self, "property")
+            res["content"] = cnt
+            pref = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+                                cuuid,
+                                symaiconfig.SymAIConfig.BASE_PROPERTIES.value,
+                                "")
+            i = len(pref)
+            if i < len(fname):
+                fname = fname[i:]
+                res["filename"] = fname
+            res = json.dumps(res)
+        else:
             try:
-                if os.path.exists(fn):
-                    os.remove(fn)
-            except:
-                pass
-            raise e
+                res = json.loads(data_received)
+                if "filename" not in res.keys():
+                    res["filename"] = "properties.prop"
+                    data_received = json.dumps(res)
+            except Exception as e:
+                self.get_logger().error(f"property command processing failed {str(e)}")
+                raise e
+            res = self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_PROPERTIES.value)
+
+            fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+                              cuuid,
+                              symaiconfig.SymAIConfig.BASE_PROPERTIES.value,
+                              res["filename"])
+            try:
+                with open(fn, "w") as f:
+                    f.write(res["content"])
+                self.get_logger().info(f"property command processed. The property saved to {fn}")
+                setattr(self, "property", fn)
+                res = ""
+            except Exception as e:
+                self.get_logger().error(f"property command processing failed {str(e)}")
+                try:
+                    if os.path.exists(fn):
+                        os.remove(fn)
+                except:
+                    pass
+                raise e
+        return res
 
     def get_behaviors(self):
         if hasattr(self, "behaviors"):
