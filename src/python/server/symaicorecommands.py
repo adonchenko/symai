@@ -9,10 +9,7 @@ import uuid
 from itertools import tee
 import os
 
-from antlr4.CommonTokenStream import CommonTokenStream
-from antlr4.InputStream import InputStream
 from extsegammarvisitor import *
-from ExpressionGrammar.ExpressionGrammarLexer import ExpressionGrammarLexer
 from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
 from enum import Enum
 
@@ -117,29 +114,50 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         return TreeUtils.prepare_parser_expr(inp)
 
     def do_behaviors(self, cuuid, data_received):
-        cnt = self.do_get_file(cuuid,
-                               symaiconfig.SymAIConfig.BASE_BEHAVIORS.value,
-                               data_received)
-        fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
-                          cuuid,
-                          symaiconfig.SymAIConfig.BASE_BEHAVIORS.value,
-                          cnt["filename"])
-        try:
-            tree = self.prepare_parser_expr(cnt["content"]).behavior()
-            visitor = ExtSEGrammarVisitor()
-            res = visitor.visit(tree)
-            with open(fn, "w") as f:
-                f.write(res)
-            self.get_logger().info(f"behaviors command processed. The behaviors list saved to {fn}")
-            setattr(self, "behaviors", fn)
-        except Exception as e:
-            self.get_logger().error(f"behaviors command processing failed {str(e)}")
+        if data_received is None or len(data_received.strip()) < 1:
+            res = dict()
+            cnt = ""
+            fname = ""
+            if hasattr(self, "behaviors"):
+                cnt, v = self.get_behaviors()
+                fname = getattr(self, "behaviors")
+            res["content"] = cnt
+            fname = os.path.basename(fname)
+            res["filename"] = fname
+            res = json.dumps(res)
+            self.get_logger().info(f"behaviors command processed. Retrieved behaviors list is {cnt}")
+        else:
             try:
-                if os.path.exists(fn):
-                    os.remove(fn)
-            except:
-                pass
-            raise e
+                res = json.loads(data_received)
+                if "filename" not in res.keys():
+                    res["filename"] = "behaviors.beh"
+                    data_received = json.dumps(res)
+            except Exception as e:
+                self.get_logger().error(f"behaviors command processing failed {str(e)}")
+                raise e
+            cnt = self.do_get_file(cuuid,
+                                   symaiconfig.SymAIConfig.BASE_BEHAVIORS.value,
+                                   data_received)
+            fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+                              cuuid,
+                              symaiconfig.SymAIConfig.BASE_BEHAVIORS.value,
+                              cnt["filename"])
+            try:
+                tree = self.prepare_parser_expr(cnt["content"]).behavior()
+                visitor = ExtSEGrammarVisitor()
+                res = visitor.visit(tree)
+                with open(fn, "w") as f:
+                    f.write(res)
+                self.get_logger().info(f"behaviors command processed. The behaviors list saved to {fn}")
+                setattr(self, "behaviors", fn)
+            except Exception as e:
+                self.get_logger().error(f"behaviors command processing failed {str(e)}")
+                try:
+                    if os.path.exists(fn):
+                        os.remove(fn)
+                except:
+                    pass
+                raise e
 
     def get_debug(self):
         if hasattr(self, "debug"):
@@ -268,31 +286,51 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         return res
 
     def do_actions(self, cuuid, data_received):
-        cnt = self.do_get_file(cuuid,
+        if data_received is None or len(data_received.strip()) < 1:
+            res = dict()
+            cnt = ""
+            fname = ""
+            if hasattr(self, "actions"):
+                cnt, v = self.get_actions()
+                fname = getattr(self, "actions")
+            res["content"] = cnt
+            fname = os.path.basename(fname)
+            res["filename"] = fname
+            res = json.dumps(res)
+            self.get_logger().info(f"actions command processed. Retrieved actions list is {cnt}")
+        else:
+            try:
+                res = json.loads(data_received)
+                if "filename" not in res.keys():
+                    res["filename"] = "actions.act"
+                    data_received = json.dumps(res)
+            except Exception as e:
+                self.get_logger().error(f"actions command processing failed {str(e)}")
+                raise e
+            cnt = self.do_get_file(cuuid,
                                symaiconfig.SymAIConfig.BASE_ACTIONS.value,
                                data_received)
-        fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
-                          cuuid,
-                          symaiconfig.SymAIConfig.BASE_ACTIONS.value,
-                          cnt["filename"])
-        try:
-            tree = self.prepare_parser_expr(cnt["content"]).actionsList()
-            visitor = ExtSEGrammarVisitor()
-            res = visitor.visit(tree)
-            with open(fn, "w") as f:
-                f.write(res)
-            setattr(self, "actions", fn)
-            self.invert_actions(cuuid, visitor, fn)
-            self.get_logger().info(f"actions command processed. The actions list saved to {fn}")
-        except Exception as e:
-            self.get_logger().error(f"actions command processing failed {str(e)}")
+            fn = os.path.join(res, cnt["filename"])
             try:
-                if os.path.exists(fn):
-                    os.remove(fn)
-            except:
-                pass
-            delattr(self, "actions")
-            raise e
+                tree = TreeUtils.prepare_parser_expr(cnt["content"]).actionsList()
+                visitor = ExtSEGrammarVisitor()
+                res = visitor.visit(tree)
+                with open(fn, "w") as f:
+                    f.write(res)
+                setattr(self, "actions", fn)
+                self.invert_actions(cuuid, visitor, fn)
+                self.get_logger().info(f"actions command processed. The actions list saved to {fn}")
+                res = ""
+            except Exception as e:
+                self.get_logger().error(f"actions command processing failed {str(e)}")
+                try:
+                    if os.path.exists(fn):
+                        os.remove(fn)
+                except:
+                    pass
+                delattr(self, "actions")
+                raise e
+        return res
 
     def do_environment(self, cuuid, data_received):
         if data_received is None or len(data_received.strip()) < 1:
@@ -303,15 +341,11 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 cnt = self.get_environment()
                 fname = getattr(self, "environment")
             res["content"] = cnt
-            pref = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
-                              cuuid,
-                              symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value,
-                              "")
-            i = len(pref)
-            if i < len(fname):
-                fname = fname[i:]
-                res["filename"] = fname
+            fname = os.path.basename(fname)
+            res["filename"] = fname
+            res["filename"] = fname
             res = json.dumps(res)
+            self.get_logger().info(f"environment command processed. Retrieved environment expression is {cnt}")
         else:
             try:
                 res = json.loads(data_received)
@@ -352,15 +386,10 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 cnt = self.get_property()
                 fname = getattr(self, "property")
             res["content"] = cnt
-            pref = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
-                                cuuid,
-                                symaiconfig.SymAIConfig.BASE_PROPERTIES.value,
-                                "")
-            i = len(pref)
-            if i < len(fname):
-                fname = fname[i:]
-                res["filename"] = fname
+            fname = os.path.basename(fname)
+            res["filename"] = fname
             res = json.dumps(res)
+            self.get_logger().info(f"property command processed. Retrieved property formula is {cnt}")
         else:
             try:
                 res = json.loads(data_received)
@@ -432,7 +461,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 cnt = f.read()
                 tree = self.prepare_parser_expr(cnt).expression()
                 visitor = ExtSEGrammarVisitor()
-                res = visitor.visit(tree)
+                res = visitor.visit(tree).replace("&", "&&").replace("|", "||").replace("_d_o_t_", ".").replace(
+                    "__d__o__t__", "_d_o_t_").replace(" not ", "!").replace(" _n_o_t_ ", " not ").strip(" ")
                 self.get_logger().debug(f"property successful retrieved. File {fn}")
             except Exception as e:
                 self.get_logger().error(f"retrieving property failed {str(e)} file {fn}")

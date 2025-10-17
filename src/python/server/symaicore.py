@@ -146,8 +146,10 @@ async def handle_client(websocket):
                     else:
                         res = "ok"
                         try:
-                            sc.do_behaviors(str(connected_clients.get(websocket).get_uuid()),
-                                              str(message).strip()[9:])
+                            s = sc.do_behaviors(str(connected_clients.get(websocket).get_uuid()),
+                                                str(message).strip()[9:])
+                            if len(s) > 0:
+                                res = res + " " + s
                         except Exception as e:
                             sc.get_logger().error("behaviors command failed " + str(e))
                             res = "nok " + str(e)
@@ -163,8 +165,9 @@ async def handle_client(websocket):
                     else:
                         res = "ok"
                         try:
-                            st = str(message).strip()[7:]
-                            sc.do_actions(str(connected_clients.get(websocket).get_uuid()), st)
+                            s = sc.do_actions(str(connected_clients.get(websocket).get_uuid()), str(message).strip()[7:])
+                            if len(s) > 0:
+                                res = res + " " + s
                         except Exception as e:
                             sc.get_logger().error("actions command failed " + str(e))
                             res = "nok " + str(e)
