@@ -19,44 +19,43 @@ class SymAIFrontendCommands(symaicommands.SymAICommands):
             is_binary = True
             fn = "favicon.ico"
         else:
-            if len(resource_path) > 1  and re.search("/symai/*", resource_path):
-                froot, fext = os.path.splitext(resource_path)
-                fext = fext.lower()
-                if len(fext) > 0:
-                    is_binary = False
-                    if fext == ".html" or fext == ".htm":
-                        ct = "text/html"
-                    elif fext == ".gif":
-                        ct = "image/gif"
-                        is_binary = True
-                    elif fext == ".jpg" or fext == ".jpeg" :
-                        ct = "image/jpeg"
-                        is_binary = True
-                    elif fext == ".png":
-                        ct = "image/png"
-                        is_binary = True
-                    elif fext == ".tiff":
-                        ct = "image/tiff"
-                        is_binary = True
-                    elif fext == ".ico":
-                        ct = "image/x-icon"
-                        is_binary = True
-                    elif fext == ".pdf":
-                        ct = "application/pdf"
-                        is_binary = True
-                    elif fext == ".svg":
-                        ct = "image/svg+xml"
-                        is_binary = True
-                    elif fext == ".css":
-                        ct = "text/css"
-                    elif fext == ".csv":
-                        ct = "text/csv"
-                    elif fext == ".js":
-                        ct = "application/javascript"
-                    elif fext == ".text" or fext == ".txt":
-                        ct = "text/plain"
-                    elif fext == ".xml":
-                        ct = "text/xml"
+            froot, fext = os.path.splitext(resource_path)
+            fext = fext.lower()
+            if len(fext) > 0:
+                is_binary = False
+                if fext == ".html" or fext == ".htm":
+                    ct = "text/html"
+                elif fext == ".gif":
+                    ct = "image/gif"
+                    is_binary = True
+                elif fext == ".jpg" or fext == ".jpeg" :
+                    ct = "image/jpeg"
+                    is_binary = True
+                elif fext == ".png":
+                    ct = "image/png"
+                    is_binary = True
+                elif fext == ".tiff":
+                    ct = "image/tiff"
+                    is_binary = True
+                elif fext == ".ico":
+                    ct = "image/x-icon"
+                    is_binary = True
+                elif fext == ".pdf":
+                    ct = "application/pdf"
+                    is_binary = True
+                elif fext == ".svg":
+                    ct = "image/svg+xml"
+                    is_binary = True
+                elif fext == ".css":
+                    ct = "text/css"
+                elif fext == ".csv":
+                    ct = "text/csv"
+                elif fext == ".js":
+                    ct = "application/javascript"
+                elif fext == ".text" or fext == ".txt":
+                    ct = "text/plain"
+                elif fext == ".xml":
+                    ct = "text/xml"
 
                 fn = resource_path[7:]
             else:
