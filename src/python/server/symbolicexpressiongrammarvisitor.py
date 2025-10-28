@@ -84,8 +84,8 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
 
     # Visit a parse tree produced by ExpressionGrammarParser#postfixExpression.
     def visitPostfixExpression(self, ctx:ExpressionGrammarParser.PostfixExpressionContext):
-        trig_funct=["sin", "cos", "tan", "catan","asin", "acos", "atan", "acatan"]
-        nl_funct=["log", "ln", "sqrt", "exp, diff"]
+        trig_funct=["sin", "cos", "tan", "cotan","asin", "acos", "atan", "acotan"]
+        nl_funct=["log", "lg", "sqrt", "exp", "pow"]
         tmp_arg_list_start = self.arg_list_start
         tmp_arg_list_cnt = self.arg_list_cnt
         tmp_arg_list_fin = self.arg_list_fin

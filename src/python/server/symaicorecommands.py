@@ -1,3 +1,4 @@
+import math
 from collections import deque
 from http import HTTPStatus
 
@@ -789,12 +790,22 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             cvals_rpl.append({"name": n, "value": str(cvals[n])})
         return cvals_rpl
 
+    @staticmethod
+    def cotan(x):
+        return 1/math.tan(x)
+
+    @staticmethod
+    def arccotan(x):
+        if x == 0:
+            return math.pi / 2
+        elif x > 0:
+            return math.atan(1 / x)
+        else:  # x < 0
+            return math.atan(1 / x) + math.pi
+
     def do_sm_subst_step(self, env, expr, cnd):
         if expr is not None and expr == "1":
             return env
-
-        is_add = False
-        cvals, vals, en = TreeUtils.get_vars_using_assignment(env)
 
         left = ""
         right = ""
@@ -802,7 +813,62 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         if len(s) > 1:
             left = s[0]
             right = s[1]
-
+        is_add = False
+        cvals, vals, en = TreeUtils.get_vars_using_assignment(env)
+        if en is None or len(en) < 1:
+            # Gong with concrete values, e is a resulting env
+            b = True
+            for it in vals.keys():
+                ret, t = TreeUtils.check_const(vals[str(it)])
+                if not ret:
+                    b = False
+                    break
+            if b:
+                cv = dict()
+                lvars = dict()
+                b = False
+                for it in cvals.keys():
+                    lvars[str(it)] = cvals[str(it)]
+                    if str(it) != left:
+                        cv[str(it)] = cvals[str(it)]
+                    else:
+                        b = True
+                gvars = dict()
+                gvars["sin"] = math.sin
+                gvars["cos"] = math.cos
+                gvars["tan"] = math.tan
+                gvars["cotan"] = SymAICoreCommands.cotan
+                gvars["asin"] = math.asin
+                gvars["acos"] = math.acos
+                gvars["atan"] = math.atan
+                gvars["acotan"] = SymAICoreCommands.arccotan
+                gvars["log"] = math.log
+                gvars["lg"] = math.log10
+                gvars["sqrt"] = math.sqrt
+                gvars["exp"] = math.exp
+                gvars["pow"] = math.pow
+                try:
+                    cv[left] = eval(right,gvars, lvars)
+                except NameError as e:
+                    self.get_logger().error(f"traversalbeh NameError error {e}" )
+                    raise e
+                except TypeError as e:
+                    self.get_logger().error(f"traversalbeh TypeError error {e}")
+                    raise e
+                except ValueError as e:
+                    self.get_logger().error(f"traversalbeh ValueError error {e}")
+                    raise e
+                except ZeroDivisionError as e:
+                    self.get_logger().error(f"traversalbeh ZeroDivisionError error {e}")
+                    raise e
+                e = ""
+                if not b:
+                    e = left + " == " + right
+                for it in cv:
+                    if len(e) > 0:
+                        e = e + " && "
+                    e = e + str(it) + " == " + str(cv[str(it)])
+                return e
         tr = self.prepare_parser_expr(right).assignmentExpression()
         v = ExtSEGrammarVisitor()
         s = v.visit(tr)
@@ -891,16 +957,23 @@ class SymAICoreCommands(symaicommands.SymAICommands):
        is_const = True
 
        num_expr = len(expr)
+       pf = ""
        if num_expr > 0:
            pe = self.prepare_parser_expr(expr[-1])
            ev = ExtSEGrammarVisitor()
            has_log = ev.action_has_logical(pe.assignmentExpressionList())
+
            if has_log:
+               s = pe.assignmentExpressionList()[num_expr - 1]
+               if s == "1":
+                   s = "True"
+               if len(expr) > 1 and len(s) > 0:
+                   pf = s + " && "
                num_expr = num_expr - 1
 
            i = 0
            while i < num_expr:
-               env = self.do_sm_subst_step(env, expr[i], cnd)
+               env = self.do_sm_subst_step(env, expr[i], pf + cnd)
                i = i + 1
 
        for it in vals.keys():
