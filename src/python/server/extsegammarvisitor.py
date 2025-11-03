@@ -200,28 +200,15 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
     # Visit a parse tree produced by ExpressionGrammarParser#additive_item.
     def visitAdditive_item(self, ctx: ExpressionGrammarParser.Additive_itemContext):
         res = ""
-        if ctx.additive_item() is not None and len(ctx.additive_item()) > 0:
-            b = False
-            for it in ctx.additive_item():
-                if b:
-                    res = res + "."
-                    self.addTerminal(".")
-                if not  b:
-                    res = res + "("
-                    self.addTerminal("(")
-                res = res + self.visit(it)
-                if not b:
-                    res = res + ")"
-                    self.addTerminal(")")
-                b = True
-        else:
-            b = False
-            for it in ctx.postfix_item():
-                if b:
-                    res = res + "+"
-                    self.addTerminal("+")
-                res = res + str(self.visit(it))
-                b = True
+        i = 0
+        while i < ctx.getChildCount():
+            if type(ctx.getChild(i)) == TerminalNodeImpl:
+                s  = ctx.getChild(i).getText()
+                self.addTerminal(s)
+            else:
+                s = self.visit(ctx.getChild(i))
+            res = res + s
+            i = i + 1
         return res
 
     # Visit a parse tree produced by ExpressionGrammarParser#items_list.

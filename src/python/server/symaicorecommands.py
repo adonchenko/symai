@@ -1,4 +1,4 @@
-import math
+from mathutils import *
 from collections import deque
 from http import HTTPStatus
 
@@ -227,9 +227,12 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                     raise Exception(f"Attempt to inverse expression error {str(conn.getresponse())}")
                 rsp = json.loads(response.read().decode())
                 rs = rsp["inverse"]
-                it = iter(rs)
-                inv = (next(it))
-                inv = l + "=" + rs[inv]
+                i = rs.find("=")
+
+                # it = iter(rs)
+                # inv = (next(it))
+                # inv = l + "=" + rs[str(inv)]
+                inv = l + "=" + rs[i+1:]
                 subsn = [{"name": nm, "value": l}]
                 tr = self.prepare_parser_expr(inv).assignmentExpression()
                 v = ExtSEGrammarVisitor()
@@ -483,6 +486,35 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 tree = self.prepare_parser_expr(s).expression()
                 res = visitor.visit(tree).replace("&", "&&").replace("|", "||").replace("_d_o_t_", ".").replace("__d__o__t__", "_d_o_t_").replace(" not ", "!").replace(" _n_o_t_ ", " not ").strip(" ")
                 self.get_logger().debug(f"environment successful retrieved. File {fn}")
+
+                cvals, vals, en = TreeUtils.get_vars_using_assignment(res)
+                if len(cvals) > 0 and len(vals) > 0 and len(en) == 0:
+                    gvals = MathUtils.fill_gvars_func()
+                    to_del = []
+                    for it in vals.keys():
+                        st = vals[str(it)]
+                        if len(st) > 0:
+                            try:
+                                r = eval(st, gvals, cvals)
+                                k = str(it)
+                                to_del.append(k)
+                                cvals[k] = r
+                            except:
+                                s = st
+                    for it in to_del:
+                        vals.pop(str(it))
+                    if en is None:
+                        en = ""
+                    for it in cvals.keys():
+                        if len(en) > 0:
+                            en = en + " && "
+                        en = en + str(it) + " == " + str(cvals[str(it)])
+                    for it in vals.keys():
+                        if len(en) > 0:
+                            en = en + " && "
+                        en = en + str(it) + " == " + str(vals[str(it)])
+
+                    res = en
             except Exception as e:
                 self.get_logger().error(f"retrieving environment failed {str(e)} file {fn}")
                 raise Exception(f"Cannot retrieve environment")
@@ -790,19 +822,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             cvals_rpl.append({"name": n, "value": str(cvals[n])})
         return cvals_rpl
 
-    @staticmethod
-    def cotan(x):
-        return 1/math.tan(x)
-
-    @staticmethod
-    def arccotan(x):
-        if x == 0:
-            return math.pi / 2
-        elif x > 0:
-            return math.atan(1 / x)
-        else:  # x < 0
-            return math.atan(1 / x) + math.pi
-
     def do_sm_subst_step(self, env, expr, cnd):
         if expr is not None and expr == "1":
             return env
@@ -829,28 +848,14 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 b = False
                 for it in cvals.keys():
                     lvars[str(it)] = cvals[str(it)]
-                    if str(it) != left:
-                        cv[str(it)] = cvals[str(it)]
-                    else:
+                    cv[str(it)] = cvals[str(it)]
+                    if str(it) == left:
                         b = True
-                gvars = dict()
-                gvars["sin"] = math.sin
-                gvars["cos"] = math.cos
-                gvars["tan"] = math.tan
-                gvars["cotan"] = SymAICoreCommands.cotan
-                gvars["asin"] = math.asin
-                gvars["acos"] = math.acos
-                gvars["atan"] = math.atan
-                gvars["acotan"] = SymAICoreCommands.arccotan
-                gvars["log"] = math.log
-                gvars["lg"] = math.log10
-                gvars["sqrt"] = math.sqrt
-                gvars["exp"] = math.exp
-                gvars["pow"] = math.pow
+                gvars = MathUtils.fill_gvars_func()
                 try:
-                    cv[left] = eval(right,gvars, lvars)
+                    cv[left] = eval(right,  gvars, cv)
                 except NameError as e:
-                    self.get_logger().error(f"traversalbeh NameError error {e}" )
+                    self.get_logger().error(f"traversalbeh expr {expr} env {env} cnd {cnd} NameError error {e}" )
                     raise e
                 except TypeError as e:
                     self.get_logger().error(f"traversalbeh TypeError error {e}")
@@ -993,6 +998,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 if ev.action_has_logical(pe.assignmentExpressionList()):
                     st = r[2].split(";")
                     lg = st[-1]
+                    if len(lg) == 1 and lg == "1":
+                        return ctx, True
                     if len(lg) > 0:
                         ret, tt = TreeUtils.check_const(lg)
                         if ret and tt:

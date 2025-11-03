@@ -5,6 +5,8 @@ from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
 
 from antlr4.error.ErrorListener import *
 
+from mathutils import *
+
 class SymbolicExpressionGrammarErrorListener( ErrorListener ):
 
     def __init__(self):
@@ -98,12 +100,17 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         result = self.visit(ctx.getChild(0))
         if result is None:
             return ""
+        func_found = False
         if result.lower().strip() in trig_funct and len(ctx.children) > 1:
             if ctx.getChild(1).getText() == '(':
                 self.hasTrigonometric = True
+                result = result.lower().strip()
+                func_found = True
         elif result.lower().strip() in nl_funct and len(ctx.children) > 1:
             if ctx.getChild(1).getText() == '(':
                 self.hasNonLinear = True
+                result = result.lower().strip()
+                func_found = True
         # CVC5: Here should be if And, Or Xor or Not eq
         # Z3: and or xor not eq
         # sympy: and or not eq ne
@@ -180,6 +187,14 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
         self.arg_list_cnt = tmp_arg_list_cnt
         self.arg_list_start = tmp_arg_list_start
         self.arg_list_fin = tmp_arg_list_fin
+        if func_found:
+            try:
+                gvars = MathUtils.fill_gvars_func()
+                lvars = dict()
+                s = str(eval(result, gvars, lvars))
+            except:
+                s = result
+            result = s
         return result
 
     # Visit a parse tree produced by ExpressionGrammarParser#argumentExpressionList.
