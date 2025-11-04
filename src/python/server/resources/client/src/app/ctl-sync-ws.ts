@@ -2,10 +2,6 @@ import { Injectable } from '@angular/core';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { Observable } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root'
-})
-
 export class CtlSyncWS {
     private ws : WebSocket | null = null;
     private responseQueue: string[] = [];
@@ -26,6 +22,7 @@ export class CtlSyncWS {
     this.ws!.onmessage = (event) => {
       try {
         this.responseQueue.push(event.data.toString());
+        console.log('*** WebSocket onmessage: ' + event.data.toString() );
         //const str = this.responseQueue.shift();
         //resolve(str);
       } catch (error) {
@@ -44,14 +41,13 @@ export class CtlSyncWS {
 
   }
 
-
-
   public async sendrecv(payload : string): Promise<string> {
     return new Promise((resolve, reject) => {
       if (this.ws!.readyState !== WebSocket.OPEN) {
         return reject(new Error('WebSocket is not open.'));
       }
 
+      console.log(' *** WebSocket sendrecv: ' + payload);
       this.ws!.send( payload );
 
       // Optional: Add a timeout to reject the promise if no response is received
@@ -62,10 +58,12 @@ export class CtlSyncWS {
       }, 5000); // 5-second timeout
 
       const str = this.responseQueue.shift();
-      if( typeof(str) === 'string')
+      if( typeof(str) === 'string') {
+        console.log(' *** WS recv: ' + str);
         resolve(str);
-      else 
-        return reject(new Error('Error receiving data'));
+      }
+      //else 
+      //  return reject(new Error('Error receiving data, response type = ' + typeof(str) ));
     });
   }
 
@@ -85,24 +83,30 @@ export class CtlSyncWS {
       }
 
       const str = this.responseQueue.shift();
-      if( typeof(str) === 'string')
+      if( typeof(str) === 'string') {
+        console.log(' *** WS recv: ' + str);
         resolve(str);
+      }
       else 
-        return reject(new Error('Error receiving data'));
+        return reject(new Error('Error receiving data, response type = ' + typeof(str)));
     });
   }
 
   public close(): void {
-    if( this.ws !== null )
+    if( this.ws !== null ) {
       this.ws.close();
+      this.isConnected = false;
+    }
   }
 
   public async connect(url : string) {
+    console.log(" *** WebSocket connect: " + url);
     this.ws = new WebSocket(url);
     this.postInit();
     await new Promise(resolve => {
       this.ws!.onopen = () => {
         this.isConnected = true;
+        console.log(" *** WebSocket connected");
         resolve(true);
       };
     });

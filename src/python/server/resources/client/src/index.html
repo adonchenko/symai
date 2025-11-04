@@ -108,17 +108,19 @@ function setSizes() {
 
 function refreshItem(id) {
   var element = document.getElementById(id);
-  //var content = element.innerHTML;
-  //element.innerHTML= content; 
-  var n = document.createTextNode(' ');
-  var disp = element.style.display;  // don't worry about previous display style
-  element.appendChild(n);
-  element.style.display = 'none';
+  if(element) {
+    //var content = element.innerHTML;
+    //element.innerHTML= content; 
+    var n = document.createTextNode(' ');
+    var disp = element.style.display;  // don't worry about previous display style
+    element.appendChild(n);
+    element.style.display = 'none';
 
-  setTimeout(function(){
-      n.parentNode.removeChild(n);
-      element.style.display = disp;
-    },20);
+    setTimeout(function(){
+        n.parentNode.removeChild(n);
+        element.style.display = disp;
+      },2);
+    }
 }
 
 function diag(msg) {
@@ -126,13 +128,20 @@ function diag(msg) {
     var n = document.createTextNode(msg);
     if(element)
       element.appendChild(n);
+
+    var br = document.createElement("br");  
+    element.append(br)
 }
 
 function output(msg) {
     var element = document.getElementById("runOutput");
-    var n = document.createTextNode(msg);
-    if(element)
+    if(element) {
+      var n = document.createTextNode(msg);
       element.appendChild(n);
+
+      var br = document.createElement("br");  
+      element.append(br)
+    }
 }
 
 
