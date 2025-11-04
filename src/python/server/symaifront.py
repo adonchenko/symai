@@ -55,7 +55,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                 self.end_headers()
             except Exception as e:
                 pass
-        elif re.search("/symai/*", self.path) or re.search("/favicon.ico", self.path):
+        else:
             try:
                 s, ct  = self.sc.do_get(self, self.path)
                 self.send_response(HTTPStatus.OK)
@@ -66,8 +66,6 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self.sc.get_logger().error(f"Error {e}")
                 self.do_send_err_rsp(f"Error {e}")
-        else:
-            self.do_send_err_rsp(f"Bad request GET {self.path}")
 
 def signal_handler(signal, frame):
     logger = logging.getLogger("frontend")
