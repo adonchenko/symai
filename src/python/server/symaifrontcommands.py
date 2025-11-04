@@ -66,9 +66,7 @@ class SymAIFrontendCommands(symaicommands.SymAICommands):
         fn = Path(os.path.join(base_path, fn))
         if fn.exists() and fn.is_file():
             filename = fn
-            self.logger.debug(f"File {fn} exist type is {ct}")
         else:
-            self.logger.debug(f"File {fn} does not exist assuming index.html")
             filename = os.path.join(base_path, "index.html")
             ct = "text/html"
             is_binary = False
