@@ -57,7 +57,7 @@ class SymAIFrontendCommands(symaicommands.SymAICommands):
                 elif fext == ".xml":
                     ct = "text/xml"
 
-                fn = resource_path[7:]
+                fn = resource_path
             else:
                 fn = "index.html"
                 ct = "text/html"
