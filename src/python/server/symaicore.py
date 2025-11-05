@@ -261,7 +261,7 @@ async def handle_client(websocket):
                         res = "ok"
                         try:
                             sc.do_trace(str(connected_clients.get(websocket).get_uuid()),
-                                        str(message).strip()[12:])
+                                        str(message).strip()[5:])
                         except Exception as e:
                             sc.get_logger().error("trace command failed " + str(e))
                             res = "nok " + str(e)
