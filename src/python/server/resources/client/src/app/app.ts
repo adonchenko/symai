@@ -35,7 +35,7 @@ declare function output(msg: string): any;
 declare function getItemText(id : string) : any;
 
 
-export const SymAI_coreURL : string = "ws://CORE_URL";
+export const SymAI_coreURL : string = "ws://{CORE_HOST}:{CORE_PORT}";
 
 @Component({
   selector: 'app-root',
@@ -50,9 +50,10 @@ export const SymAI_coreURL : string = "ws://CORE_URL";
     ButtonModule,
     DialogModule,
 
+
     Prefs
   ],
-  providers:  [ CtlWS, CtlSyncWS, CtlPrefs, MessageService ],
+  providers:  [ CtlWS, CtlPrefs, MessageService ],
 
   templateUrl: './app.html',
   styleUrl: './app.css'
@@ -63,15 +64,26 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     protected readonly title = signal('SymAI Client');
     messages: string[] = [];
     private messageSubscription: Subscription | undefined;
+    svcSyncWS : CtlSyncWS | null = null;
 
     constructor(//private svcWS: CtlWS,
-                private svcSyncWS : CtlSyncWS,
                 private svcCtlPrefs: CtlPrefs, 
                 private svcMsg: MessageService,
                 private primeng: PrimeNG) {
         console.log("constructor");
     }
 
+    SyncWS() : CtlSyncWS {
+      if( this.svcSyncWS === null )
+        this.svcSyncWS = new CtlSyncWS();
+      if( !this.svcSyncWS.isConnected ) {
+        this.Diag("Connecting to " + SymAI_coreURL);
+        this.svcSyncWS.connect(SymAI_coreURL);
+      }
+      else
+        this.Diag("It seems WebSocket connected");
+      return this.svcSyncWS;
+    }
 
     items: ChkMenuItem[] = [];
     itemsRun : ChkMenuItem[] = [];
@@ -140,9 +152,6 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
           (window as any).theProp = "this";
         }
        
-        // Subscribe to messages from the WebSocket
-        this.svcSyncWS.connect(SymAI_coreURL); // Connect when the component initializes
-
         /*
         this.messageSubscription = this.svcWS.getMessages()!.subscribe(
           (message) => {
@@ -165,7 +174,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     }
 
     public ngOnDestroy(): void {
-      this.svcSyncWS.disconnect();
+      if(this.svcSyncWS !== null)
+        this.svcSyncWS.disconnect();
       console.log("ngOnDestroy");
     }
 
@@ -177,6 +187,9 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
           (window as any)['myApp'] = this;
           (window as any).theProp = "that";
         }
+
+        // Subscribe to messages from the WebSocket
+        this.SyncWS();
 
         if( this.prefsComponent === undefined )
           this.msgBox('error', 'Error', 'prefsComponent undefined')
@@ -207,35 +220,6 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       return this.splitterBottom;
     }  
 
-    doSplitterResizeElem( ws : HTMLElement, idElem : string  ) {
-      const inpElem = document.getElementById(idElem);
-      let w : number = 0;
-      if(inpElem) {
-        setTextareaSizes(idElem);
-    /*
-        //console.log("ws.style.height="+ws.style.height);
-        let h1 : number = wsHeight(ws); //Number(ws.height);
-        w = wsWidth(ws);//Number(ws.width);
-        if( h1===0) { 
-          console.log("ws.clientHeight="+ws.clientHeight);
-          h1=Number(ws.clientHeight);
-        }
-        if(w === 0) {
-          console.log("ws.clientWidth="+ws.clientWidth);
-          w=Number(ws.clientWidth);
-        }
-        console.log("Anchor sizes: "+ w + " x " + h1);
-
-        let t1 : number  =  Math.trunc((h1 * Math.trunc(this.splitterTop)) / 100) - 36;
-        //console.log("h1=" + h1 + ", h=" +t1)
-        inpElem.style.height =  String(t1) + "px";
-        inpElem.style.width = String(w-20) + "px";
-        inpElem.style.left = "4px";
-        //console.log('New Textarea height', inpElem.style.height);
-    */
-      }
-    }
-
     onSplitterResizeEnd(event: any) {
       //console.log('Splitter resized');
       this.splitterTop = event.sizes[0];
@@ -245,10 +229,10 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       const ws = document.getElementById("workspace");
       if(ws) {
         switch(this.tabVal) {
-          case 0: this.doSplitterResizeElem(ws, "txtEnv"); break;
-          case 1: this.doSplitterResizeElem(ws, "txtBeh"); break;
-          case 2: this.doSplitterResizeElem(ws, "txtAct"); break;
-          case 3: this.doSplitterResizeElem(ws, "txtTgt"); break;
+          case 0: setTextareaSizes("txtEnv"); break;
+          case 1: setTextareaSizes("txtBeh"); break;
+          case 2: setTextareaSizes("txtAct"); break;
+          case 3: setTextareaSizes("txtTgt"); break;
         }
       }
     }
@@ -275,6 +259,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             reader.onload = (e) => {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntEnv = String(fileContent);
+              refreshItem("txtEnv");
             };
             reader.onerror = (e : any) => {
               console.error("Error reading file:", e.target.error);
@@ -302,6 +287,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             reader.onload = (e) => {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntAct = String(fileContent);
+              refreshItem("txtAct");
             };
             reader.onerror = (e : any) => {
               console.error("Error reading file:", e.target.error);
@@ -329,6 +315,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             reader.onload = (e) => {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntTgt = String(fileContent);
+              refreshItem("txtTgt");
             };
             reader.onerror = (e : any) => {
               console.error("Error reading file:", e.target.error);
@@ -338,7 +325,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             console.log("read File...");             
             this.cntTgt = "Reading file...";
             reader.readAsText(this.fileTgtToUpload);
-            console.log("cntTgt: " + this.cntTgt); // Do something with the file content
+            console.log("cntTgt: " + this.cntTgt); 
+            refreshItem("txtTgt"); // Do something with the file content
             
         }
         else
@@ -356,6 +344,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             reader.onload = (e) => {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntBeh = String(fileContent);
+              refreshItem("txtBeh");
             };
             reader.onerror = (e : any) => {
               console.error("Error reading file:", e.target.error);
@@ -365,7 +354,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             console.log("read File..." + this.fileBehToUpload);             
             this.cntBeh = "Reading file...";
             reader.readAsText(this.fileBehToUpload);
-            console.log("cntBeh: " + this.cntBeh); // Do something with the file content
+            console.log("cntBeh: " + this.cntBeh); 
+            refreshItem("txtBeh");// Do something with the file content
         }
         else
           console.log("fileBehToUpload not found");
@@ -416,29 +406,25 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     // ============================================ communication: 
 
     doReconnect() : void {
-      this.svcSyncWS.disconnect(); 
+      if(this.svcSyncWS !== null)
+        this.svcSyncWS.disconnect(); 
       this.sleep(2);
-      this.svcSyncWS.connect(SymAI_coreURL);
-
-      if( !this.svcSyncWS.isConnected )
+ 
+      if( !this.SyncWS().isConnected )
         this.msgBox('error', 'Error', 'Could not connect to '+ SymAI_coreURL);
       else
         this.msgBox('info', 'Information', 'Connected');
     }
     
     doShutdown() : void {
-      if( !this.svcSyncWS.isConnected )
-        this.svcSyncWS.connect(SymAI_coreURL);
-      if( this.svcSyncWS.send("shutdown") )
+      if( this.SyncWS().send("shutdown") )
         this.msgBox('info', 'Information', 'Command sent');
       else 
         this.msgBox('error', 'Error', 'Could not send command');
     }
     
     doStop() : void {
-      if( !this.svcSyncWS.isConnected )
-        this.svcSyncWS.connect(SymAI_coreURL);
-      if( this.svcSyncWS.send("stop") )
+      if( this.SyncWS().send("stop") )
         this.msgBox('info', 'Information', 'Command sent');
       else 
         this.msgBox('error', 'Error', 'Could not send command');
@@ -453,80 +439,62 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.isRunning = false;
     }
 
-    async doLoadEnv() {
+    async doLoadData( msg: string, dataname: string) {
+      try {
+        const resp = await this.SyncWS().sendrecv(msg);
+        if( resp === 'ok' ) {
+          this.Diag( dataname + "  loaded");
+        }
+        else {
+          this.Diag("Error loading " + dataname);
+        }
+      } catch (error) {
+          this.Diag('Error during synchronous message exchange:' + error);
+      }
+
+    }
+
+    doLoadEnv() : void {
       if( this.cntEnv === "" ) {
         this.msgBox('error', 'Error', 'Environment is empty -- nothing to load');
         return;
       }
       
-      var msg : string = 'environment { "content":' + this.cntEnv + ', "solver":';
+      var msg : string = 'environment { "content":"' + this.cntEnv + '", "solver": "';
       if( this.prefsComponent === undefined )
         msg.concat('SymPy');
-      else
-        msg.concat(this.prefsComponent.selectedSolver);
-      msg.concat('}');
-
-      if( !this.svcSyncWS.isConnected )
-        this.svcSyncWS.connect(SymAI_coreURL);
-      
-      try {
-        const resp = await this.svcSyncWS.sendrecv(msg);
-        if( resp === 'ok' ) {
-          this.Diag("Environment loaded");
-        }
-        else {
-          this.Diag("Error loading Environment");
-        }
-      } catch (error) {
-          this.Diag('Error during synchronous message exchange:' + error);
+      else { 
+        this.Diag("Solver: "+ this.prefsComponent.selectedSolver);
+        if(this.prefsComponent.selectedSolver === "" )
+          msg += 'SymPy';
+        else
+          msg += this.prefsComponent.selectedSolver;
       }
+      msg += '" }';
+
+      this.doLoadData(msg, "Environment");      
     }
 
-    async doLoadBeh() {
+    doLoadBeh() : void {
       if( this.cntBeh === "" ) {
         this.msgBox('error', 'Error', 'Behavior is empty -- nothing to load');
         return;
       }
       
-      var msg : string = 'behaviors { "content":' + this.cntBeh + '}';
- 
-      if( !this.svcSyncWS.isConnected )
-        this.svcSyncWS.connect(SymAI_coreURL);
-      try {
-        const resp = await this.svcSyncWS.sendrecv(msg);
-        if( resp === 'ok' ) {
-          this.Diag("Behavior loaded");
-        }
-        else {
-          this.Diag("Error loading Behavior");
-        }
-      } catch (error) {
-          this.Diag('Error during synchronous message exchange:' + error);
-          console.log()
-      }
+      var msg : string = 'behaviors { "content": "' + this.cntBeh + '" }';
+
+      this.doLoadData(msg, "Behaviors");
     }
 
-    async doLoadAct() {
+    doLoadAct() : void {
       if( this.cntAct === "" ) {
         this.msgBox('error', 'Error', 'Actions  empty -- nothing to load');
         return;
       }
       
-      var msg : string = 'actions { "content":' + this.cntAct + '}';
+      var msg : string = 'actions { "content": "' + this.cntAct + '" }';
 
-      if( !this.svcSyncWS.isConnected )
-        this.svcSyncWS.connect(SymAI_coreURL);
-      try {
-        const resp = await this.svcSyncWS.sendrecv(msg);
-        if( resp === 'ok' ) {
-          this.Diag("Actions loaded");
-        }
-        else {
-          this.Diag("Error loading Actions");
-        }
-      } catch (error) {
-          this.Diag('Error during synchronous message exchange:' + error);
-      }
+      this.doLoadData(msg, "Actions");
     }
 
     async doLoadTgt() {
@@ -535,26 +503,16 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         return;
       }
       
-      var msg : string = 'property { "content":' + this.cntTgt + ', "solver":';
+      var msg : string = 'property { "content": "' + this.cntTgt + '", "solver": "';
       if( this.prefsComponent === undefined )
+        msg.concat('SymPy');
+      else if(this.prefsComponent.selectedSolver === "" )
         msg.concat('SymPy');
       else
         msg.concat(this.prefsComponent.selectedSolver);
-      msg.concat('}');
+      msg.concat('" }');
 
-      try {
-        if( !this.svcSyncWS.isConnected )
-          this.svcSyncWS.connect(SymAI_coreURL);
-          const resp = await this.svcSyncWS.sendrecv(msg);
-          if( resp === 'ok' ) {
-            this.Diag("Property loaded");
-          }
-          else {
-            this.Diag("Error loading Property");
-          }
-      } catch (error) {
-          this.Diag('Error during synchronous message exchange:' + error);
-      }
+      this.doLoadData(msg, "Property");
     }
 
     doLoad() : void {
@@ -579,7 +537,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
           debug : this.isDebug
         };
         msg += JSON.stringify(parm);
-        this.svcSyncWS.send(msg);
+        this.SyncWS().send(msg);
         this.isRunning = true;
 
         this.recvOutput();
@@ -590,9 +548,6 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     }
 
     doRun() : void {
-      if( !this.svcSyncWS.isConnected )
-        this.svcSyncWS.connect(SymAI_coreURL);
-      
       if( this.isDebug ) { // if Already debugging, just send "run" subcommand
         this.isDebug = false;
         
@@ -600,7 +555,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         this.checkMenu(this.itemsRun, "Debug", false);
 
         var msg : string = "traversalbeh run";
-        this.svcSyncWS.send(msg);
+        this.SyncWS().send(msg);
         this.isRunning = true;
 
         this.recvOutput();
@@ -634,9 +589,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
 
     async recvOutput() {
       try {
-        if( !this.svcSyncWS.isConnected )
-          this.svcSyncWS.connect(SymAI_coreURL);
-          const resp = await this.svcSyncWS.recv();
+          const resp = await this.SyncWS().recv();
 
           this.onReceiveMsg(resp);
       } catch (error) {
