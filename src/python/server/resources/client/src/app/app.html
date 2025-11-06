@@ -193,10 +193,7 @@
               <p-tab [value]="1">Behavior</p-tab>
               <p-tab [value]="2">Actions</p-tab>
               <p-tab [value]="3">Property</p-tab>
-              @if(isRunning) {
-              <!--<p-tab [value]="4" *ngIf="isRunning">Execution</p-tab>-->
-              <p-tab [value]="4" >Execution</p-tab>
-              }
+              <p-tab [value]="4">Execution</p-tab>
           </p-tablist>
 
           <p-tabpanels>
@@ -248,17 +245,15 @@
             
             </p-tabpanel>
 
-            @if(isRunning) {
             <!--<p-tabpanel [value]="4" *ngIf="isRunning">-->
             <p-tabpanel [value]="4">
-              <div #menuRun id="menuRun" layout="row" class="div-table-row">
+              <!-- <div #menuRun id="menuRun" layout="row" class="div-table-row"> -->
                 <!-- Controls -->
-                <p-menubar [model]="itemsRun" [style]="{height:'48px'}"/>
-              </div>
-              <div #runOutput id="runOutput">
+                <!-- <p-menubar [model]="itemsRun" [style]="{height:'48px'}"/> -->
+              <!-- </div> -->
+              <div #runOutput id="runOutput" style="font-family: Arial, Helvetica, sans-serif; font-size: 10pt;">
               </div>
             </p-tabpanel>  
-            }
           </p-tabpanels>
         </p-tabs>
 
@@ -266,7 +261,9 @@
         </ng-template>
         <ng-template #panel>
             <div id="graph"></div>
-            <div id="diag" class="flex items-center justify-center h-full"><!--Panel 2--></div>
+            <div id="diag" class="flex items-center justify-center h-full" style="font-family: Arial, Helvetica, sans-serif; font-size: 8pt;">
+              <!--Panel 2-->
+            </div>
         </ng-template>
     </p-splitter>
     </div>

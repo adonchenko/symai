@@ -369,6 +369,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     switchBeh() { this.tabVal = 1; setTextareaSizes("txtBeh"); }
     switchAct() { this.tabVal = 2; setTextareaSizes("txtAct"); }
     switchTgt() { this.tabVal = 3; setTextareaSizes("txtTgt"); }
+    switchCons() { this.tabVal = 4; }
 
     dlgVisible : boolean = false;
     isRunning : boolean = false;
@@ -421,6 +422,12 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         this.msgBox('info', 'Information', 'Command sent');
       else 
         this.msgBox('error', 'Error', 'Could not send command');
+      this.isDebug = false;
+      this.isRunning = false;
+      this.envLoaded = false;
+      this.behLoaded = false;
+      this.actLoaded = false;
+      this.tgtLoaded = false;
     }
     
     doStop() : void {
@@ -437,12 +444,25 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       
       this.isDebug = false;
       this.isRunning = false;
+      this.envLoaded = false;
+      this.behLoaded = false;
+      this.actLoaded = false;
+      this.tgtLoaded = false;
     }
 
+    // ===================================================
+    envLoaded : boolean = false;
+    actLoaded : boolean = false;
+    behLoaded : boolean = false;
+    tgtLoaded : boolean = false;
+    errLoad : boolean = false;
+
     async doLoadData( msg: string, dataname: string) {
+      this.errLoad = true;
       try {
         const resp = await this.SyncWS().sendrecv(msg);
         if( resp === 'ok' ) {
+          this.errLoad = false;
           this.Diag( dataname + "  loaded");
         }
         else {
@@ -472,7 +492,10 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       }
       msg += '" }';
 
-      this.doLoadData(msg, "Environment");      
+      this.doLoadData(msg, "Environment"); 
+      if( !this.errLoad ) 
+        this.envLoaded = true;
+           
     }
 
     doLoadBeh() : void {
@@ -484,6 +507,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       var msg : string = 'behaviors { "content": "' + this.cntBeh + '" }';
 
       this.doLoadData(msg, "Behaviors");
+      if( !this.errLoad ) 
+        this.behLoaded = true;
     }
 
     doLoadAct() : void {
@@ -495,6 +520,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       var msg : string = 'actions { "content": "' + this.cntAct + '" }';
 
       this.doLoadData(msg, "Actions");
+      if( !this.errLoad ) 
+        this.actLoaded = true;
     }
 
     async doLoadTgt() {
@@ -513,6 +540,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       msg.concat('" }');
 
       this.doLoadData(msg, "Property");
+      if( !this.errLoad ) 
+        this.tgtLoaded = true;
     }
 
     doLoad() : void {
@@ -529,6 +558,14 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         this.dlgStartBeh = false;
         this.startBeh = getItemText("start_beh");
 
+        this.Diag("Start beh=" + this.startBeh);
+
+        this.doLoad();
+        if(!this.envLoaded) { this.msgBox('error', 'Error', 'Environment not loaded'); return; }
+        if(!this.actLoaded) { this.msgBox('error', 'Error', 'Actions not loaded'); return; }
+        if(!this.behLoaded) { this.msgBox('error', 'Error', 'Behaviors not loaded'); return; }
+        if(!this.tgtLoaded) { this.msgBox('error', 'Error', 'Property not loaded'); return; }
+
         var msg : string = "traversalbeh ";
         var parm : TraversalbehCfg = { 
           solver : this.prefsComponent!.selectedSolver,
@@ -536,7 +573,11 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
           reenter_count : this.prefsComponent!.reenterCount,
           debug : this.isDebug
         };
+        
         msg += JSON.stringify(parm);
+        
+        this.Diag("Sending: " + msg);
+
         this.SyncWS().send(msg);
         this.isRunning = true;
 
