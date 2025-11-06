@@ -147,7 +147,7 @@ async def handle_client(websocket):
                         res = "ok"
                         try:
                             s = sc.do_behaviors(str(connected_clients.get(websocket).get_uuid()),
-                                                str(message).strip()[9:])
+                                                message.replace("\t"," ").replace("\r"," ").replace("\n"," ").strip()).strip()[9:]
                             if len(s) > 0:
                                 res = res + " " + s
                         except Exception as e:
@@ -165,7 +165,8 @@ async def handle_client(websocket):
                     else:
                         res = "ok"
                         try:
-                            s = sc.do_actions(str(connected_clients.get(websocket).get_uuid()), str(message).strip()[7:])
+                            s = sc.do_actions(str(connected_clients.get(websocket).get_uuid()),
+                                              message.replace("\t"," ").replace("\r"," ").replace("\n"," ").strip()[7:])
                             if len(s) > 0:
                                 res = res + " " + s
                         except Exception as e:
@@ -184,7 +185,7 @@ async def handle_client(websocket):
                         res = "ok"
                         try:
                             s = sc.do_environment(str(connected_clients.get(websocket).get_uuid()),
-                                                  str(message).strip()[11:])
+                                                  message.replace("\t"," ").replace("\r"," ").replace("\n"," ").strip().strip()[11:])
                             if len(s) > 0:
                                 res = res + " " + s
                         except Exception as e:
@@ -204,7 +205,7 @@ async def handle_client(websocket):
                         res = "ok"
                         try:
                             s = sc.do_property(str(connected_clients.get(websocket).get_uuid()),
-                                               str(message).strip()[8:])
+                                               message.replace("\t"," ").replace("\r"," ").replace("\n"," ").strip().strip()[8:])
                             if len(s) > 0:
                                 res = res + " " + s
                         except Exception as e:
@@ -261,7 +262,7 @@ async def handle_client(websocket):
                         res = "ok"
                         try:
                             sc.do_trace(str(connected_clients.get(websocket).get_uuid()),
-                                        str(message).strip()[5:])
+                                        message.replace("\t"," ").replace("\r"," ").replace("\n"," ").strip().strip()[5:])
                         except Exception as e:
                             sc.get_logger().error("trace command failed " + str(e))
                             res = "nok " + str(e)
