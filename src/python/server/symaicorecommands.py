@@ -125,7 +125,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             res["content"] = cnt
             fname = os.path.basename(fname)
             res["filename"] = fname
-            res = json.dumps(res)
+            json.dumps(res)
             self.get_logger().info(f"behaviors command processed. Retrieved behaviors list is {cnt}")
         else:
             try:
@@ -151,6 +151,10 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                     f.write(res)
                 self.get_logger().info(f"behaviors command processed. The behaviors list saved to {fn}")
                 setattr(self, "behaviors", fn)
+                rs = dict()
+                rs["filename"] = fn
+                rs["content"] = res
+                res = json.dumps(rs)
             except Exception as e:
                 self.get_logger().error(f"behaviors command processing failed {str(e)}")
                 try:
@@ -159,6 +163,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 except:
                     pass
                 raise e
+        return res
 
     def get_debug(self):
         if hasattr(self, "debug"):
