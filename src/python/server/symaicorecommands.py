@@ -317,22 +317,18 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             cnt = self.do_get_file(cuuid,
                                symaiconfig.SymAIConfig.BASE_ACTIONS.value,
                                data_received)
-            print(f"After do_get_file {cnt}")
             fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
                               cuuid,
                               symaiconfig.SymAIConfig.BASE_ACTIONS.value,
                               cnt["filename"])
             try:
-                print("Before tree")
                 tree = TreeUtils.prepare_parser_expr(cnt["content"]).actionsList()
                 visitor = ExtSEGrammarVisitor()
                 res = visitor.visit(tree)
                 with open(fn, "w") as f:
                     f.write(res)
                 setattr(self, "actions", fn)
-                print("Before invert")
                 self.invert_actions(cuuid, visitor, fn)
-                print("After invert")
 
                 self.get_logger().info(f"actions command processed. The actions list saved to {fn}")
                 res = ""
