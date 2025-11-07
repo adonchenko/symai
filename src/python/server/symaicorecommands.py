@@ -125,7 +125,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             res["content"] = cnt
             fname = os.path.basename(fname)
             res["filename"] = fname
-            json.dumps(res)
+            res = json.dumps(res)
             self.get_logger().info(f"behaviors command processed. Retrieved behaviors list is {cnt}")
         else:
             try:
@@ -151,10 +151,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                     f.write(res)
                 self.get_logger().info(f"behaviors command processed. The behaviors list saved to {fn}")
                 setattr(self, "behaviors", fn)
-                rs = dict()
-                rs["filename"] = fn
-                rs["content"] = res
-                res = json.dumps(rs)
+                res = ""
             except Exception as e:
                 self.get_logger().error(f"behaviors command processing failed {str(e)}")
                 try:
@@ -302,10 +299,11 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             if hasattr(self, "actions"):
                 cnt, v = self.get_actions()
                 fname = getattr(self, "actions")
-            res["content"] = cnt
+            rs = dict()
+            rs["content"] = cnt
             fname = os.path.basename(fname)
-            res["filename"] = fname
-            res = json.dumps(res)
+            rs["filename"] = fname
+            res = json.dumps(rs)
             self.get_logger().info(f"actions command processed. Retrieved actions list is {cnt}")
         else:
             try:
@@ -319,15 +317,23 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             cnt = self.do_get_file(cuuid,
                                symaiconfig.SymAIConfig.BASE_ACTIONS.value,
                                data_received)
-            fn = os.path.join(res, cnt["filename"])
+            print(f"After do_get_file {cnt}")
+            fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+                              cuuid,
+                              symaiconfig.SymAIConfig.BASE_ACTIONS.value,
+                              cnt["filename"])
             try:
+                print("Before tree")
                 tree = TreeUtils.prepare_parser_expr(cnt["content"]).actionsList()
                 visitor = ExtSEGrammarVisitor()
                 res = visitor.visit(tree)
                 with open(fn, "w") as f:
                     f.write(res)
                 setattr(self, "actions", fn)
+                print("Before invert")
                 self.invert_actions(cuuid, visitor, fn)
+                print("After invert")
+
                 self.get_logger().info(f"actions command processed. The actions list saved to {fn}")
                 res = ""
             except Exception as e:
