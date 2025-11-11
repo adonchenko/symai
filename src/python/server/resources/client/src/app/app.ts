@@ -10,7 +10,7 @@ import { MenubarModule } from 'primeng/menubar';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import {MenuItem} from 'primeng/api';
-import { MessageService } from 'primeng/api';
+//import { MessageService } from 'primeng/api';
 //import { FileSelectEvent } from 'primeng/fileupload';
 import { Subscription, of } from 'rxjs';
 import { delay } from 'rxjs/operators';
@@ -53,7 +53,7 @@ export const SymAI_coreURL : string = "ws://{CORE_HOST}:{CORE_PORT}";
 
     Prefs
   ],
-  providers:  [ CtlWS, CtlPrefs, MessageService ],
+  providers:  [ CtlWS, CtlPrefs ], //, MessageService ],
 
   templateUrl: './app.html',
   styleUrl: './app.css'
@@ -68,7 +68,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
 
     constructor(//private svcWS: CtlWS,
                 private svcCtlPrefs: CtlPrefs, 
-                private svcMsg: MessageService,
+                //private svcMsg: MessageService,
                 private primeng: PrimeNG) {
         console.log("constructor");
     }
@@ -107,10 +107,10 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         {
           label:'Data', icon:'pi pi-fw pi-file',
           items:[
-              { label:'Load Environment', icon:'pi pi-fw', command: () => this.doLoadEnv() },
-              { label:'Load Behavior', icon:'pi pi-fw', command: () => this.doLoadBeh() },
-              { label:'Load Actions', icon:'pi pi-fw', command: () => this.doLoadAct() },
-              { label:'Load Property', icon:'pi pi-fw', command: () => this.doLoadTgt() },
+              { label:'Load Environment', icon:'pi pi-fw', command: () => this.doLoadEnv(false) },
+              { label:'Load Behavior', icon:'pi pi-fw', command: () => this.doLoadBeh(false) },
+              { label:'Load Actions', icon:'pi pi-fw', command: () => this.doLoadAct(false) },
+              { label:'Load Property', icon:'pi pi-fw', command: () => this.doLoadTgt(false) },
               { separator:true },
               { label:'Load All', icon:'pi pi-fw', command: () => this.doLoad() },
             ]
@@ -176,13 +176,13 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     public ngOnDestroy(): void {
       if(this.svcSyncWS !== null)
         this.svcSyncWS.disconnect();
-      console.log("ngOnDestroy");
+      //console.log("ngOnDestroy");
     }
 
     @ViewChild(Prefs) prefsComponent?: Prefs;
 
     public ngAfterViewInit(): void {
-        console.log("ngOnAfterInit");
+        //console.log("ngOnAfterInit");
         if (typeof window !== 'undefined') {
           (window as any)['myApp'] = this;
           (window as any).theProp = "that";
@@ -192,7 +192,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         this.SyncWS();
 
         if( this.prefsComponent === undefined )
-          this.msgBox('error', 'Error', 'prefsComponent undefined')
+          this.msgBox('Error', 'prefsComponent undefined');
     }
 
     // =================================== Interface menu
@@ -224,7 +224,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       //console.log('Splitter resized');
       this.splitterTop = event.sizes[0];
       this.splitterBottom = event.sizes[1];
-      console.log('***** New panel sizes:', this.splitterTop,this.splitterBottom);
+      //console.log('***** New panel sizes:', this.splitterTop,this.splitterBottom);
 
       const ws = document.getElementById("workspace");
       if(ws) {
@@ -250,27 +250,27 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     
     handleEnvFileInput(event: any): void {
         //const inputElement = event.target as HTMLInputElement;
-        console.log("handleEnvFileInput:");
+        //console.log("handleEnvFileInput:");
         this.fileEnvToUpload = event.target.files[0];
         if (this.fileEnvToUpload) {
             const reader = new FileReader();
-            console.log("FileReader created");             
+            //console.log("FileReader created");             
             
             reader.onload = (e) => {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntEnv = String(fileContent);
-              refreshItem("txtEnv");
+              console.log("cntEnv: " + this.cntEnv);
+              //refreshItem("txtEnv");
             };
             reader.onerror = (e : any) => {
               console.error("Error reading file:", e.target.error);
-              console.log("Error reading file.");
+              this.msgBox("Error", "Error reading file.");
             };
             
-            console.log("read File...");   
+            //console.log("read File...");   
             this.cntEnv = "Reading file....";          
             reader.readAsText(this.fileEnvToUpload);
-            console.log("cntEnv: " + this.cntEnv);
-            refreshItem("txtEnv"); // Do something with the file content
+            //refreshItem("txtEnv"); // Do something with the file content
         }
         else
           console.log("fileEnvToUpload not found");
@@ -278,27 +278,27 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
 
     handleActFileInput(event: any): void {
         //const inputElement = event.target as HTMLInputElement;
-        console.log("handleActFileInput:");
+        //console.log("handleActFileInput:");
         this.fileActToUpload = event.target.files[0];
         if (this.fileActToUpload) {
             const reader = new FileReader();
-            console.log("FileReader created");             
+            //console.log("FileReader created");             
             
             reader.onload = (e) => {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntAct = String(fileContent);
-              refreshItem("txtAct");
+              //refreshItem("txtAct");
+              console.log("cntAct: " + this.cntAct); // Do something with the file content
             };
             reader.onerror = (e : any) => {
-              console.error("Error reading file:", e.target.error);
-              console.log("Error reading file.");
+              //console.error("Error reading file:", e.target.error);
+              this.msgBox("Error", "Error reading file.");
             };
             
-            console.log("read File...");             
+            //console.log("read File...");             
             this.cntAct = "Reading file...";
             reader.readAsText(this.fileActToUpload);
-            console.log("cntAct: " + this.cntAct); // Do something with the file content
-            refreshItem("txtAct"); // Do something with the file content
+            //refreshItem("txtAct"); // Do something with the file content
         }
         else
           console.log("fileActToUpload not found");
@@ -306,27 +306,27 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
 
     handleTgtFileInput(event: any): void {
         //const inputElement = event.target as HTMLInputElement;
-        console.log("handleTgtFileInput:");
+        //console.log("handleTgtFileInput:");
         this.fileTgtToUpload = event.target.files[0];
         if (this.fileTgtToUpload) {
             const reader = new FileReader();
-            console.log("FileReader created");             
+            //console.log("FileReader created");             
             
             reader.onload = (e) => {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntTgt = String(fileContent);
-              refreshItem("txtTgt");
+              //refreshItem("txtTgt");
+              console.log("cntTgt: " + this.cntTgt); 
             };
             reader.onerror = (e : any) => {
-              console.error("Error reading file:", e.target.error);
-              console.log("Error reading file.");
+              //console.error("Error reading file:", e.target.error);
+              this.msgBox("Error", "Error reading file.");
             };
             
-            console.log("read File...");             
+            //console.log("read File...");             
             this.cntTgt = "Reading file...";
             reader.readAsText(this.fileTgtToUpload);
-            console.log("cntTgt: " + this.cntTgt); 
-            refreshItem("txtTgt"); // Do something with the file content
+            //refreshItem("txtTgt"); // Do something with the file content
             
         }
         else
@@ -335,27 +335,27 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
 
     handleBehFileInput(event: any): void {
         //const inputElement = event.target as HTMLInputElement;
-        console.log("handleBehFileInput:");
+        //console.log("handleBehFileInput:");
         this.fileBehToUpload = event.target.files[0];
         if (this.fileBehToUpload) {
             const reader = new FileReader();
-            console.log("FileReader created");             
+            //console.log("FileReader created");             
             
             reader.onload = (e) => {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntBeh = String(fileContent);
-              refreshItem("txtBeh");
+              //refreshItem("txtBeh");
+              console.log("cntBeh: " + this.cntBeh); 
             };
             reader.onerror = (e : any) => {
-              console.error("Error reading file:", e.target.error);
-              console.log("Error reading file.");
+              //console.error("Error reading file:", e.target.error);
+              this.msgBox("Error", "Error reading file.");
             };
             
-            console.log("read File..." + this.fileBehToUpload);             
+            //console.log("read File..." + this.fileBehToUpload);             
             this.cntBeh = "Reading file...";
             reader.readAsText(this.fileBehToUpload);
-            console.log("cntBeh: " + this.cntBeh); 
-            refreshItem("txtBeh");// Do something with the file content
+            //refreshItem("txtBeh");// Do something with the file content
         }
         else
           console.log("fileBehToUpload not found");
@@ -386,7 +386,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     }
 
     showPrefsDialog() {
-      console.log("Call showDialog");
+//      console.log("Call showDialog");
       this.dlgVisible = true;
       if( this.prefsComponent !== undefined )
         this.prefsComponent.showDialog();
@@ -394,9 +394,19 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         this.svcCtlPrefs.setShowDialog(this.dlgVisible);
     }
 
-    msgBox(sev: string, hdr: string, msg: string) : void {
-      console.log(hdr + ' : ' + msg);
-      this.svcMsg.add({severity:sev, summary:hdr, detail:msg});
+    msgBox(hdr: string, msg: string) : void {
+      console.log("MsgBox: " + hdr + ' : ' + msg);
+
+      const div1 = document.getElementById("msg_hdr");
+      if( div1 ) div1.innerText = hdr;
+      const div2 = document.getElementById("msg_msg");
+      if( div2 ) div2.innerText = msg;
+      const box = document.getElementById("MsgBox");
+      if(box) box.style.visibility="visible";
+      else console.log("Failure with MsgBox");
+
+      if( div2 ) div2.innerText = msg;
+      //this.svcMsg.add({severity:sev, summary:hdr, detail:msg});
     }
     
     Diag(msg : string) : void {
@@ -412,16 +422,16 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.sleep(2);
  
       if( !this.SyncWS().isConnected )
-        this.msgBox('error', 'Error', 'Could not connect to '+ SymAI_coreURL);
+        this.msgBox('Error', 'Could not connect to '+ SymAI_coreURL);
       else
-        this.msgBox('info', 'Information', 'Connected');
+        this.msgBox('Information', 'Connected');
     }
     
     doShutdown() : void {
       if( this.SyncWS().send("shutdown") )
-        this.msgBox('info', 'Information', 'Command sent');
+        this.msgBox('Information', 'Command sent');
       else 
-        this.msgBox('error', 'Error', 'Could not send command');
+        this.msgBox('Error', 'Could not send command');
       this.isDebug = false;
       this.isRunning = false;
       this.envLoaded = false;
@@ -432,9 +442,9 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     
     doStop() : void {
       if( this.SyncWS().send("stop") )
-        this.msgBox('info', 'Information', 'Command sent');
+        this.msgBox('Information', 'Command sent');
       else 
-        this.msgBox('error', 'Error', 'Could not send command');
+        this.msgBox('Error', 'Could not send command');
 
       this.disableMenu(this.items, "Start", false);
       this.disableMenu(this.itemsRun, "Start", false);
@@ -460,7 +470,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     async doLoadData( msg: string, dataname: string) {
       this.errLoad = true;
       try {
-        const resp = await this.SyncWS().sendrecv(msg);
+        msg.replace(/[\r\n]+/g, ' ');
+        const resp = await this.SyncWS().sendrecv(msg, (data) => typeof(data) === 'string');
         if( resp === 'ok' ) {
           this.errLoad = false;
           this.Diag( dataname + "  loaded");
@@ -474,15 +485,16 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
 
     }
 
-    doLoadEnv() : void {
+    doLoadEnv(loadNext : boolean) : void {
       if( this.cntEnv === "" ) {
-        this.msgBox('error', 'Error', 'Environment is empty -- nothing to load');
+        this.msgBox('Error', 'Environment is empty -- nothing to load');
         return;
       }
+      this.Diag("Uploading Environment...");
       
       var msg : string = 'environment { "content":"' + this.cntEnv + '", "solver": "';
       if( this.prefsComponent === undefined )
-        msg.concat('SymPy');
+        msg +='SymPy';
       else { 
         this.Diag("Solver: "+ this.prefsComponent.selectedSolver);
         if(this.prefsComponent.selectedSolver === "" )
@@ -493,51 +505,68 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       msg += '" }';
 
       this.doLoadData(msg, "Environment"); 
-      if( !this.errLoad ) 
+      if( !this.errLoad ) {
         this.envLoaded = true;
-           
+        if( loadNext ) {
+          const inputElem = document.getElementById("behLoader") as HTMLInputElement;
+          if( inputElem ) { this.Diag("Load next..."); inputElem.click(); }
+        }
+      }
     }
 
-    doLoadBeh() : void {
+    doLoadBeh( loadNext : boolean ) : void {
       if( this.cntBeh === "" ) {
-        this.msgBox('error', 'Error', 'Behavior is empty -- nothing to load');
+        this.msgBox('Error', 'Behavior is empty -- nothing to load');
         return;
       }
+      this.Diag("Uploading Behaviors...");
       
       var msg : string = 'behaviors { "content": "' + this.cntBeh + '" }';
 
       this.doLoadData(msg, "Behaviors");
-      if( !this.errLoad ) 
+      if( !this.errLoad ) { 
         this.behLoaded = true;
+        if( loadNext ) {
+          const inputElem = document.getElementById("actLoader") as HTMLInputElement;
+          if( inputElem ) { this.Diag("Load next..."); inputElem.click(); }
+        }
+      }
     }
 
-    doLoadAct() : void {
+    doLoadAct(loadNext : boolean) : void {
       if( this.cntAct === "" ) {
-        this.msgBox('error', 'Error', 'Actions  empty -- nothing to load');
+        this.msgBox('Error', 'Actions  empty -- nothing to load');
         return;
       }
+      this.Diag("Uploading Actions...");
       
       var msg : string = 'actions { "content": "' + this.cntAct + '" }';
 
       this.doLoadData(msg, "Actions");
-      if( !this.errLoad ) 
+      if( !this.errLoad ) {
         this.actLoaded = true;
+        if( loadNext ) {
+          const inputElem = document.getElementById("tgtLoader") as HTMLInputElement;
+          if( inputElem ) { this.Diag("Load next..."); inputElem.click(); }
+        }
+      }
     }
 
-    async doLoadTgt() {
+    doLoadTgt(loadNext : boolean) : void {
       if( this.cntTgt === "" ) {
-        this.msgBox('error', 'Error', 'Property is empty -- nothing to load');
+        this.msgBox('Error', 'Property is empty -- nothing to load');
         return;
       }
+      this.Diag("Uploading Property...");
       
       var msg : string = 'property { "content": "' + this.cntTgt + '", "solver": "';
       if( this.prefsComponent === undefined )
-        msg.concat('SymPy');
+        msg += 'SymPy';
       else if(this.prefsComponent.selectedSolver === "" )
-        msg.concat('SymPy');
+        msg += 'SymPy';
       else
-        msg.concat(this.prefsComponent.selectedSolver);
-      msg.concat('" }');
+        msg += this.prefsComponent.selectedSolver;
+      msg += '" }';
 
       this.doLoadData(msg, "Property");
       if( !this.errLoad ) 
@@ -545,10 +574,10 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     }
 
     doLoad() : void {
-      this.doLoadEnv();
-      this.doLoadBeh();
-      this.doLoadAct();
-      this.doLoadTgt();
+      this.doLoadEnv(false);
+      this.doLoadBeh(false);
+      this.doLoadAct(false);
+      this.doLoadTgt(false);
     }
 
     dlgStartBeh : boolean = false;
@@ -561,10 +590,11 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         this.Diag("Start beh=" + this.startBeh);
 
         this.doLoad();
-        if(!this.envLoaded) { this.msgBox('error', 'Error', 'Environment not loaded'); return; }
-        if(!this.actLoaded) { this.msgBox('error', 'Error', 'Actions not loaded'); return; }
-        if(!this.behLoaded) { this.msgBox('error', 'Error', 'Behaviors not loaded'); return; }
-        if(!this.tgtLoaded) { this.msgBox('error', 'Error', 'Property not loaded'); return; }
+        
+        if(!this.envLoaded) { this.msgBox('Error', 'Environment not loaded'); return; }
+        if(!this.actLoaded) { this.msgBox('Error', 'Actions not loaded'); return; }
+        if(!this.behLoaded) { this.msgBox('Error', 'Behaviors not loaded'); return; }
+        if(!this.tgtLoaded) { this.msgBox('Error', 'Property not loaded'); return; }
 
         var msg : string = "traversalbeh ";
         var parm : TraversalbehCfg = { 

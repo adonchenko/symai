@@ -32,7 +32,7 @@ function adjustSizes() {
 
 function setTextareaSizes( taId ) {
     const inp = document.getElementById(taId);
-    console.log("setTextareaSizes for "+ taId);
+    //console.log("setTextareaSizes for "+ taId);
     if(inp) {
       var inpParent = inp.parentElement;
 
@@ -48,7 +48,7 @@ function setTextareaSizes( taId ) {
       inp.width = String(inpParent.width-24) + "px";
       
       if( window.myApp ) {
-        console.log("SplitterTop:" + window.myApp.getSplitterTop());
+        //console.log("SplitterTop:" + window.myApp.getSplitterTop());
         var t1 =  Math.trunc((inpParent.height * Math.trunc(window.myApp.getSplitterTop()))  / 100) - 36;
         inp.style.height = String(t1) + "px";
         inp.height =  String(t1) + "px";
@@ -58,7 +58,7 @@ function setTextareaSizes( taId ) {
         //inpEnv.style.height = String(inpEnvParent.clientHeight-256) + "px";
         //inpEnv.height =  String(inpEnvParent.clientHeight-256) + "px";
       }
-      console.log("Element sizes: " + inp.width + " x " + inp.height);
+      //console.log("Element sizes: " + inp.width + " x " + inp.height);
     }
     else
       console.log("Element not found: " + taId);
@@ -77,14 +77,14 @@ function setSizes() {
   var h = window.innerHeight;
   const menuBar = document.getElementById("menuBar");
   const ws = document.getElementById("workspace");
-  console.log("SET SIZES, window: "  + w + " x " + h );
+  //console.log("SET SIZES, window: "  + w + " x " + h );
   if(ws) {
     ws.width = w;
     if(menuBar && menuBar.height)
       ws.height = h - menuBar.height;
     else
       ws.height = h - 48;
-    console.log("Workspace size: " + ws.width + " x " + ws.height);
+    //console.log("Workspace size: " + ws.width + " x " + ws.height);
 
     const diagPanel =  document.getElementById("diag");
     if(diagPanel) {
@@ -149,5 +149,5 @@ function output(msg) {
 <link rel="stylesheet" href="styles-5INURTSO.css"></head>
 <body onload="setSizes()" onresize="setSizes()">
   <app-root></app-root>
-<link rel="modulepreload" href="chunk-HOQYSINP.js"><script src="main-JU2RWW64.js" type="module"></script></body>
+<link rel="modulepreload" href="chunk-HOQYSINP.js"><script src="main-AL25VT4O.js" type="module"></script></body>
 </html>

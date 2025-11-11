@@ -23,8 +23,6 @@ export class CtlSyncWS {
       try {
         this.responseQueue.push(event.data.toString());
         console.log('*** WebSocket onmessage: ' + event.data.toString() );
-        //const str = this.responseQueue.shift();
-        //resolve(str);
       } catch (error) {
         console.error('Error while receiving WebSocket message:', error);
       }
@@ -41,7 +39,52 @@ export class CtlSyncWS {
 
   }
 
-  public async sendrecv(payload : string): Promise<string> {
+  waitRecvBuf( condition : (data : string) => boolean) : Promise<string> {
+    return new Promise((resolve, reject) => {
+      // This Promise resolves to a string
+      if (this.ws!.readyState !== WebSocket.OPEN) {
+        return reject(new Error('WebSocket is not open.'));
+      }
+      const handler = (event : MessageEvent) => {
+        const data = event.data.toString();
+        if( condition(data) ) {
+          this.responseQueue.push(data);
+          this.ws!.removeEventListener('message', handler);
+          resolve(data);
+        }
+      }
+      this.ws!.addEventListener('message', handler);
+      /*
+      if( this.responseQueue.length > 0 ) {
+        const str = this.responseQueue.shift();
+        if( typeof(str) === 'string') {
+          resolve(str);
+        }
+        else
+          reject("Invalid data");
+      }
+      else
+        reject("No data yet");
+      */
+    });
+  }
+
+  public getData() : string | null {
+    if( this.responseQueue.length > 0) {  
+      const str = this.responseQueue.shift();
+      if( typeof(str) === 'string') {
+        console.log(' *** WS recv: ' + str);
+        return str;
+      }
+    }
+    return null; 
+  }
+
+  public async waitData() {
+      const response = await this.waitRecvBuf((data) => typeof(data) === 'string');
+  }
+
+  public async sendrecv(payload : string, condition : (data : string) => boolean) : Promise<string> {
     return new Promise((resolve, reject) => {
       if (this.ws!.readyState !== WebSocket.OPEN) {
         return reject(new Error('WebSocket is not open.'));
@@ -50,7 +93,19 @@ export class CtlSyncWS {
       console.log(' *** WebSocket sendrecv: ' + payload);
       this.ws!.send( payload );
 
+      const handler = (event : MessageEvent) => {
+        const data = event.data.toString();
+        if( condition(data) ) {
+          this.responseQueue.push(data);
+          this.ws!.removeEventListener('message', handler);
+          resolve(data);
+        }
+      }
+      this.ws!.addEventListener('message', handler);
+    });
+
       // Optional: Add a timeout to reject the promise if no response is received
+      /*
       setTimeout(() => {
         if (this.responseQueue.length === 0 ) {
           reject(new Error(`Timeout waiting for response to message:`));
@@ -60,11 +115,12 @@ export class CtlSyncWS {
       const str = this.responseQueue.shift();
       if( typeof(str) === 'string') {
         console.log(' *** WS recv: ' + str);
-        resolve(str);
+        //resolve(str);
       }
       //else 
       //  return reject(new Error('Error receiving data, response type = ' + typeof(str) ));
-    });
+    //});
+      */
   }
 
   public send(message : string) : boolean {
@@ -81,7 +137,7 @@ export class CtlSyncWS {
       if (this.ws!.readyState !== WebSocket.OPEN) {
         return reject(new Error('WebSocket is not open.'));
       }
-
+      
       const str = this.responseQueue.shift();
       if( typeof(str) === 'string') {
         console.log(' *** WS recv: ' + str);
