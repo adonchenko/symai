@@ -52,6 +52,19 @@ function setTextareaSizes( taId ) {
         var t1 =  Math.trunc((inpParent.height * Math.trunc(window.myApp.getSplitterTop()))  / 100) - 36;
         inp.style.height = String(t1) + "px";
         inp.height =  String(t1) + "px";
+
+        const diagPanel =  document.getElementById("diag");
+        if(diagPanel) {
+          var diagParent = diagPanel.parentElement;
+
+          while( diagParent && diagParent.clientHeight === undefined)
+            diagParent = diagParent.parentElement;
+            
+            diagPanel.style.height = diagParent.clientHeight + 'px';
+            console.log("setTextareaSizes-diagHeight="+diagPanel.style.height);
+            //inp.style.width = String(inpParent.width-24) + "px";
+        }
+
       }            
       else {
         console.log("theApp not accessible");              
@@ -89,8 +102,9 @@ function setSizes() {
     const diagPanel =  document.getElementById("diag");
     if(diagPanel) {
       const dPanel = diagPanel.parentElement;  
-      diagPanel.height =  ws.height / 4;
-      diagPanel.width =  ws.width - 8;
+      diagPanel.style.height =  ws.height / 4 + 'px';
+      diagPanel.style.width =  ws.width - 8 + 'px';
+      console.log("setSizes-diagHeight="+diagPanel.style.height);
       dPanel.clientHeight = ws.height / 4;
       dPanel.clientWidth = ws.width -8;
     }

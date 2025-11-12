@@ -36,7 +36,6 @@ export class CtlSyncWS {
     this.ws!.onerror = (error) => {
       console.error('WebSocket error:', error);
     };
-
   }
 
   waitRecvBuf( condition : (data : string) => boolean) : Promise<string> {
@@ -132,12 +131,22 @@ export class CtlSyncWS {
       return true;
   }
 
-  public async recv() : Promise<string> {
+  public async recv(condition : (data : string) => boolean) : Promise<string> {
     return new Promise((resolve, reject) => {
       if (this.ws!.readyState !== WebSocket.OPEN) {
         return reject(new Error('WebSocket is not open.'));
       }
       
+      const handler = (event : MessageEvent) => {
+        const data = event.data.toString();
+        if( condition(data) ) {
+          this.responseQueue.push(data);
+          this.ws!.removeEventListener('message', handler);
+          resolve(data);
+        }
+      }
+      this.ws!.addEventListener('message', handler);
+      /*
       const str = this.responseQueue.shift();
       if( typeof(str) === 'string') {
         console.log(' *** WS recv: ' + str);
@@ -145,6 +154,7 @@ export class CtlSyncWS {
       }
       else 
         return reject(new Error('Error receiving data, response type = ' + typeof(str)));
+      */
     });
   }
 

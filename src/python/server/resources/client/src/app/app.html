@@ -272,7 +272,7 @@
                 <!-- Controls -->
                 <!-- <p-menubar [model]="itemsRun" [style]="{height:'48px'}"/> -->
               <!-- </div> -->
-              <div #runOutput id="runOutput" style="font-family: Arial, Helvetica, sans-serif; font-size: 10pt; overflow: auto;">
+              <div #runOutput id="runOutput" style="font-family: Arial, Helvetica, sans-serif; font-size: 10pt; overflow: scroll;">
               </div>
             </p-tabpanel>  
           </p-tabpanels>
@@ -282,7 +282,7 @@
         </ng-template>
         <ng-template #panel>
             <div id="graph"></div>
-            <div id="diag" class="flex items-center justify-center h-full" style="font-family: Arial, Helvetica, sans-serif; font-size: 8pt; overflow: scroll;">
+            <div #diag id="diag" style="font-family: Arial, Helvetica, sans-serif; font-size: 8pt; overflow: scroll;">
               <!--Panel 2-->
             </div>
         </ng-template>
@@ -294,13 +294,13 @@
 <app-prefs></app-prefs>
 
 <p-dialog header="Start with behavior" [modal]="true" [(visible)]="dlgStartBeh" [style]="{ width: '25rem' }">
-    <div class="flex items-center gap-4 mb-4">
+    <div class="flex items-center mb-4">
         <label for="start_beh" class="font-semibold w-24">Behavior name: </label>
-        <input start_beh id="start_beh" class="flex-auto" autocomplete="off" />
+        <input #start_beh id="start_beh" class="flex-auto" autocomplete="off" />
     </div>
-    <div class="flex justify-end gap-2">
-        <p-button label="Cancel" severity="secondary" (click)="startBehConfirm();" />
-        <p-button label="Save" (click)="startBehCancel();" />
+    <div class="flex justify-end">
+        <p-button label="Cancel" severity="secondary" (click)="startBehCancel();" />
+        <p-button label="Save" (click)="startBehConfirm();" />
     </div>
 </p-dialog>
 

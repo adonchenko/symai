@@ -492,17 +492,21 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       }
       this.Diag("Uploading Environment...");
       
-      var msg : string = 'environment { "content":"' + this.cntEnv + '", "solver": "';
-      if( this.prefsComponent === undefined )
-        msg +='SymPy';
-      else { 
+      var msg : string = 'environment ';
+      var solver : string = 'SymPy'; 
+      if( this.prefsComponent !== undefined ) { 
         this.Diag("Solver: "+ this.prefsComponent.selectedSolver);
         if(this.prefsComponent.selectedSolver === "" )
-          msg += 'SymPy';
+          solver = 'SymPy';
         else
-          msg += this.prefsComponent.selectedSolver;
+          solver = this.prefsComponent.selectedSolver;
       }
-      msg += '" }';
+      this.cntEnv.replace(/[\r\n]+/g, ' ');
+      var cmd = { 
+        content : this.cntEnv, 
+        solver : solver 
+        };
+      msg += JSON.stringify(cmd);
 
       this.doLoadData(msg, "Environment"); 
       if( !this.errLoad ) {
@@ -521,6 +525,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       }
       this.Diag("Uploading Behaviors...");
       
+      this.cntBeh.replace(/[\r\n]+/g, ' ');
       var msg : string = 'behaviors { "content": "' + this.cntBeh + '" }';
 
       this.doLoadData(msg, "Behaviors");
@@ -540,6 +545,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       }
       this.Diag("Uploading Actions...");
       
+      this.cntAct.replace(/[\r\n]+/g, ' ');
       var msg : string = 'actions { "content": "' + this.cntAct + '" }';
 
       this.doLoadData(msg, "Actions");
@@ -558,15 +564,22 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         return;
       }
       this.Diag("Uploading Property...");
-      
-      var msg : string = 'property { "content": "' + this.cntTgt + '", "solver": "';
-      if( this.prefsComponent === undefined )
-        msg += 'SymPy';
-      else if(this.prefsComponent.selectedSolver === "" )
-        msg += 'SymPy';
-      else
-        msg += this.prefsComponent.selectedSolver;
-      msg += '" }';
+      this.cntTgt.replace(/[\r\n]+/g, ' ');
+
+      var msg : string = 'property ';
+      var solver : string = 'SymPy'; 
+      if( this.prefsComponent !== undefined ) { 
+        this.Diag("Solver: "+ this.prefsComponent.selectedSolver);
+        if(this.prefsComponent.selectedSolver === "" )
+          solver = 'SymPy';
+        else
+          solver = this.prefsComponent.selectedSolver;
+      }
+      var cmd = { 
+        content : this.cntTgt, 
+        solver : solver 
+        };
+      msg += JSON.stringify(cmd);
 
       this.doLoadData(msg, "Property");
       if( !this.errLoad ) 
@@ -584,34 +597,30 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     private startBeh : string = "";
 
     startBehConfirm() : void {
-        this.dlgStartBeh = false;
-        this.startBeh = getItemText("start_beh");
+      console.log("StartBehConfirm...");
+      this.startBeh = getItemText("start_beh");
+      this.dlgStartBeh = false;
 
-        this.Diag("Start beh=" + this.startBeh);
+      this.Diag("Start beh=" + this.startBeh);
 
-        this.doLoad();
-        
-        if(!this.envLoaded) { this.msgBox('Error', 'Environment not loaded'); return; }
-        if(!this.actLoaded) { this.msgBox('Error', 'Actions not loaded'); return; }
-        if(!this.behLoaded) { this.msgBox('Error', 'Behaviors not loaded'); return; }
-        if(!this.tgtLoaded) { this.msgBox('Error', 'Property not loaded'); return; }
+      var msg : string = "traversalbeh ";
+      var parm : TraversalbehCfg = { 
+        solver : this.prefsComponent!.selectedSolver,
+        behavior : this.startBeh,
+        reenter_count : this.prefsComponent!.reenterCount,
+        debug : this.isDebug
+      };
+      
+      msg += JSON.stringify(parm);
+      
+      console.log("Sending: " + msg);
+      this.Diag("Sending: " + msg);
 
-        var msg : string = "traversalbeh ";
-        var parm : TraversalbehCfg = { 
-          solver : this.prefsComponent!.selectedSolver,
-          behavior : this.startBeh,
-          reenter_count : this.prefsComponent!.reenterCount,
-          debug : this.isDebug
-        };
-        
-        msg += JSON.stringify(parm);
-        
-        this.Diag("Sending: " + msg);
+      this.SyncWS().send(msg);
+      this.isRunning = true;
+      this.tabVal = 4;
 
-        this.SyncWS().send(msg);
-        this.isRunning = true;
-
-        this.recvOutput();
+      this.recvOutput();
     }
 
     startBehCancel() : void {
@@ -619,7 +628,16 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     }
 
     doRun() : void {
+      //this.doLoad();
+      
+      //if(!this.envLoaded) { console.log('Environment not loaded'); this.msgBox('Error', 'Environment not loaded'); return; }
+      //if(!this.actLoaded) { console.log('Actions not loaded'); this.msgBox('Error', 'Actions not loaded'); return; }
+      //if(!this.behLoaded) { console.log('Actions not loaded'); this.msgBox('Error', 'Behaviors not loaded'); return; }
+      //if(!this.tgtLoaded) { console.log('Actions not loaded'); this.msgBox('Error', 'Property not loaded'); return; }
+
       if( this.isDebug ) { // if Already debugging, just send "run" subcommand
+        console.log("In debug mode -- switch to batch");
+
         this.isDebug = false;
         
         this.checkMenu(this.items, "Debug", false);
@@ -634,10 +652,19 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       else {
         this.dlgStartBeh = true;
         // ... and continue from startBehConfirm()
+        console.log("DlgStartBeh...");
+
       }
     }
 
     async doDebug(nxt : boolean) {
+      //this.doLoad();
+      
+      //if(!this.envLoaded) { this.Diag('Environment not loaded'); this.msgBox('Error', 'Environment not loaded'); return; }
+      //if(!this.actLoaded) { this.Diag('Actions not loaded'); this.msgBox('Error', 'Actions not loaded'); return; }
+      //if(!this.behLoaded) { this.Diag('Actions not loaded'); this.msgBox('Error', 'Behaviors not loaded'); return; }
+      //if(!this.tgtLoaded) { this.Diag('Actions not loaded'); this.msgBox('Error', 'Property not loaded'); return; }
+
       if( !nxt ) { // Very beginning
         this.isDebug = true;
         
@@ -659,26 +686,53 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     }
 
     async recvOutput() {
-      try {
-          const resp = await this.SyncWS().recv();
+      let next = true; 
+      while( next ) {
+        try {
+            const resp = await this.SyncWS().recv((data) => typeof(data) === 'string');
 
-          this.onReceiveMsg(resp);
-      } catch (error) {
-          this.Diag('Error during synchronous message exchange:' + error);
+            next = this.onReceiveMsg(resp);
+        } catch (error) {
+            this.Diag('Error during synchronous message exchange:' + error);
+            //next = false;
+        }
       }
     }
 
-    onReceiveMsg(msg : string) : void {
+    onReceiveMsg(msg : string) : boolean {
+      this.Diag("Recv: " + msg);
+      
       var sp1 : number = msg.indexOf(' ', 0);
+      var out = msg;
       if( sp1 > 0 ) {
         var rsp : string = msg.substring(0,sp1-1);
-        if( rsp === 'nok' || rsp === 'ok' ) {
-          this.Diag(msg);
-          return;
+        if( rsp === 'nok' ) {
+          //this.Diag(msg);
+          return false;
+        }
+        else if( rsp === 'ok' ) {
+          var sp2 : number = msg.indexOf(' ', sp1+1);
+          if( sp2 > 0 ) {
+            var cmd : string = msg.substring(sp1+1,sp2-1);
+            switch( cmd ) {
+              case 'start' : // ok start
+                return true;
+              case 'end' : // ok end
+                return false;
+              case 'trace': 
+              case 'environment':
+                output(" ");
+                out = msg.substring(sp1+1);
+                break;
+              default:
+                break;
+            }
+          }
         }
       }
       // Suppose this is an output from Core
-      output(msg);
+      output(out);
+      return true;
     }
 
 }
