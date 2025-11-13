@@ -412,6 +412,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 cnt = self.get_property()
                 fname = getattr(self, "property")
             res["content"] = cnt
+            if len(fname) < 1:
+                fname = "properties.prop"
             fname = os.path.basename(fname)
             res["filename"] = fname
             res = json.dumps(res)

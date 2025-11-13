@@ -63,5 +63,6 @@ if __name__ == '__main__':
     suite.addTest(SymAITestCase('test_action_has_logical'))
     suite.addTest(SymAICoreTestCase('test_do_actions'))
     suite.addTest(SymAICoreTestCase('test_do_behaviors'))
+    suite.addTest(SymAICoreTestCase('test_do_property'))
     runner = unittest.TextTestRunner()
     runner.run(suite)
