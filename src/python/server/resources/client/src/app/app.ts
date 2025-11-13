@@ -33,6 +33,7 @@ declare function refreshItem(id: string): any;
 declare function diag(msg: string): any;
 declare function output(msg: string): any;
 declare function getItemText(id : string) : any;
+declare function clickHiddenRefresh(arg : string) : any;
 
 
 export const SymAI_coreURL : string = "ws://{CORE_HOST}:{CORE_PORT}";
@@ -80,8 +81,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         this.Diag("Connecting to " + SymAI_coreURL);
         this.svcSyncWS.connect(SymAI_coreURL);
       }
-      else
-        this.Diag("It seems WebSocket connected");
+      //else
+      //  this.Diag("It seems WebSocket connected");
       return this.svcSyncWS;
     }
 
@@ -107,12 +108,13 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         {
           label:'Data', icon:'pi pi-fw pi-file',
           items:[
-              { label:'Load Environment', icon:'pi pi-fw', command: () => this.doLoadEnv(false) },
-              { label:'Load Behavior', icon:'pi pi-fw', command: () => this.doLoadBeh(false) },
-              { label:'Load Actions', icon:'pi pi-fw', command: () => this.doLoadAct(false) },
-              { label:'Load Property', icon:'pi pi-fw', command: () => this.doLoadTgt(false) },
+              { label:'Upload Environment', icon:'pi pi-fw', command: () => this.doLoadEnv(false) },
+              { label:'Upload Behavior', icon:'pi pi-fw', command: () => this.doLoadBeh(false) },
+              { label:'Upload Actions', icon:'pi pi-fw', command: () => this.doLoadAct(false) },
+              { label:'Upload Property', icon:'pi pi-fw', command: () => this.doLoadTgt(false) },
               { separator:true },
-              { label:'Load All', icon:'pi pi-fw', command: () => this.doLoad() },
+              //{ label:'Load All', icon:'pi pi-fw', command: () => this.doLoad() },
+              { label:'Add Graph...', icon:'pi pi-fw', command: () => this.addGraph() },
             ]
         },
         { label:'Run', icon:'pi pi-fw pi-file',
@@ -259,8 +261,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             reader.onload = (e) => {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntEnv = String(fileContent);
-              console.log("cntEnv: " + this.cntEnv);
-              //refreshItem("txtEnv");
+              //console.log("cntEnv: " + this.cntEnv);
             };
             reader.onerror = (e : any) => {
               console.error("Error reading file:", e.target.error);
@@ -287,8 +288,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             reader.onload = (e) => {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntAct = String(fileContent);
-              //refreshItem("txtAct");
-              console.log("cntAct: " + this.cntAct); // Do something with the file content
+              //console.log("cntAct: " + this.cntAct); // Do something with the file content
             };
             reader.onerror = (e : any) => {
               //console.error("Error reading file:", e.target.error);
@@ -315,8 +315,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             reader.onload = (e) => {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntTgt = String(fileContent);
-              //refreshItem("txtTgt");
-              console.log("cntTgt: " + this.cntTgt); 
+              //console.log("cntTgt: " + this.cntTgt); 
             };
             reader.onerror = (e : any) => {
               //console.error("Error reading file:", e.target.error);
@@ -344,7 +343,6 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             reader.onload = (e) => {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntBeh = String(fileContent);
-              //refreshItem("txtBeh");
               console.log("cntBeh: " + this.cntBeh); 
             };
             reader.onerror = (e : any) => {
@@ -601,6 +599,9 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.startBeh = getItemText("start_beh");
       this.dlgStartBeh = false;
 
+      this.Diag("Auto-upload data...");
+      this.doLoad();
+
       this.Diag("Start beh=" + this.startBeh);
 
       var msg : string = "traversalbeh ";
@@ -692,6 +693,13 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             const resp = await this.SyncWS().recv((data) => typeof(data) === 'string');
 
             next = this.onReceiveMsg(resp);
+            
+            /*
+            var qstr : string | null;
+            while( (qstr = this.SyncWS().getData()) !== null ) {
+              console.log("queue: " + qstr);
+            }
+            */ 
         } catch (error) {
             this.Diag('Error during synchronous message exchange:' + error);
             //next = false;
@@ -700,39 +708,86 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     }
 
     onReceiveMsg(msg : string) : boolean {
+      msg.replace(/[\r\n]+/g, ' ');
       this.Diag("Recv: " + msg);
       
       var sp1 : number = msg.indexOf(' ', 0);
+      console.log("SP1: " + String(sp1));
+      var rsp : string = "";
       var out = msg;
-      if( sp1 > 0 ) {
-        var rsp : string = msg.substring(0,sp1-1);
-        if( rsp === 'nok' ) {
-          //this.Diag(msg);
-          return false;
-        }
-        else if( rsp === 'ok' ) {
-          var sp2 : number = msg.indexOf(' ', sp1+1);
-          if( sp2 > 0 ) {
-            var cmd : string = msg.substring(sp1+1,sp2-1);
-            switch( cmd ) {
-              case 'start' : // ok start
-                return true;
-              case 'end' : // ok end
-                return false;
-              case 'trace': 
-              case 'environment':
-                output(" ");
-                out = msg.substring(sp1+1);
-                break;
-              default:
-                break;
-            }
-          }
+      
+      if( sp1 < 0)
+        rsp = msg;
+      if( sp1 > 0 )
+        rsp = msg.substring(0,sp1);
+
+      console.log("RSP: '" + rsp + "'");
+      if( rsp === 'nok' ) {
+        this.Diag(msg);
+        return false;
+      }
+       
+      if( rsp === 'ok' ) {
+        var cmd : string = "";
+        var sp2 : number = msg.indexOf(' ', sp1+1);
+        console.log("SP2: " + String(sp2));
+
+        if( sp2 < 0 )
+          cmd = msg.substring(sp1+1);
+        if( sp2 > 0 ) 
+          cmd = msg.substring(sp1+1,sp2-1);
+
+        console.log("CMD: " + cmd);
+        switch( cmd ) {
+          case 'start' : // ok start
+            return true;
+          case 'end' : // ok end
+            return false;
+          case 'trace': 
+          case 'environment':
+            out = msg.substring(sp2+1);
+            break;
+          default:
+            return true;
         }
       }
+
       // Suppose this is an output from Core
+      console.log("Output: " + out);
       output(out);
       return true;
+    }
+
+    // ============================================================================
+    // Graphs
+
+    dlgAddGraph : boolean = false;
+    private graphName : string = "";
+
+    addGraph() : void {
+      this.dlgAddGraph = true;
+    }
+
+    addGraphCancel() : void {
+      this.dlgAddGraph = false;
+    }
+
+    addGraphConfirm() : void {
+      this.graphName = getItemText("gr_name");
+      const clr : HTMLInputElement = document.getElementById("gr_color")! as HTMLInputElement;
+      // clr.value;
+      this.dlgAddGraph = false;
+
+      console.log("Create graph" + this.graphName);
+
+      const cont : HTMLElement = document.getElementById("graph")!;
+      var svg = document.createElement("svg")!;
+      svg.style.width='400px';
+      svg.style.height='400px';
+      svg.id=this.graphName;
+
+      cont.appendChild(svg);
+
     }
 
 }

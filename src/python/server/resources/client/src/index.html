@@ -158,6 +158,20 @@ function output(msg) {
     }
 }
 
+function do_refresh() {
+    var element = document.getElementById("hiddenRefresh");
+    if( element )  // should be DIV
+      refreshItem( element.innerText );
+}
+
+function clickHiddenRefresh(arg) {
+    var element = document.getElementById("hiddenRefresh");
+    if( element ) { // should be DIV
+      element.innerText = arg;
+      element.click();
+    }
+}
+
 
 </script>
 </head>
