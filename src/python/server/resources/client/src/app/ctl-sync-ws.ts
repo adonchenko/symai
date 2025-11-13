@@ -72,7 +72,7 @@ export class CtlSyncWS {
     if( this.responseQueue.length > 0) {  
       const str = this.responseQueue.shift();
       if( typeof(str) === 'string') {
-        console.log(' *** WS recv: ' + str);
+        console.log(' *** WS queue: ' + str);
         return str;
       }
     }

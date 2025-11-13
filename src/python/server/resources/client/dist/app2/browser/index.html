@@ -158,10 +158,24 @@ function output(msg) {
     }
 }
 
+function do_refresh() {
+    var element = document.getElementById("hiddenRefresh");
+    if( element )  // should be DIV
+      refreshItem( element.innerText );
+}
+
+function clickHiddenRefresh(arg) {
+    var element = document.getElementById("hiddenRefresh");
+    if( element ) { // should be DIV
+      element.innerText = arg;
+      element.click();
+    }
+}
+
 
 </script>
 <link rel="stylesheet" href="styles-5INURTSO.css"></head>
 <body onload="setSizes()" onresize="setSizes()">
   <app-root></app-root>
-<link rel="modulepreload" href="chunk-HOQYSINP.js"><script src="main-DR37YQWR.js" type="module"></script></body>
+<link rel="modulepreload" href="chunk-HOQYSINP.js"><script src="main-TYUZ5ACZ.js" type="module"></script></body>
 </html>

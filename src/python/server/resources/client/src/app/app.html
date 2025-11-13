@@ -195,10 +195,13 @@
 
     <div #menuBar id="menuBar" layout="row" class="div-table-row">
       <p-menubar [model]="items" [style]="{height:'48px'}"/>
+      <!--
       <input type="button" id="envLoader" (click)="doLoadEnv(true)" style="visibility: hidden;" />
       <input type="button" id="behLoader" (click)="doLoadBeh(true)" style="visibility: hidden;" />
       <input type="button" id="actLoader" (click)="doLoadAct(true)" style="visibility: hidden;" />
       <input type="button" id="tgtLoader" (click)="doLoadTgt(true)" style="visibility: hidden;" />
+      -->
+      <div id="hiddenRefresh"  style="visibility: hidden; width: 0px; height: 0px; overflow: hidden;" onclick="do_refresh();"></div>
     </div>
 
     <div id="workspace" id="workspace" class="div-table-row">
@@ -281,10 +284,11 @@
             <!--</div>-->
         </ng-template>
         <ng-template #panel>
-            <div id="graph"></div>
-            <div #diag id="diag" style="font-family: Arial, Helvetica, sans-serif; font-size: 8pt; overflow: scroll;">
+          <table [border]="0" [cellSpacing]="0" [cellPadding]="2"><tr>
+            <td><div id="graph"><!--<svg #myGraph width="400" height="400" style="border:1px solid #000;"></svg>--></div></td>
+            <td><div #diag id="diag" style="font-family: Arial, Helvetica, sans-serif; font-size: 8pt; overflow: scroll;"></div></td>
               <!--Panel 2-->
-            </div>
+          </tr></table>
         </ng-template>
     </p-splitter>
     </div>
@@ -303,6 +307,27 @@
         <p-button label="Save" (click)="startBehConfirm();" />
     </div>
 </p-dialog>
+
+<p-dialog header="Add graph" [modal]="true" [(visible)]="dlgAddGraph">
+    <div class="flex items-center mb-4">
+        <label for="gr_name" class="font-semibold w-24">Graph name: </label>
+        <input #gr_name type="text" id="gr_name" class="flex-auto" autocomplete="off" />
+        <input #gr_color type="color" id="gr_color" class="flex-auto" />
+    </div>
+    <div class="flex items-center mb-4">
+        <label for="gr_X" class="font-semibold w-24">X-axis parameter: </label>
+        <input type="text" #gr_X id="gr_X" class="flex-auto" autocomplete="off" />
+        <br />
+        <label for="gr_Y" class="font-semibold w-24">Y-axis parameter: </label>
+        <input type="text" #gr_Y id="gr_Y" class="flex-auto" autocomplete="off" />
+    </div>
+    <hr />  
+    <div class="flex justify-end">
+        <p-button label="Cancel" severity="secondary" (click)="addGraphCancel();" />
+        <p-button label="OK" (click)="addGraphConfirm();" />
+    </div>
+</p-dialog>
+
 
 <!-- MsgBox div -->
 <div id="MsgBox" class="Absolute-Center" style="visibility: hidden;">
