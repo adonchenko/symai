@@ -62,5 +62,6 @@ if __name__ == '__main__':
     suite.addTest(SymAITestCase('test_do_remove_vars'))
     suite.addTest(SymAITestCase('test_action_has_logical'))
     suite.addTest(SymAICoreTestCase('test_do_actions'))
+    suite.addTest(SymAICoreTestCase('test_do_behaviors'))
     runner = unittest.TextTestRunner()
     runner.run(suite)

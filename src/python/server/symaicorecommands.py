@@ -136,6 +136,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 fname = getattr(self, "behaviors")
             res["content"] = cnt
             fname = os.path.basename(fname)
+            if len(fname) < 1:
+                fname = "behaviors.beh"
             res["filename"] = fname
             res = json.dumps(res)
             self.get_logger().info(f"behaviors command processed. Retrieved behaviors list is {cnt}")
