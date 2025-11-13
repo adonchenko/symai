@@ -1,8 +1,8 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/")
-from symaicorecommands import *
-from extsegammarvisitor import *
+
+from testsymaicore import *
 
 import unittest
 
@@ -61,5 +61,6 @@ if __name__ == '__main__':
     suite.addTest(SymAITestCase('test_get_vars_using_assignment'))
     suite.addTest(SymAITestCase('test_do_remove_vars'))
     suite.addTest(SymAITestCase('test_action_has_logical'))
+    suite.addTest(SymAICoreTestCase('test_do_actions'))
     runner = unittest.TextTestRunner()
     runner.run(suite)

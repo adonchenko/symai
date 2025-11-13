@@ -35,6 +35,18 @@ class SymAICoreParam:
         return self.session_uuid
 
 class SymAICoreCommands(symaicommands.SymAICommands):
+    def get_temp_dir(self)->str:
+        s = None
+        if self.get_config() is not None:
+            s = self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value,symaiconfig.SymAIConfig.TEMP.value)
+        if s is None or len(s) < 1:
+            s = symaiconfig.SymAIConfig.BASE_TEMP.value
+
+        return s
+
+    def set_temp_dir(self, td):
+        if self.get_config() is not None:
+            self.config.set(symaiconfig.SymAIConfig.SYMAICORE.value,symaiconfig.SymAIConfig.TEMP.value, td)
 
     def remove_directory_tree(self, start_directory: str):
         """Recursively and permanently removes the specified directory, all of its
@@ -65,7 +77,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         self.get_logger().info("Shutting down the service....")
 
     def do_stop(self, cuuid : str):
-        self.remove_directory_tree(os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+        self.remove_directory_tree(os.path.join(self.get_temp_dir(),
                                     str(cuuid)))
 
     """ Loads and saves the file
@@ -94,7 +106,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             self.get_logger().error("Incorrect JSON data. Field 'content' is empty.")
             raise Exception("Incorrect JSON data. Field 'content' is empty.")
         else:
-            d = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+            d = os.path.join(self.get_temp_dir(),
                                     pref,
                                     mid)
             if not os.path.exists(d):
@@ -139,7 +151,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             cnt = self.do_get_file(cuuid,
                                    symaiconfig.SymAIConfig.BASE_BEHAVIORS.value,
                                    data_received)
-            fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+            fn = os.path.join(self.get_temp_dir(),
                               cuuid,
                               symaiconfig.SymAIConfig.BASE_BEHAVIORS.value,
                               cnt["filename"])
@@ -252,7 +264,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         elif hasattr(self, "actions"):
             fn = getattr(self, "actions") + ".inv"
         else:
-            fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+            fn = os.path.join(self.get_temp_dir(),
                               cuuid,
                               symaiconfig.SymAIConfig.BASE_ACTIONS.value,
                               fname + ".inv")
@@ -293,7 +305,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
     def do_actions(self, cuuid, data_received):
         if data_received is None or len(data_received.strip()) < 1:
-            res = dict()
             cnt = ""
             fname = ""
             if hasattr(self, "actions"):
@@ -302,6 +313,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             rs = dict()
             rs["content"] = cnt
             fname = os.path.basename(fname)
+            if len(fname) < 1:
+                fname = "actions.act"
             rs["filename"] = fname
             res = json.dumps(rs)
             self.get_logger().info(f"actions command processed. Retrieved actions list is {cnt}")
@@ -317,7 +330,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             cnt = self.do_get_file(cuuid,
                                symaiconfig.SymAIConfig.BASE_ACTIONS.value,
                                data_received)
-            fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+            fn = os.path.join(self.get_temp_dir(),
                               cuuid,
                               symaiconfig.SymAIConfig.BASE_ACTIONS.value,
                               cnt["filename"])
@@ -368,7 +381,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 raise e
             res = self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value)
 
-            fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+            fn = os.path.join(self.get_temp_dir(),
                               cuuid,
                               symaiconfig.SymAIConfig.BASE_ENVIRONMENT.value,
                               res["filename"])
@@ -412,7 +425,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 raise e
             res = self.get_and_simplify(cuuid, data_received, symaiconfig.SymAIConfig.BASE_PROPERTIES.value)
 
-            fn = os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+            fn = os.path.join(self.get_temp_dir(),
                               cuuid,
                               symaiconfig.SymAIConfig.BASE_PROPERTIES.value,
                               res["filename"])
@@ -1064,6 +1077,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
         env = self.get_environment()
         ctx["environment"] = env
+        if not hasattr(self, "trace_file"):
+            ctx["trace_file"] = (os.path.splitext(getattr(self, "behaviors"))[0]) + ".trx"
 
         try:
             if "reenter_count" in dr:
@@ -1095,7 +1110,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 if "trace_file" in ctx:
                     fn = ctx["trace_file"]
                 else:
-                    fn = os.path.join( symaiconfig.SymAIConfig.BASE_TEMP.value,
+                    fn = os.path.join( self.get_temp_dir(),
                                        ctx["cuuid"],
                                        symaiconfig.SymAIConfig.BASE_TRACE.value,
                                        symaiconfig.SymAIConfig.BASE_TRACE_FILE.value)
@@ -1205,7 +1220,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             if not (response.getcode() == HTTPStatus.OK):
                 raise Exception("Attempt simplify expression error Error code " + str(conn.getresponse()))
             rsp = json.loads(response.read().decode())
-            with open(os.path.join(symaiconfig.SymAIConfig.BASE_TEMP.value,
+            with open(os.path.join(self.get_temp_dir(),
                         cuuid,
                         infix,
                         res["filename"]), "w") as f:
@@ -1519,7 +1534,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 raise Exception(f"Incorrect input `{data_received}` JSON data {str(e)}`")
             if "behavior" in dr:
                 beh = dr["behavior"]
-                if dr["behavior"] not in behaviors:
+                if dr["behavior"] not in behaviors.keys():
                     raise Exception(f"Incorrect behavior {beh}")
             if "solver" in dr:
                 self.do_solver(cuuid, dr["solver"])
