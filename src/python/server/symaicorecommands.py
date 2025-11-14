@@ -1159,6 +1159,27 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         res = res + " ]"
         return res
 
+    def dump_concrete_trace(self, trace)->str:
+        res = "["
+        b = False
+        for it in trace:
+            if b:
+                res = res + ","
+            cvals, vals, ret = TreeUtils.get_vars_using_assignment(str(it))
+            res = res + "["
+            b1 = False
+            if cvals is not None:
+                for i in cvals.keys():
+                    if b1:
+                        res = res + ","
+                    res = res + '{"' + i + '":' + str(cvals[i]) + '}'
+                    b1 = True
+            res = res + "]"
+            b = True
+        res = res + "]"
+
+        return res
+
     def do_rsp_traversalbeh(self, cuuid, data_received):
         if data_received is not None and len(data_received) > 0 and self.get_debug():
             s = str(data_received).strip(" \t").lower()
@@ -1744,7 +1765,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                         else:
                                             is_reached = False
                                         yield f"ok trace {self.dump_trace(tr)}"
-                                        yield f"ok environment trace {self.dump_trace(env_tr)}"
+                                        yield f"ok environment {self.dump_trace(env_tr)}"
+                                        yield f"ok values {self.dump_concrete_trace(env_tr)}"
                                         ctx = self.append_trace(ctx, tr, env_tr)
                                         ctx["trace"] = tr.copy()
                                         ctx["environment_trace"] = env_tr.copy()
