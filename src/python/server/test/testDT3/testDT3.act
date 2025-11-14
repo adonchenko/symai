@@ -1,0 +1,9 @@
+getNewMassW: 1 -> massW = flowRateW*time,
+getNewN: 1 -> neutronNum = ((nSourcePow * tConst* massW1* massW2)/
+(reactivity0*(POW(flowRateW*time,2) - (massW1+ massW2)* flowRateW*time + massW1* massW2))) *
+(1 - POW(e,(-1*( reactivity0*time/ tConst* massW1* massW2)*(POW(flowRateW*time,2) - (massW1+ massW2)* flowRateW*time + massW1* massW2)))),
+getNewNdensity: 1 -> densityN = neutronNum*averVelosityThN,
+doMonitoring: time <= monitoringTime -> 1,
+setNewTime: 1 -> time = time + 1,
+stopMonitoring: time > monitoringTime -> 1,
+

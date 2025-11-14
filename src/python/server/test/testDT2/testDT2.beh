@@ -1,0 +1,2 @@
+B = (doMonitoring . getNewMassW . getNewN . getNewNdensity . setNewTime . B + stopMonitoring),
+
