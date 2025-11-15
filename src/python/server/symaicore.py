@@ -229,10 +229,13 @@ async def handle_client(websocket):
                             s = None
                             if len(message) > 11:
                                 s = str(message).strip()[12:]
+                            suuid = str(connected_clients.get(websocket).get_uuid())
+                            sc.get_logger().debug(f"traversalbeh command before loop {suuid}")
                             for res in sc.do_traversalbeh(
-                                    str(connected_clients.get(websocket).get_uuid()),
+                                    suuid,
                                     s):
                                 await websocket.send(res)
+                                res = ""
                                 if bool(sc.get_debug()):
                                     message = await websocket.recv()
                                     st = message.replace("\t", " ").replace("\r", " ").replace("\n",
