@@ -1198,23 +1198,26 @@ class SymAICoreCommands(symaicommands.SymAICommands):
     def do_trace(self, cuuid, data_received):
         try:
             r = ""
+            b = True
             if data_received is not None:
-                s = data_received.trim()
-                if s != "remove":
+                s = data_received.strip()
+                if len(s) > 0 and s != "remove":
                     raise Exception(f"Incorrect trace command parameter {data_received}")
                 else:
-                    if hasattr(self, "trace_file"):
+                    if s == "remove" and hasattr(self, "trace_file"):
                         path = getattr(self, "trace_file")
                         if path is not None:
                             if os.path.isfile(path):
                                 self.get_logger().debug(f"Deleting the '{path}' file.")
                                 os.remove(path)
                             setattr(self, "trace_file", None)
-            else:
-                if hasattr(self, "trace"):
-                    r = getattr(self, "trace")
-                    if r is None:
-                        r = ""
+                        b = False
+            if b and hasattr(self, "trace_file"):
+                r = ""
+                fn = getattr(self, "trace_file")
+                if fn is not None and len(fn.strip()) > 0:
+                    f = open(fn, "r")
+                    r = f.read()
         except Exception as e:
             raise e
         return r
