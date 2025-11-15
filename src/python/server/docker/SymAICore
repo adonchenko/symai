@@ -20,7 +20,7 @@ COPY ./ExpressionGrammar/ExpressionGrammarLexer.py /app/ExpressionGrammar/Expres
 COPY ./ExpressionGrammar/ExpressionGrammarListener.py /app/ExpressionGrammar/ExpressionGrammarListener.py
 COPY ./ExpressionGrammar/ExpressionGrammarParser.py /app/ExpressionGrammar/ExpressionGrammarParser.py
 COPY ./ExpressionGrammar/ExpressionGrammarVisitor.py /app/ExpressionGrammar/ExpressionGrammarVisitor.py
-COPY ./bash/run.sh /app/run.sh
+#COPY ./bash/run.sh /app/run.sh
 
 # Install any needed dependencies specified in requirements.txt
 RUN pip3 install antlr4-python3-runtime websockets 
@@ -28,4 +28,5 @@ RUN pip3 install antlr4-python3-runtime websockets
 # Make port 12345 available to the world outside this container
 EXPOSE 12345
 # Run symaicore.py when the container launches
-CMD ["bash", "run.sh", "python", "symaicore.py"]
+CMD ["python3", "./symaicore.py"]
+
