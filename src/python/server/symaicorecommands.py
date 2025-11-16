@@ -432,7 +432,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             try:
                 with open(fn, "w") as f:
                     f.write(res["content"])
-                self.get_logger().info(f"property command processed. The environment saved to {fn}")
+                self.get_logger().info(f"property command processed. The property saved to {fn}")
                 setattr(self, "property", fn)
                 res = ""
             except Exception as e:
