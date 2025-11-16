@@ -368,7 +368,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             res["content"] = cnt
             fname = os.path.basename(fname)
             res["filename"] = fname
-            res["filename"] = fname
             res = json.dumps(res)
             self.get_logger().info(f"environment command processed. Retrieved environment expression is {cnt}")
         else:
@@ -411,12 +410,10 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 cnt = self.get_property()
                 fname = getattr(self, "property")
             res["content"] = cnt
-            if len(fname) < 1:
-                fname = "properties.prop"
             fname = os.path.basename(fname)
             res["filename"] = fname
             res = json.dumps(res)
-            self.get_logger().info(f"property command processed. Retrieved property formula is {cnt}")
+            self.get_logger().info(f"property command processed. Retrieved environment expression is {cnt}")
         else:
             try:
                 res = json.loads(data_received)
@@ -435,7 +432,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             try:
                 with open(fn, "w") as f:
                     f.write(res["content"])
-                self.get_logger().info(f"property command processed. The property saved to {fn}")
+                self.get_logger().info(f"property command processed. The environment saved to {fn}")
                 setattr(self, "property", fn)
                 res = ""
             except Exception as e:
