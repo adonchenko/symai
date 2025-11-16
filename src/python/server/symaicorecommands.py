@@ -1565,6 +1565,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                     raise Exception("Incorrect solver name")
                 if dr["solver"] in symaiconfig.SymAISolvers._value2member_map_:
                     setattr(self, "solver", dr["solver"])
+                else:
+                    raise Exception("Incorrect solver name '" + dr["solver"] + "'")
             if "debug" in dr:
                 try:
                     fn = dr["debug"]
