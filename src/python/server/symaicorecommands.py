@@ -180,8 +180,10 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         if hasattr(self, "debug"):
             fn = getattr(self, "debug")
         else:
+            cfg = self.get_config()
             try:
-                fn = self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.SYMAICORE_DEBUG.value)
+                fn = cfg.get(symaiconfig.SymAIConfig.SYMAICORE.value,
+                              symaiconfig.SymAIConfig.SYMAICORE_DEBUG.value)
                 try:
                     fn = bool(fn)
                 except:
@@ -195,10 +197,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                         fn = False
             except:
                 fn = False
-            c = self.get_config()
-            c.set(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.SYMAICORE_DEBUG.value, str(fn))
-            self.set_config(c)
-        setattr(self,"debug", fn)
+            setattr(self,"debug", fn)
 
         return fn
 
@@ -1565,6 +1564,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 if dr["behavior"] not in behaviors.keys():
                     raise Exception(f"Incorrect behavior {beh}")
             if "solver" in dr:
+                if type(dr["solver"]) != str:
+                    raise Exception("Incorrect solver name")
                 self.do_solver(cuuid, dr["solver"])
             if "debug" in dr:
                 try:

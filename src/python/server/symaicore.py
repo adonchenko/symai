@@ -236,7 +236,6 @@ async def handle_client(websocket):
                                     s):
                                 await websocket.send(res)
                                 res = ""
-                                """
                                 if bool(sc.get_debug()):
                                     message = await websocket.recv()
                                     st = message.replace("\t", " ").replace("\r", " ").replace("\n",
@@ -248,7 +247,7 @@ async def handle_client(websocket):
                                     is_cnt = sc.do_rsp_traversalbeh(str(connected_clients.get(websocket).get_uuid()), st)
                                     if is_cnt:
                                         break
-                               """
+
                         except Exception as e:
                             sc.get_logger().error("traversalbeh command failed " + str(e))
                             res = "nok " + str(e)
