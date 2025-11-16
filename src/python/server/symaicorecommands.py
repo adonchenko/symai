@@ -1563,7 +1563,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             if "solver" in dr:
                 if type(dr["solver"]) != str:
                     raise Exception("Incorrect solver name")
-                self.do_solver(cuuid, dr["solver"])
+                if dr["solver"] in symaiconfig.SymAISolvers._value2member_map_:
+                    setattr(self, "solver", dr["solver"])
             if "debug" in dr:
                 try:
                     fn = dr["debug"]
@@ -1574,7 +1575,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                             i = int(fn)
                             if i == 1:
                                 fn = True
-                            else:
                                 fn = False
                         except:
                             fn = False
