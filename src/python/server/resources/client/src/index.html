@@ -16,7 +16,7 @@ function getItemText(id) {
 }  
 
 function adjustSizes() {
-    console.log("AdjustSizes");
+    //console.log("AdjustSizes");
     if( window.myApp ) {
         var idx = window.myApp.getTabValue();
         var id="";
@@ -61,7 +61,7 @@ function setTextareaSizes( taId ) {
             diagParent = diagParent.parentElement;
             
             diagPanel.style.height = diagParent.clientHeight + 'px';
-            console.log("setTextareaSizes-diagHeight="+diagPanel.style.height);
+            //console.log("setTextareaSizes-diagHeight="+diagPanel.style.height);
             //inp.style.width = String(inpParent.width-24) + "px";
         }
 
@@ -104,7 +104,7 @@ function setSizes() {
       const dPanel = diagPanel.parentElement;  
       diagPanel.style.height =  ws.height / 4 + 'px';
       diagPanel.style.width =  ws.width - 8 + 'px';
-      console.log("setSizes-diagHeight="+diagPanel.style.height);
+      //console.log("setSizes-diagHeight="+diagPanel.style.height);
       dPanel.clientHeight = ws.height / 4;
       dPanel.clientWidth = ws.width -8;
     }
@@ -121,6 +121,7 @@ function setSizes() {
 }
 
 function refreshItem(id) {
+  console.log("refreshItem: " + id);
   var element = document.getElementById(id);
   if(element) {
     //var content = element.innerHTML;
@@ -161,14 +162,15 @@ function output(msg) {
 function do_refresh() {
     var element = document.getElementById("hiddenRefresh");
     if( element )  // should be DIV
-      refreshItem( element.innerText );
+      refreshItem( element.value );
 }
 
 function clickHiddenRefresh(arg) {
     var element = document.getElementById("hiddenRefresh");
-    if( element ) { // should be DIV
-      element.innerText = arg;
-      element.click();
+    var elemCmd = document.getElementById("cmdRefresh");
+    if( element && elemCmd ) { // should be DIV
+      element.value = arg;
+      elemCmd.click();
     }
 }
 

@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 export class CtlSyncWS {
     private ws : WebSocket | null = null;
-    private responseQueue: string[] = [];
+    private responseQueue: Array<(msg: MessageEvent) => void> = []; //string[] = [];
     public isConnected : boolean = false;
 
   constructor() {}
@@ -20,11 +20,15 @@ export class CtlSyncWS {
     };
 
     this.ws!.onmessage = (event) => {
-      try {
-        this.responseQueue.push(event.data.toString());
-        console.log('*** WebSocket onmessage: ' + event.data.toString() );
-      } catch (error) {
-        console.error('Error while receiving WebSocket message:', error);
+      //try {
+      //  this.responseQueue.push(event.data.toString());
+      //  console.log('*** WebSocket onmessage: ' + event.data.toString() );
+      //} catch (error) {
+      //  console.error('Error while receiving WebSocket message:', error);
+      //}
+      const resolve = this.responseQueue.shift();
+      if (resolve) {
+        resolve(event);
       }
     };
 
@@ -36,6 +40,12 @@ export class CtlSyncWS {
     this.ws!.onerror = (error) => {
       console.error('WebSocket error:', error);
     };
+  }
+
+  waitForMessage(): Promise<MessageEvent> {
+    return new Promise((resolve) => {
+      this.responseQueue.push(resolve);
+    });
   }
 
   waitRecvBuf( condition : (data : string) => boolean) : Promise<string> {
@@ -84,14 +94,20 @@ export class CtlSyncWS {
   }
 
   public async sendrecv(payload : string, condition : (data : string) => boolean) : Promise<string> {
-    return new Promise((resolve, reject) => {
+    return new Promise( async (resolve, reject) => {
       if (this.ws!.readyState !== WebSocket.OPEN) {
         return reject(new Error('WebSocket is not open.'));
       }
 
       console.log(' *** WebSocket sendrecv: ' + payload);
       this.ws!.send( payload );
-
+      
+      const msg = await this.waitForMessage();
+      const data = msg.data.toString();
+      if( condition(data) ) {
+        resolve(data);
+      }
+      /*
       const handler = (event : MessageEvent) => {
         const data = event.data.toString();
         if( condition(data) ) {
@@ -101,25 +117,8 @@ export class CtlSyncWS {
         }
       }
       this.ws!.addEventListener('message', handler);
-    });
-
-      // Optional: Add a timeout to reject the promise if no response is received
-      /*
-      setTimeout(() => {
-        if (this.responseQueue.length === 0 ) {
-          reject(new Error(`Timeout waiting for response to message:`));
-        }
-      }, 5000); // 5-second timeout
-
-      const str = this.responseQueue.shift();
-      if( typeof(str) === 'string') {
-        console.log(' *** WS recv: ' + str);
-        //resolve(str);
-      }
-      //else 
-      //  return reject(new Error('Error receiving data, response type = ' + typeof(str) ));
-    //});
       */
+    });
   }
 
   public send(message : string) : boolean {
@@ -132,29 +131,16 @@ export class CtlSyncWS {
   }
 
   public async recv(condition : (data : string) => boolean) : Promise<string> {
-    return new Promise((resolve, reject) => {
+    return new Promise( async (resolve, reject) => {
       if (this.ws!.readyState !== WebSocket.OPEN) {
         return reject(new Error('WebSocket is not open.'));
       }
       
-      const handler = (event : MessageEvent) => {
-        const data = event.data.toString();
-        if( condition(data) ) {
-          this.responseQueue.push(data);
-          this.ws!.removeEventListener('message', handler);
-          resolve(data);
-        }
+      const msg = await this.waitForMessage();
+      const data = msg.data.toString();
+      if( condition(data) ) {
+        resolve(data);
       }
-      this.ws!.addEventListener('message', handler);
-      /*
-      const str = this.responseQueue.shift();
-      if( typeof(str) === 'string') {
-        console.log(' *** WS recv: ' + str);
-        resolve(str);
-      }
-      else 
-        return reject(new Error('Error receiving data, response type = ' + typeof(str)));
-      */
     });
   }
 

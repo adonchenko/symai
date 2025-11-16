@@ -37,6 +37,7 @@ declare function clickHiddenRefresh(arg : string) : any;
 
 
 export const SymAI_coreURL : string = "ws://{CORE_HOST}:{CORE_PORT}";
+export const defSolver = "Z3";
 
 @Component({
   selector: 'app-root',
@@ -262,6 +263,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntEnv = String(fileContent);
               //console.log("cntEnv: " + this.cntEnv);
+              clickHiddenRefresh("txtEnv");
             };
             reader.onerror = (e : any) => {
               console.error("Error reading file:", e.target.error);
@@ -289,6 +291,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntAct = String(fileContent);
               //console.log("cntAct: " + this.cntAct); // Do something with the file content
+              clickHiddenRefresh("txtAct");
             };
             reader.onerror = (e : any) => {
               //console.error("Error reading file:", e.target.error);
@@ -316,6 +319,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntTgt = String(fileContent);
               //console.log("cntTgt: " + this.cntTgt); 
+              clickHiddenRefresh("txtTgt");
             };
             reader.onerror = (e : any) => {
               //console.error("Error reading file:", e.target.error);
@@ -343,7 +347,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             reader.onload = (e) => {
               const fileContent = reader.result; //e.target.value; // The content of the file
               this.cntBeh = String(fileContent);
-              console.log("cntBeh: " + this.cntBeh); 
+              //console.log("cntBeh: " + this.cntBeh); 
+              clickHiddenRefresh("txtBeh");
             };
             reader.onerror = (e : any) => {
               //console.error("Error reading file:", e.target.error);
@@ -466,10 +471,13 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     errLoad : boolean = false;
 
     async doLoadData( msg: string, dataname: string) {
+      console.log("=============== doLoadData " + dataname + "================");      
       this.errLoad = true;
       try {
         msg.replace(/[\r\n]+/g, ' ');
         const resp = await this.SyncWS().sendrecv(msg, (data) => typeof(data) === 'string');
+        
+        console.log(resp);
         if( resp === 'ok' ) {
           this.errLoad = false;
           this.Diag( dataname + "  loaded");
@@ -491,11 +499,11 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.Diag("Uploading Environment...");
       
       var msg : string = 'environment ';
-      var solver : string = 'SymPy'; 
+      var solver : string = defSolver; 
       if( this.prefsComponent !== undefined ) { 
         this.Diag("Solver: "+ this.prefsComponent.selectedSolver);
         if(this.prefsComponent.selectedSolver === "" )
-          solver = 'SymPy';
+          solver = defSolver;
         else
           solver = this.prefsComponent.selectedSolver;
       }
@@ -509,10 +517,10 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.doLoadData(msg, "Environment"); 
       if( !this.errLoad ) {
         this.envLoaded = true;
-        if( loadNext ) {
-          const inputElem = document.getElementById("behLoader") as HTMLInputElement;
-          if( inputElem ) { this.Diag("Load next..."); inputElem.click(); }
-        }
+        //if( loadNext ) {
+        //  const inputElem = document.getElementById("behLoader") as HTMLInputElement;
+        //  if( inputElem ) { this.Diag("Load next..."); inputElem.click(); }
+        //}
       }
     }
 
@@ -529,10 +537,10 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.doLoadData(msg, "Behaviors");
       if( !this.errLoad ) { 
         this.behLoaded = true;
-        if( loadNext ) {
-          const inputElem = document.getElementById("actLoader") as HTMLInputElement;
-          if( inputElem ) { this.Diag("Load next..."); inputElem.click(); }
-        }
+        //if( loadNext ) {
+        //  const inputElem = document.getElementById("actLoader") as HTMLInputElement;
+        //  if( inputElem ) { this.Diag("Load next..."); inputElem.click(); }
+        //}
       }
     }
 
@@ -549,10 +557,10 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.doLoadData(msg, "Actions");
       if( !this.errLoad ) {
         this.actLoaded = true;
-        if( loadNext ) {
-          const inputElem = document.getElementById("tgtLoader") as HTMLInputElement;
-          if( inputElem ) { this.Diag("Load next..."); inputElem.click(); }
-        }
+        //if( loadNext ) {
+        //  const inputElem = document.getElementById("tgtLoader") as HTMLInputElement;
+        //  if( inputElem ) { this.Diag("Load next..."); inputElem.click(); }
+        //}
       }
     }
 
@@ -565,11 +573,11 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.cntTgt.replace(/[\r\n]+/g, ' ');
 
       var msg : string = 'property ';
-      var solver : string = 'SymPy'; 
+      var solver : string = defSolver; 
       if( this.prefsComponent !== undefined ) { 
         this.Diag("Solver: "+ this.prefsComponent.selectedSolver);
         if(this.prefsComponent.selectedSolver === "" )
-          solver = 'SymPy';
+          solver = defSolver;
         else
           solver = this.prefsComponent.selectedSolver;
       }
@@ -585,6 +593,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     }
 
     doLoad() : void {
+      console.log("========== doLoad =========");
       this.doLoadEnv(false);
       this.doLoadBeh(false);
       this.doLoadAct(false);
@@ -690,6 +699,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       let next = true; 
       while( next ) {
         try {
+
+            console.log("... ... wait for data... ...");
             const resp = await this.SyncWS().recv((data) => typeof(data) === 'string');
 
             next = this.onReceiveMsg(resp);
@@ -735,7 +746,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         if( sp2 < 0 )
           cmd = msg.substring(sp1+1);
         if( sp2 > 0 ) 
-          cmd = msg.substring(sp1+1,sp2-1);
+          cmd = msg.substring(sp1+1,sp2);
 
         console.log("CMD: " + cmd);
         switch( cmd ) {

@@ -39,7 +39,7 @@ import { Subscription } from 'rxjs';
 
 export class Prefs implements OnInit, OnDestroy {
     constructor(private svcCtlPrefs: CtlPrefs, private primeng: PrimeNG) { 
-      console.log(" Prefs constructor");
+      //console.log(" Prefs constructor");
       //this.window = inject(DOCUMENT).defaultView as Window;
       //this.window.localStorage.setItem('myApp', this);
     }
@@ -50,26 +50,26 @@ export class Prefs implements OnInit, OnDestroy {
     solvers : any = [];
 
     ngOnInit(): void {
-      console.log("ngOnInit Prefs -->");
+      //console.log("ngOnInit Prefs -->");
       this.svcCtlPrefs.getShowDialog().subscribe((newData:boolean)  => {
-        console.log("Prefs: getShowDialog = " + newData);
+        //console.log("Prefs: getShowDialog = " + newData);
         this.dlgVisible = newData;
       });
       this.svcCtlPrefs.showDialogObs2$.subscribe((newData:boolean)  => {
-        console.log("Prefs: getShowDialog2 = " + newData);
+        //console.log("Prefs: getShowDialog2 = " + newData);
         this.dlgVisible = newData;
       });
 
       this.solvers = [ 
-        { label : "SymPy", value : "SymPy" }, 
         { label : "Z3", value : "Z3" },
+        { label : "SymPy", value : "SymPy" }, 
         { label : "CVC5", value : "CVC5" }
       ];
-      console.log(" --> ngOnInit Prefs");
+      //console.log(" --> ngOnInit Prefs");
     }
 
     ngOnDestroy(): void {
-      console.log(" --> ngOnDestroy Prefs");
+      //console.log(" --> ngOnDestroy Prefs");
     }
     //ngOnChanges(changes: SimpleChanges) {
     //    console.log(changes);
@@ -77,7 +77,7 @@ export class Prefs implements OnInit, OnDestroy {
 
     public flagUseAI : boolean = false;
 
-    public selectedSolver: string = "SymPy";
+    public selectedSolver: string = "Z3";
     public maxModels : number = 1;
     public reenterCount : number = 1;
     public flushSelSolver : boolean = false;

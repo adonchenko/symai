@@ -191,7 +191,7 @@
   
 </style>
 
-<main class="main"><div class="div-table">
+<main class="main"><div class="div-table" styly="overflow:auto;">
 
     <div #menuBar id="menuBar" layout="row" class="div-table-row">
       <p-menubar [model]="items" [style]="{height:'48px'}"/>
@@ -201,7 +201,8 @@
       <input type="button" id="actLoader" (click)="doLoadAct(true)" style="visibility: hidden;" />
       <input type="button" id="tgtLoader" (click)="doLoadTgt(true)" style="visibility: hidden;" />
       -->
-      <div id="hiddenRefresh"  style="visibility: hidden; width: 0px; height: 0px; overflow: hidden;" onclick="do_refresh();"></div>
+      <input type="hidden" id="hiddenRefresh" value="" style="visibility: hidden;" />
+      <input type="button" id="cmdRefresh" style="visibility: hidden; width: 0px; height: 0px; overflow: hidden;" onclick="do_refresh();" />
     </div>
 
     <div id="workspace" id="workspace" class="div-table-row">
@@ -285,8 +286,10 @@
         </ng-template>
         <ng-template #panel>
           <table [border]="0" [cellSpacing]="0" [cellPadding]="2"><tr>
-            <td><div id="graph"><!--<svg #myGraph width="400" height="400" style="border:1px solid #000;"></svg>--></div></td>
             <td><div #diag id="diag" style="font-family: Arial, Helvetica, sans-serif; font-size: 8pt; overflow: scroll;"></div></td>
+            <td style="width:420px; height: 200px;"><div id="graph">
+              <!-- <svg #myGraph id="myGraph" width="600px" height="400px" style="border: none;"></svg> -->
+            </div></td>
               <!--Panel 2-->
           </tr></table>
         </ng-template>
