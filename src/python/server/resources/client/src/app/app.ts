@@ -20,15 +20,19 @@ import { CtlPrefs } from './ctl-prefs';
 import { CtlWS } from './ctl-ws'; 
 import { CtlSyncWS } from './ctl-sync-ws';
 import { ChkMenuItem } from './chk-menu-item';
+
 import { TraversalbehCfg } from './traversalbeh-cfg';
+import { RequestQue } from './request-que';
+import { GraphSet } from './graph-set';
+import { GraphItem } from './graph-item';
 
 
 // ============================================ JS exports
 declare function setSizes(): any;
 declare function adjustSizes(): any;
 declare function setTextareaSizes(id:string): any;
-declare function wsWidth(e:HTMLElement): any;
-declare function wsHeight(e:HTMLElement): any;
+declare function wsWidth(): any;
+declare function wsHeight(): any;
 declare function refreshItem(id: string): any;
 declare function diag(msg: string): any;
 declare function output(msg: string): any;
@@ -469,13 +473,38 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     behLoaded : boolean = false;
     tgtLoaded : boolean = false;
     errLoad : boolean = false;
+    private isLoading : number = 0;
+    private rque : RequestQue = new RequestQue();
+
+    processLoad() : void {
+      if(this.rque.hasRequests() === false) 
+        return;
+      const msg = this.rque.getRequest();
+      const name = this.rque.getDName();
+      if( typeof(msg) === 'string' ) {
+        if( typeof(name) === 'string')
+          this.doLoadData( msg, name);
+        else
+          this.doLoadData( msg, "");
+      }
+    }
 
     async doLoadData( msg: string, dataname: string) {
+      /*
+      if(this.isLoading > 0) {
+        this.rque.postRequest(msg, dataname);
+        console.log("=== doLoadData " + dataname + "==> BUSY");      
+        return;
+      }
+      */
+
       console.log("=============== doLoadData " + dataname + "================");      
       this.errLoad = true;
       try {
         msg.replace(/[\r\n]+/g, ' ');
+        this.isLoading++;
         const resp = await this.SyncWS().sendrecv(msg, (data) => typeof(data) === 'string');
+        this.isLoading--;
         
         console.log(resp);
         if( resp === 'ok' ) {
@@ -484,11 +513,13 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         }
         else {
           this.Diag("Error loading " + dataname);
+          return;
         }
       } catch (error) {
           this.Diag('Error during synchronous message exchange:' + error);
       }
 
+      //this.processLoad(); 
     }
 
     doLoadEnv(loadNext : boolean) : void {
@@ -501,11 +532,11 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       var msg : string = 'environment ';
       var solver : string = defSolver; 
       if( this.prefsComponent !== undefined ) { 
-        this.Diag("Solver: "+ this.prefsComponent.selectedSolver);
+        this.Diag("Solver: "+ this.prefsComponent.selectedSolver.toString());
         if(this.prefsComponent.selectedSolver === "" )
           solver = defSolver;
         else
-          solver = this.prefsComponent.selectedSolver;
+          solver = this.prefsComponent.selectedSolver.toString();
       }
       this.cntEnv.replace(/[\r\n]+/g, ' ');
       var cmd = { 
@@ -514,14 +545,14 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         };
       msg += JSON.stringify(cmd);
 
-      this.doLoadData(msg, "Environment"); 
-      if( !this.errLoad ) {
-        this.envLoaded = true;
-        //if( loadNext ) {
-        //  const inputElem = document.getElementById("behLoader") as HTMLInputElement;
-        //  if( inputElem ) { this.Diag("Load next..."); inputElem.click(); }
-        //}
+      /*
+      this.rque.postRequest(msg, "Environment");
+      if(this.isLoading <= 0 ) {
+        this.isLoading = 0;
+        this.processLoad();
       }
+      */
+      this.doLoadData(msg, "Environment"); 
     }
 
     doLoadBeh( loadNext : boolean ) : void {
@@ -535,13 +566,13 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       var msg : string = 'behaviors { "content": "' + this.cntBeh + '" }';
 
       this.doLoadData(msg, "Behaviors");
-      if( !this.errLoad ) { 
-        this.behLoaded = true;
-        //if( loadNext ) {
-        //  const inputElem = document.getElementById("actLoader") as HTMLInputElement;
-        //  if( inputElem ) { this.Diag("Load next..."); inputElem.click(); }
-        //}
+      /*
+      this.rque.postRequest(msg, "Behaviors");
+      if(this.isLoading <= 0 ) {
+        this.isLoading = 0;
+        this.processLoad();
       }
+      */
     }
 
     doLoadAct(loadNext : boolean) : void {
@@ -555,13 +586,6 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       var msg : string = 'actions { "content": "' + this.cntAct + '" }';
 
       this.doLoadData(msg, "Actions");
-      if( !this.errLoad ) {
-        this.actLoaded = true;
-        //if( loadNext ) {
-        //  const inputElem = document.getElementById("tgtLoader") as HTMLInputElement;
-        //  if( inputElem ) { this.Diag("Load next..."); inputElem.click(); }
-        //}
-      }
     }
 
     doLoadTgt(loadNext : boolean) : void {
@@ -575,11 +599,11 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       var msg : string = 'property ';
       var solver : string = defSolver; 
       if( this.prefsComponent !== undefined ) { 
-        this.Diag("Solver: "+ this.prefsComponent.selectedSolver);
+        this.Diag("Solver: "+ this.prefsComponent.selectedSolver.toString());
         if(this.prefsComponent.selectedSolver === "" )
           solver = defSolver;
         else
-          solver = this.prefsComponent.selectedSolver;
+          solver = this.prefsComponent.selectedSolver.toString();
       }
       var cmd = { 
         content : this.cntTgt, 
@@ -588,8 +612,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       msg += JSON.stringify(cmd);
 
       this.doLoadData(msg, "Property");
-      if( !this.errLoad ) 
-        this.tgtLoaded = true;
+      //if( !this.errLoad ) 
+      //  this.tgtLoaded = true;
     }
 
     doLoad() : void {
@@ -623,7 +647,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       
       msg += JSON.stringify(parm);
       
-      console.log("Sending: " + msg);
+      //console.log("Sending: " + msg);
       this.Diag("Sending: " + msg);
 
       this.SyncWS().send(msg);
@@ -758,6 +782,13 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
           case 'environment':
             out = msg.substring(sp2+1);
             break;
+          case 'values':
+            this.graphSet.addDataRow(msg.substring(sp2+1)); 
+            {
+              var svg : SVGSVGElement = document.getElementById('myGraph')! as unknown as SVGSVGElement;
+              this.graphSet.repaintGraphs(svg);
+            }
+            return true;
           default:
             return true;
         }
@@ -774,7 +805,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
 
     dlgAddGraph : boolean = false;
     private graphName : string = "";
-
+    graphSet : GraphSet = new GraphSet();
+    
     addGraph() : void {
       this.dlgAddGraph = true;
     }
@@ -787,18 +819,26 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.graphName = getItemText("gr_name");
       const clr : HTMLInputElement = document.getElementById("gr_color")! as HTMLInputElement;
       // clr.value;
+      console.log("Create graph " + this.graphName + "(" + getItemText('gr_X') + "," + getItemText('gr_Y') + ")");
+      this.graphSet.addGraph( this.graphName, getItemText('gr_X'), getItemText('gr_Y'));
       this.dlgAddGraph = false;
 
-      console.log("Create graph" + this.graphName);
+      let gi : GraphItem | undefined = this.graphSet.getGraph(this.graphName);
+      if( gi !== undefined )
+        gi.color = String(clr);
 
-      const cont : HTMLElement = document.getElementById("graph")!;
+      var cont : HTMLDivElement = document.getElementById("graph")! as HTMLDivElement;
+      /*
       var svg = document.createElement("svg")!;
       svg.style.width='400px';
       svg.style.height='400px';
       svg.id=this.graphName;
 
       cont.appendChild(svg);
-
+      */
+      cont.style.left = String(wsWidth()-420) + 'px';
+      cont.style.visibility='visible';
+      cont.style.zIndex='9999';
     }
 
 }

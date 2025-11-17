@@ -9,6 +9,15 @@ export class GraphSet {
     public range : Point = new Point(0.,0.);
     public scale : Point = new Point(1.,1.);
 
+    public addGraph(name: string, xParm: string, yParm: string) : void {
+        this.graphs.set(name, new GraphItem(name, xParm, yParm));
+    }
+
+    public getGraph(id:string) : GraphItem | undefined {
+        let res: GraphItem | undefined = this.graphs.get(id);
+        return res;
+    }
+
     public addDataRow(data:string) : void {
         const json = JSON.parse(data); // should be array of arrays
         if( data.length > 0 && Array.isArray(data) ) {
@@ -55,6 +64,8 @@ export class GraphSet {
                 }
             }
         });
+        for (const entry of this.graphs.entries())
+            entry[1].check();
     }
 
     public normalizeX(x:number, width:number) : number {
@@ -90,7 +101,7 @@ export class GraphSet {
 
         let zp : Point = this.normalizePoint(zeroPt, w, h);
 
-        //console.log(" --- zero point: (" + zp.x.toFixed(2) + "," + zp.y.toFixed(2) + ")" );
+        console.log(" --- zero point: (" + zp.x.toFixed(2) + "," + zp.y.toFixed(2) + ")" );
         
         const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line1.setAttribute('stroke', 'rgba(6, 43, 6, 0.94)');
@@ -106,9 +117,9 @@ export class GraphSet {
         line2.setAttribute('stroke', 'rgba(6, 43, 6, 0.94)');
         line2.setAttribute('stroke-width', '2');
         line2.setAttribute('x1', '1');
-        line2.setAttribute('y1', String(zp.y));
+        line2.setAttribute('y1', String(h-zp.y));
         line2.setAttribute('x2', String(w-1));
-        line2.setAttribute('y2', String(zp.y));
+        line2.setAttribute('y2', String(h-zp.y));
         svg.appendChild(line2);
         //console.log("H-line: (" + String(zp.x) + ", " + String(zp.y) + ", " + String(w-2) + ", " + String(zp.y) + ")");
 
@@ -119,7 +130,7 @@ export class GraphSet {
     
     
     drawGraph( svg : SVGElement, graph : GraphItem, zero : Point, width: number, height: number ) : void {
-        console.log("Draw Graph " + graph.id);
+        console.log("Draw Graph " + graph.id + ", points: " + String(graph.pts.length));
         
         for( var idx = 1; idx < graph.pts.length; idx++ ) {
             var x0 : number = this.normalizeX(graph.pts[idx-1].x, width);  

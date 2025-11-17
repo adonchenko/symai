@@ -9,6 +9,10 @@ export class CtlSyncWS {
 
   constructor() {}
 
+  public attach(other_ws : WebSocket) : void {
+    this.ws = other_ws;
+  }
+  
   public init( some_ws : WebSocket) {
     this.ws = some_ws;
     this.postInit();

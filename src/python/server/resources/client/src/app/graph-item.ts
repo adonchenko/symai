@@ -10,7 +10,11 @@ export class GraphItem {
     
     private newPt : Point | null = null;
 
-    constructor( id:string ){ this.id = id;}
+    constructor( id:string, px : string, py: string ) {
+         this.id = id;
+         this.parmX = px;
+         this.parmY = py;
+    }
 
     public addPoint(pt:Point) : void {
         this.pts.push(pt);
