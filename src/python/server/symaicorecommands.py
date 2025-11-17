@@ -1314,7 +1314,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
     def do_debug(self, cuuid, msg:str):
         b = False
-        if hasattr(self, "debug"):
+        if hasattr(self, ):
             b = getattr(self, "debug")
         else:
             try:
@@ -1591,7 +1591,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
     def do_traversalbeh(self, cuuid, data_received):
         yield "ok start traversal behaviors"
         self.get_logger().info(f"traversal behaviors started {data_received}")
-        slvr = None
         try:
             ctx = self.do_load_traversal_data(cuuid, data_received)
             yield "ok input data retrieved"
@@ -1618,8 +1617,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             ctx["environment_trace"] = env_trace
 
             setattr(self, "stop", False)
-            # ctx["stop"] = False
-            is_reached = False
 
             for s in self.process_one_behavior(behaviors[cur_beh], ctx, None):
                 yield s
@@ -1631,9 +1628,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         except Exception as e:
             self.get_logger().error(f"traversal behaviors failed with {e}")
             yield f"nok Traversal behaviors failed {e}"
-        finally:
-            if slvr is not None:
-                self.do_solver(cuuid, slvr)
 
     def process_one_behavior(self, beh, ctx, it_tail):
         environment = ctx["environment"]

@@ -226,11 +226,24 @@ async def handle_client(websocket):
                     else:
                         res = "ok"
                         try:
+                            to_preserve = dict()
+                            t = ""
+                            if hasattr(sc, "solver"):
+                                t = getattr(sc, "solver")
+                            to_preserve["solver"] = t
+                            t = ""
+                            if hasattr(sc, "debug"):
+                                t = getattr(sc, "debug")
+                            to_preserve["debug"] = t
+                            t = ""
+                            if hasattr(sc, "reenter_count"):
+                                t = getattr(sc, "reenter_count")
+                            to_preserve["reenter_count"] = t
+
                             s = None
                             if len(message) > 11:
                                 s = str(message).strip()[12:]
                             suuid = str(connected_clients.get(websocket).get_uuid())
-                            sc.get_logger().debug(f"traversalbeh command before loop {suuid}")
                             for res in sc.do_traversalbeh(
                                     suuid,
                                     s):
@@ -255,8 +268,15 @@ async def handle_client(websocket):
                             if len(res) > 2 and res[:2] == "ok":
                                 sc.get_logger().info("traversalbeh command passed ok")
                         finally:
-                            if len(res) > 2 and res[:2] == "ok":
-                                await websocket.send(res)
+                            setattr(sc, "solver", to_preserve["solver"])
+                            t = ""
+                            setattr(sc, "debug", to_preserve["debug"])
+                            setattr(sc, "reenter_count", to_preserve["reenter_count"])
+                            if len(res) > 0:
+                                try:
+                                    await websocket.send(res)
+                                except:
+                                    pass
 
                 case "trace":
                     sc.get_logger().info("trace command received")
