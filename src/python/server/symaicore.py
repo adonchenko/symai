@@ -225,8 +225,8 @@ async def handle_client(websocket):
                         await websocket.send("nok UUID not found.Cannot process " + message)
                     else:
                         res = "ok"
+                        to_preserve = dict()
                         try:
-                            to_preserve = dict()
                             t = ""
                             if hasattr(sc, "solver"):
                                 t = getattr(sc, "solver")
