@@ -361,7 +361,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         if data_received is None or len(data_received.strip()) < 1:
             res = dict()
             cnt = ""
-            fname = ""
+            fname = "environment.env"
             if hasattr(self, "environment"):
                 cnt = self.get_environment()
                 fname = getattr(self, "environment")
@@ -405,7 +405,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         if data_received is None or len(data_received.strip()) < 1:
             res = dict()
             cnt = ""
-            fname = ""
+            fname = "properties.prop"
             if hasattr(self, "property"):
                 cnt = self.get_property()
                 fname = getattr(self, "property")

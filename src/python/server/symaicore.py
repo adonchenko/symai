@@ -269,7 +269,6 @@ async def handle_client(websocket):
                                 sc.get_logger().info("traversalbeh command passed ok")
                         finally:
                             setattr(sc, "solver", to_preserve["solver"])
-                            t = ""
                             setattr(sc, "debug", to_preserve["debug"])
                             setattr(sc, "reenter_count", to_preserve["reenter_count"])
                             if len(res) > 0:
