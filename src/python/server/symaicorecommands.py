@@ -1314,7 +1314,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
     def do_debug(self, cuuid, msg:str):
         b = False
-        if hasattr(self, ):
+        if hasattr(self, "debug"):
             b = getattr(self, "debug")
         else:
             try:
