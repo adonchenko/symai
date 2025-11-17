@@ -65,5 +65,6 @@ if __name__ == '__main__':
     suite.addTest(SymAICoreTestCase('test_do_behaviors'))
     suite.addTest(SymAICoreTestCase('test_do_property'))
     suite.addTest(SymAICoreTestCase('test_do_environment'))
+    suite.addTest(SymAICoreTestCase('test_do_ai'))
     runner = unittest.TextTestRunner()
     runner.run(suite)

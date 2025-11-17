@@ -28,6 +28,7 @@ class SymAICoreTestCase(unittest.TestCase):
         self.cc.set_config(self.cfg)
         self.cc.set_logger(logger)
         self.cc.set_temp_dir("temp")
+        self.restore_ini = False
 
     def test_do_actions(self):
         # cuuid, [data_received, need_test_repl, resp_tail_tpl, need_test_file, file_test_tpl, ...], ...
@@ -225,8 +226,67 @@ class SymAICoreTestCase(unittest.TestCase):
                 else:
                     self.assertTrue(False, "environment file has not been defined")
 
+    def test_do_ai(self):
+        # cuuid, [data_received, need_test_repl, resp_tail_tpl,
+        #         need_test_attr, test_attr_name, test_attr_value,
+        #         need_test_ini, test_ini_name, test_ini_value...], ...
+        test_data = [
+            ["temp",
+             ["",
+              True,
+              'False',
+              True,
+              "ai",
+              False,
+              True,
+              symaiconfig.SymAIConfig.AI.value,
+              'False'
+              ],
+              ["True",
+              True,
+              'False',
+              True,
+              "ai",
+              False,
+              True,
+              symaiconfig.SymAIConfig.AI.value,
+              'True'
+              ]
+             ]
+        ]
+
+        for it in test_data:
+            cuuid = it[0]
+            self.restore_ini = False
+            data_received = it[1][0]
+            need_test_repl = it[1][1]
+            resp_tail_tpl = it[1][2]
+            need_test_attr = it[1][3]
+            test_attr_name = it[1][4]
+            test_attr_value = it[1][5]
+            need_test_ini = it[1][6]
+            self.test_ini_name = it[1][7]
+            test_ini_value = it[1][8]
+            self.old_value = self.cc.get_config().get(SymAIConfig.SYMAICORE.value, self.test_ini_name)
+            self.restore_ini = True
+
+            rsp = self.cc.do_ai(cuuid, data_received)
+            if need_test_repl:
+                self.assertEqual(resp_tail_tpl, rsp, "response is not equal to expected")
+            if need_test_attr:
+                self.assertTrue(hasattr(self.cc, test_attr_name), "attribute is absent")
+                attr_tpl = getattr(self.cc, test_attr_name)
+                self.assertEqual(test_attr_value, attr_tpl, "attribute is not equal")
+            if need_test_ini:
+                tv = self.cc.get_config().get(SymAIConfig.SYMAICORE.value, self.test_ini_name)
+                self.assertEqual(test_ini_value, tv, "expected and actual config values are not equal")
+            self.cc.get_config().set(SymAIConfig.SYMAICORE.value, self.test_ini_name, str(self.old_value))
+            self.restore_ini = False
+
     def tearDown(self):
         if self.cc is not None:
             self.cc.remove_directory_tree(self.cc.get_temp_dir())
-            self.cc = None
+            if self.restore_ini:
+                self.cc.get_config().set(SymAIConfig.SYMAICORE.value, self.test_ini_name, str(self.old_value))
+                self.restore_ini = False
         self.cfg = None

@@ -1269,6 +1269,10 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             except:
                 b = False
         s = str(msg).strip().split()
+        if len(s) < 1:
+            if not hasattr(self, "ai"):
+                setattr(self, "ai", b)
+            return str(b)
         is_flush = False
         if len(s) == 1:
             if not hasattr(self, "ai"):
