@@ -19,7 +19,7 @@ export class GraphItem {
     public addPoint(pt:Point) : void {
         this.pts.push(pt);
 
-        console.log("new point(" + String(pt.x) + "," + String(pt.y));
+        console.log("Graph " + this.id + ", new point(" + String(pt.x) + "," + String(pt.y) + ")");
         //console.log("Min: (" + String(this.min.x) + "," + String(this.min.y) + "), Max(" + String(this.max.x) + "," + String(this.max.y) + ")");
         if(pt.x > this.max.x ) this.max.x = pt.x;
         if(pt.x < this.min.x) this.min.x = pt.x;
@@ -30,12 +30,14 @@ export class GraphItem {
     public new_x(v : number) : void {
         if( this.newPt === null ) 
             this.newPt = new Point();
+        //console.log(this.id + ": new_x=" + String(v));
         this.newPt.x = v;
     }
 
     public new_y(v : number) : void {
         if( this.newPt === null ) 
             this.newPt = new Point();
+        //console.log(this.id + ": new_y=" + String(v));
         this.newPt.y = v;
     }
 
