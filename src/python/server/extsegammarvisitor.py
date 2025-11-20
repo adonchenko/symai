@@ -38,10 +38,10 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
     # Visit a parse tree produced by ExpressionGrammarParser#assignmentExpressionList
     def visitAssignmentExpressionList(self, ctx:ExpressionGrammarParser.AssignmentExpressionListContext):
         result = self.visit(ctx.getChild(0))
-        i = 1
-        while i  < ctx.getChildCount():
-            result = result + ";" + self.visit(ctx.assignmentExpression(i))
+        i = 0
+        while i + 2  < ctx.getChildCount():
             i = i + 2
+            result = result + ";" + self.visit(ctx.getChild(i))
         return result
 
     # Visit a parse tree produced by ExpressionGrammarParser#actionsList.
@@ -62,7 +62,7 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
             else:
                 t.append(None)
             self.action_has_logical(ctx.assignmentExpressionList(i))
-            t.append(self.visit(ctx.assignmentExpressionList(i)))
+            t.append(self.visitAssignmentExpressionList(ctx.assignmentExpressionList(i)))
             i = i + 1
             self.results.append(t)
             result = result + str(t[0]) + ":"

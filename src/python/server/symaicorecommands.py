@@ -451,7 +451,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             try:
                 f = open(fn, "r")
                 cnt = f.read()
-                tree = self.prepare_parser_expr(cnt).behavior()
+                p = self.prepare_parser_expr(cnt)
+                tree = p.behavior()
                 visitor = ExtSEGrammarVisitor()
                 res = visitor.visit(tree)
                 self.get_logger().debug(f"behaviors successful retrieved. File {fn}")
@@ -1211,9 +1212,12 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             if b and hasattr(self, "trace_file"):
                 r = ""
                 fn = getattr(self, "trace_file")
-                if fn is not None and len(fn.strip()) > 0:
-                    f = open(fn, "r")
-                    r = f.read()
+                try:
+                    if fn is not None and len(fn.strip()) > 0:
+                        f = open(fn, "r")
+                        r = f.read()
+                except:
+                    r = ""
         except Exception as e:
             raise e
         return r
