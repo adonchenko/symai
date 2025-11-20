@@ -52,7 +52,7 @@ export class CtlSyncWS {
     });
   }
 
-  waitRecvBuf( condition : (data : string) => boolean) : Promise<string> {
+  waitRecvBuf( condition : (data : string) => boolean) : Promise<string> { // BAD!!
     return new Promise((resolve, reject) => {
       // This Promise resolves to a string
       if (this.ws!.readyState !== WebSocket.OPEN) {

@@ -23,6 +23,7 @@ import { ChkMenuItem } from './chk-menu-item';
 
 import { TraversalbehCfg } from './traversalbeh-cfg';
 import { RequestQue } from './request-que';
+import { Point } from './point';
 import { GraphSet } from './graph-set';
 import { GraphItem } from './graph-item';
 
@@ -250,6 +251,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
           case 1: setTextareaSizes("txtBeh"); break;
           case 2: setTextareaSizes("txtAct"); break;
           case 3: setTextareaSizes("txtTgt"); break;
+          case 4: setTextareaSizes("runOutput"); break;
         }
       }
     }
@@ -264,115 +266,83 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     cntBeh : string = '';
     cntAct : string = '';
     cntTgt : string = '';
+
+    waitReadFile(file : any) : Promise<String> {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        //console.log("FileReader created");             
+        
+        reader.onload = (e) => {
+          const fileContent = reader.result; //e.target.value; // The content of the file
+          resolve(String(fileContent));
+          //console.log("cntEnv: " + this.cntEnv);
+          //clickHiddenRefresh("txtEnv");
+        };
+        reader.onerror = (e : any) => {
+          console.error("Error reading file:", e.target.error);
+          this.msgBox("Error", "Error reading file.");
+        };
+        
+        //console.log("read File...");   
+        reader.readAsText(file);
+      });
+    }
     
-    handleEnvFileInput(event: any): void {
+    async handleEnvFileInput(event: any) {
         //const inputElement = event.target as HTMLInputElement;
         //console.log("handleEnvFileInput:");
         this.fileEnvToUpload = event.target.files[0];
         if (this.fileEnvToUpload) {
-            const reader = new FileReader();
-            //console.log("FileReader created");             
-            
-            reader.onload = (e) => {
-              const fileContent = reader.result; //e.target.value; // The content of the file
-              this.cntEnv = String(fileContent);
-              //console.log("cntEnv: " + this.cntEnv);
-              clickHiddenRefresh("txtEnv");
-            };
-            reader.onerror = (e : any) => {
-              console.error("Error reading file:", e.target.error);
-              this.msgBox("Error", "Error reading file.");
-            };
-            
-            //console.log("read File...");   
-            this.cntEnv = "Reading file....";          
-            reader.readAsText(this.fileEnvToUpload);
-            //refreshItem("txtEnv"); // Do something with the file content
+          this.cntEnv = "Reading file....";
+          
+          const str = await this.waitReadFile(this.fileEnvToUpload); 
+          
+          this.cntEnv = String(str);
         }
         else
           console.log("fileEnvToUpload not found");
     }
 
-    handleActFileInput(event: any): void {
+    async handleActFileInput(event: any) {
         //const inputElement = event.target as HTMLInputElement;
         //console.log("handleActFileInput:");
         this.fileActToUpload = event.target.files[0];
         if (this.fileActToUpload) {
-            const reader = new FileReader();
-            //console.log("FileReader created");             
-            
-            reader.onload = (e) => {
-              const fileContent = reader.result; //e.target.value; // The content of the file
-              this.cntAct = String(fileContent);
-              //console.log("cntAct: " + this.cntAct); // Do something with the file content
-              clickHiddenRefresh("txtAct");
-            };
-            reader.onerror = (e : any) => {
-              //console.error("Error reading file:", e.target.error);
-              this.msgBox("Error", "Error reading file.");
-            };
-            
-            //console.log("read File...");             
-            this.cntAct = "Reading file...";
-            reader.readAsText(this.fileActToUpload);
-            //refreshItem("txtAct"); // Do something with the file content
+          this.cntAct = "Reading file...";
+
+          const str = await this.waitReadFile(this.fileActToUpload); 
+          
+          this.cntAct = String(str);
         }
         else
           console.log("fileActToUpload not found");
     }
 
-    handleTgtFileInput(event: any): void {
+    async handleTgtFileInput(event: any) {
         //const inputElement = event.target as HTMLInputElement;
         //console.log("handleTgtFileInput:");
         this.fileTgtToUpload = event.target.files[0];
         if (this.fileTgtToUpload) {
-            const reader = new FileReader();
-            //console.log("FileReader created");             
-            
-            reader.onload = (e) => {
-              const fileContent = reader.result; //e.target.value; // The content of the file
-              this.cntTgt = String(fileContent);
-              //console.log("cntTgt: " + this.cntTgt); 
-              clickHiddenRefresh("txtTgt");
-            };
-            reader.onerror = (e : any) => {
-              //console.error("Error reading file:", e.target.error);
-              this.msgBox("Error", "Error reading file.");
-            };
-            
-            //console.log("read File...");             
-            this.cntTgt = "Reading file...";
-            reader.readAsText(this.fileTgtToUpload);
-            //refreshItem("txtTgt"); // Do something with the file content
-            
+          this.cntTgt = "Reading file...";
+
+          const str = await this.waitReadFile(this.fileTgtToUpload); 
+          
+          this.cntTgt = String(str);
         }
         else
             console.log("fileTgtToUpload not found");
     }
 
-    handleBehFileInput(event: any): void {
+    async handleBehFileInput(event: any) {
         //const inputElement = event.target as HTMLInputElement;
         //console.log("handleBehFileInput:");
         this.fileBehToUpload = event.target.files[0];
         if (this.fileBehToUpload) {
-            const reader = new FileReader();
-            //console.log("FileReader created");             
-            
-            reader.onload = (e) => {
-              const fileContent = reader.result; //e.target.value; // The content of the file
-              this.cntBeh = String(fileContent);
-              //console.log("cntBeh: " + this.cntBeh); 
-              clickHiddenRefresh("txtBeh");
-            };
-            reader.onerror = (e : any) => {
-              //console.error("Error reading file:", e.target.error);
-              this.msgBox("Error", "Error reading file.");
-            };
-            
-            //console.log("read File..." + this.fileBehToUpload);             
-            this.cntBeh = "Reading file...";
-            reader.readAsText(this.fileBehToUpload);
-            //refreshItem("txtBeh");// Do something with the file content
+          this.cntBeh = "Reading file...";
+
+          const str = await this.waitReadFile(this.fileBehToUpload); 
+          
+          this.cntBeh = String(str);
         }
         else
           console.log("fileBehToUpload not found");
@@ -386,7 +356,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     switchBeh() { this.tabVal = 1; setTextareaSizes("txtBeh"); }
     switchAct() { this.tabVal = 2; setTextareaSizes("txtAct"); }
     switchTgt() { this.tabVal = 3; setTextareaSizes("txtTgt"); }
-    switchCons() { this.tabVal = 4; }
+    switchCons() { this.tabVal = 4; setTextareaSizes("runOutput"); }
 
     dlgVisible : boolean = false;
     isRunning : boolean = false;
@@ -818,7 +788,23 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             if(this.graphSet.graphs.size > 0)
             {
               var svg : SVGSVGElement = document.getElementById('myGraph')! as unknown as SVGSVGElement;
-              this.graphSet.repaintGraphs(svg);
+              var zp : Point = this.graphSet.repaintGraphs(svg);
+
+              this.graphSet.graphs.forEach((val, key) => {
+                  this.graphSet.drawGraph( svg, val, zp, svg.clientWidth-2, svg.clientHeight-2 ); 
+              });
+              /* ======================== DEBUG
+              const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              line.setAttribute('stroke', '#f00');
+              line.setAttribute('stroke-width', '2');
+              
+              line.setAttribute('x1', String(25));
+              line.setAttribute('y1', String(25));
+              line.setAttribute('x2', String(300));
+              line.setAttribute('y2', String(200));
+              svg.appendChild(line);
+              */
+              console.log("SVG: " + svg.innerHTML);
             }
             return true;
           default:

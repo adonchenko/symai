@@ -44,14 +44,18 @@ function setTextareaSizes( taId ) {
 
       inp.style.top = '50px';
       inp.style.left = '4px';
-      inp.style.width = String(inpParent.width-24) + "px";
-      inp.width = String(inpParent.width-24) + "px";
+      if(inp.style.width)
+        inp.style.width = String(inpParent.width-24) + "px";
+      if(inp.width)
+        inp.width = String(inpParent.width-24) + "px";
       
       if( window.myApp ) {
         //console.log("SplitterTop:" + window.myApp.getSplitterTop());
-        var t1 =  Math.trunc((inpParent.height * Math.trunc(window.myApp.getSplitterTop()))  / 100) - 36;
-        inp.style.height = String(t1) + "px";
-        inp.height =  String(t1) + "px";
+        var t1 =  Math.trunc((inpParent.height * Math.trunc(window.myApp.getSplitterTop()))  / 100) - 40;
+        if(inp.style.height)
+          inp.style.height = String(t1) + "px";
+        if(inp.height)
+          inp.height =  String(t1) + "px";
 
         const diagPanel =  document.getElementById("diag");
         if(diagPanel) {
@@ -60,11 +64,10 @@ function setTextareaSizes( taId ) {
           while( diagParent && diagParent.clientHeight === undefined)
             diagParent = diagParent.parentElement;
             
-            diagPanel.style.height = diagParent.clientHeight + 'px';
+          diagPanel.style.height = diagParent.clientHeight + 'px';
             //console.log("setTextareaSizes-diagHeight="+diagPanel.style.height);
             //inp.style.width = String(inpParent.width-24) + "px";
         }
-
       }            
       else {
         console.log("theApp not accessible");              

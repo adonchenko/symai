@@ -228,9 +228,10 @@
                 <input type="file" #fileEnv maxFileSize="100000000" 
                       (onSelect)="handleEnvFileInput($event)" 
                       (change)="handleEnvFileInput($event)" 
-                      id="fileEnv" name="fileEnv" style="height: 24px" />
+                      id="fileEnv" name="fileEnv" style="height: 24px;" />
               </div>
-              <textarea id="txtEnv" [(ngModel)]='cntEnv' name="txtEnv" #txtEnv='ngModel' spellcheck="false"></textarea>            
+              <textarea id="txtEnv" [(ngModel)]='cntEnv' name="txtEnv" #txtEnv='ngModel' spellcheck="false"
+                        style="height: 400px; width: 600px;"></textarea>            
             
             </p-tabpanel>
 
@@ -240,9 +241,10 @@
                 <input type="file" #fileBeh maxFileSize="100000000" 
                       (onSelect)="handleBehFileInput($event)" 
                       (change)="handleBehFileInput($event)" 
-                      id="fileBeh" name="fileBeh" style="height: 24px" />
+                      id="fileBeh" name="fileBeh" style="height: 24px;" />
               </div>
-              <textarea id="txtBeh" [(ngModel)]='cntBeh' name="txtBeh" #txtBeh='ngModel' spellcheck="false"></textarea>            
+              <textarea id="txtBeh" [(ngModel)]='cntBeh' name="txtBeh" #txtBeh='ngModel' spellcheck="false"
+                        style="height: 400px; width: 600px;"></textarea>            
             
             </p-tabpanel>
 
@@ -254,7 +256,8 @@
                       (change)="handleActFileInput($event)" 
                       id="fileAct" name="fileAct" style="height: 24px" />
               </div>
-              <textarea id="txtAct" [(ngModel)]='cntAct' name="txtAct" #txtAct='ngModel' spellcheck="false"></textarea>            
+              <textarea id="txtAct" [(ngModel)]='cntAct' name="txtAct" #txtAct='ngModel' spellcheck="false"
+                        style="height: 400px; width: 600px;"></textarea>            
             
             </p-tabpanel>
 
@@ -264,9 +267,10 @@
                 <input type="file" #fileTgt maxFileSize="100000000" 
                       (onSelect)="handleTgtFileInput($event)" 
                       (change)="handleTgtFileInput($event)" 
-                      id="fileTgt" name="fileTgt" style="height: 24px" />
+                      id="fileTgt" name="fileTgt" style="height: 24px;" />
               </div>
-              <textarea id="txtTgt" [(ngModel)]='cntTgt' name="txtTgt" #txtTgt='ngModel' spellcheck="false"></textarea>            
+              <textarea id="txtTgt" [(ngModel)]='cntTgt' name="txtTgt" #txtTgt='ngModel' spellcheck="false"
+                        style="height: 400px; width: 600px;"></textarea>            
             
             </p-tabpanel>
 
@@ -276,7 +280,8 @@
                 <!-- Controls -->
                 <!-- <p-menubar [model]="itemsRun" [style]="{height:'48px'}"/> -->
               <!-- </div> -->
-              <div #runOutput id="runOutput" style="overflow: auto; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; overflow: auto;">
+              <div>
+              <div #runOutput id="runOutput" style="overflow: auto; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; overflow: auto;"></div>
               </div>
             </p-tabpanel>  
           </p-tabpanels>
@@ -296,8 +301,14 @@
 
 </div>
 
-<div id="graph" style="position:absolute; top: 50px; left: 1000px; width: 400px; height: 400px; visibility: hidden;">
-  <svg #myGraph id="myGraph" width="400px" height="400px" style="border: 1px solid #000;"></svg>
+<div id="graph" style="position:absolute; top: 50px; left: 1000px; width: 400px; height: 400px; visibility: hidden; z-index: 0;">
+  <svg #myGraph id="myGraph" width="400px" height="400px" style="border: 1px solid #000; background-color: white;">
+      <style>
+        .smallTxt {
+          font: italic 4px sans-serif;
+        }
+      </style>
+  </svg>
 </div>
 
 <app-prefs></app-prefs>
