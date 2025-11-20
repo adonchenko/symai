@@ -124,7 +124,12 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         },
         { label:'Run', icon:'pi pi-fw pi-file',
           items:[
-              { label:'Run', icon:'pi pi-fw', command : () => this.doRun() },
+              //{ label:'Run', icon:'pi pi-fw', command : () => this.doRun() },
+              { label:'Run', icon:'pi pi-fw', items : [
+                  { label : "Default", icon:'pi pi-fw', command: () => this.doRun(false) },
+                  { label : "Set start behavior...", icon:'pi pi-fw', command: () => this.doRun(true) },
+                ] 
+              },
               { separator:true },
               { label:'Debug', icon:'pi pi-fw', checked : this.isDebug, 
                 items : [
@@ -142,7 +147,12 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
 
         ];
         this.itemsRun = [
-              { label:'Run', icon:'pi pi-fw', command : () => this.doRun() },
+              //{ label:'Run', icon:'pi pi-fw', command : () => this.doRun() },
+              { label:'Run', icon:'pi pi-fw', items : [
+                  { label : "Default", icon:'pi pi-fw', command: () => this.doRun(false) },
+                  { label : "Set start behavior...", icon:'pi pi-fw', command: () => this.doRun(true) },
+                ] 
+              },
               { separator:true },
               { label:'Debug', icon:'pi pi-fw', checked: this.isDebug, 
                 items : [
@@ -633,20 +643,35 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.dlgStartBeh = false;
 
       this.Diag("Auto-upload data...");
+      this.doRun2();
+    }
+
+    doRun2() : void {
       this.doLoad();
 
       this.Diag("Start beh=" + this.startBeh);
 
       var msg : string = "traversalbeh ";
-      var parm : TraversalbehCfg = { 
-        solver : this.prefsComponent!.selectedSolver,
-        behavior : this.startBeh,
-        reenter_count : this.prefsComponent!.reenterCount,
-        debug : this.isDebug
-      };
-      
-      msg += JSON.stringify(parm);
-      
+      if( this.startBeh !== "") {
+        var parm : TraversalbehCfg = { 
+          solver : this.prefsComponent!.selectedSolver,
+          behavior : this.startBeh,
+          reenter_count : this.prefsComponent!.reenterCount,
+          debug : this.isDebug
+        };
+        
+        msg += JSON.stringify(parm);
+      }
+      else {
+        var par = { 
+          solver : this.prefsComponent!.selectedSolver,
+          reenter_count : this.prefsComponent!.reenterCount,
+          debug : this.isDebug
+        };
+        
+        msg += JSON.stringify(par);
+      } 
+
       //console.log("Sending: " + msg);
       this.Diag("Sending: " + msg);
 
@@ -661,7 +686,10 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         this.dlgStartBeh = false;
     }
 
-    doRun() : void {
+    doRun(selBeh : boolean) : void {
+      const out :HTMLDivElement = document.getElementById('runOutput')! as HTMLDivElement;
+      out.innerText = "";
+      out.innerHTML = ""; 
       //this.doLoad();
       
       //if(!this.envLoaded) { console.log('Environment not loaded'); this.msgBox('Error', 'Environment not loaded'); return; }
@@ -684,10 +712,13 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         this.recvOutput();
       }
       else {
-        this.dlgStartBeh = true;
-        // ... and continue from startBehConfirm()
-        console.log("DlgStartBeh...");
-
+        if( selBeh ) {
+          this.dlgStartBeh = true;
+          // ... and continue from startBehConfirm()
+          console.log("DlgStartBeh...");
+        }
+        else 
+          this.doRun2();
       }
     }
 
@@ -747,7 +778,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.Diag("Recv: " + msg);
       
       var sp1 : number = msg.indexOf(' ', 0);
-      console.log("SP1: " + String(sp1));
+      //console.log("SP1: " + String(sp1));
       var rsp : string = "";
       var out = msg;
       
@@ -765,14 +796,14 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       if( rsp === 'ok' ) {
         var cmd : string = "";
         var sp2 : number = msg.indexOf(' ', sp1+1);
-        console.log("SP2: " + String(sp2));
+        //console.log("SP2: " + String(sp2));
 
         if( sp2 < 0 )
           cmd = msg.substring(sp1+1);
         if( sp2 > 0 ) 
           cmd = msg.substring(sp1+1,sp2);
 
-        console.log("CMD: " + cmd);
+        //console.log("CMD: " + cmd);
         switch( cmd ) {
           case 'start' : // ok start
             return true;
@@ -784,6 +815,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             break;
           case 'values':
             this.graphSet.addDataRow(msg.substring(sp2+1)); 
+            if(this.graphSet.graphs.size > 0)
             {
               var svg : SVGSVGElement = document.getElementById('myGraph')! as unknown as SVGSVGElement;
               this.graphSet.repaintGraphs(svg);

@@ -8,6 +8,7 @@ export class GraphSet {
     public min : Point = new Point(0.,0.);
     public range : Point = new Point(0.,0.);
     public scale : Point = new Point(1.,1.);
+    public defRange : Point = new Point(0.,0.);
 
     public addGraph(name: string, xParm: string, yParm: string) : void {
         this.graphs.set(name, new GraphItem(name, xParm, yParm));
@@ -19,13 +20,21 @@ export class GraphSet {
     }
 
     public addDataRow(data:string) : void {
+        if(this.graphs.size === 0) return;
+
         const json = JSON.parse(data); // should be array of arrays
-        if( data.length > 0 && Array.isArray(data) ) {
-            for( let key in data ) {
-                if( data[key].length > 0 && Array.isArray(data[key]) ) {
+
+        this.graphs.forEach((val, key) => {
+            val.pts = [];
+        });
+        
+        console.log("addDataRow: " + String(json.length) + " items");
+        if( json.length > 0 && Array.isArray(json) ) {
+            for( let key in json ) {
+                if( json[key].length > 0 && Array.isArray(json[key]) ) {
                     let parms : parmVal[] = [];//   Map<string, number> = new Map<string, number>(); 
 
-                    data[key].forEach( item => {
+                    json[key].forEach( item => {
                         for (const k in item) {
                             if (item.hasOwnProperty(k)) {
                                 parms.push(new parmVal(k, item[k])); //.set(k, item[k]);
@@ -53,9 +62,12 @@ export class GraphSet {
     }
     
     public addPoint(param:parmVal[]) : void {
+        //console.log("Set: addPoint: " + String(param.length) + " values");
+        
         param.forEach((item) => {
 
             for (const entry of this.graphs.entries()) {
+                console.log("Check parm value: parmX=" + entry[1].parmX + ", parmY=" + entry[1].parmY + " <-- " + item.name);
                 if( entry[1].parmX === item.name ) {
                     entry[1].new_x(item.val);
                 }
@@ -88,6 +100,9 @@ export class GraphSet {
 
     public normalizePoint(pt: Point, width:number, height:number) : Point {
         let ret = new Point(0., 0.);
+
+        //console.log("NormalizePoint: w=" + String(width) + ",h=" + String(height) + ", range=(" + String(this.range.x) + "," + String(this.range.x) + ")");
+
         ret.x = this.normalizeX(pt.x,width);
         ret.y = this.normalizeY(pt.y, height);
         return ret;
@@ -99,9 +114,14 @@ export class GraphSet {
         var h = svg.clientHeight;
         var zeroPt : Point = new Point(0, 0);
 
+        this.defRange.x = w;
+        this.defRange.y = h;
+        if( this.range.x <= 0. ) this.range.x = this.defRange.x;
+        if( this.range.y <= 0. ) this.range.y = this.defRange.y;
+
         let zp : Point = this.normalizePoint(zeroPt, w, h);
 
-        console.log(" --- zero point: (" + zp.x.toFixed(2) + "," + zp.y.toFixed(2) + ")" );
+        //console.log(" --- zero point: (" + zp.x.toFixed(2) + "," + zp.y.toFixed(2) + ")" );
         
         const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line1.setAttribute('stroke', 'rgba(6, 43, 6, 0.94)');
@@ -111,17 +131,17 @@ export class GraphSet {
         line1.setAttribute('x2', String(zp.x));
         line1.setAttribute('y2', String(h-1));
         svg.appendChild(line1);
-        //console.log("V-line: (" + String(zp.x) + ", 1, " + String(zp.x) + ", " + String(zp.y) + ")");
+        console.log("V-line: (" + String(zp.x) + ", 1, " + String(zp.x) + ", " + String(zp.y) + ")");
 
         const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line2.setAttribute('stroke', 'rgba(6, 43, 6, 0.94)');
         line2.setAttribute('stroke-width', '2');
         line2.setAttribute('x1', '1');
-        line2.setAttribute('y1', String(h-zp.y));
+        line2.setAttribute('y1', String(zp.y));
         line2.setAttribute('x2', String(w-1));
-        line2.setAttribute('y2', String(h-zp.y));
+        line2.setAttribute('y2', String(zp.y));
         svg.appendChild(line2);
-        //console.log("H-line: (" + String(zp.x) + ", " + String(zp.y) + ", " + String(w-2) + ", " + String(zp.y) + ")");
+        console.log("H-line: (" + String(zp.x) + ", " + String(zp.y) + ", " + String(w-1) + ", " + String(zp.y) + ")");
 
         this.graphs.forEach((val, key) => {
             this.drawGraph( svg, val, zp, w-2, h-2 ); 
