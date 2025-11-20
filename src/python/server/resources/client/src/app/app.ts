@@ -843,7 +843,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
 
       let gi : GraphItem | undefined = this.graphSet.getGraph(this.graphName);
       if( gi !== undefined )
-        gi.color = String(clr);
+        gi.color = "'" + clr.value + "'";
 
       var cont : HTMLDivElement = document.getElementById("graph")! as HTMLDivElement;
       /*

@@ -154,7 +154,7 @@ export class GraphSet {
     drawGraph( svg : SVGElement, graph : GraphItem, zero : Point, width: number, height: number ) : void {
         console.log("Draw Graph " + graph.id + ", points: " + String(graph.pts.length));
         
-        const clr = String(graph.color);
+        const clr = graph.color;
         var x0 : number = this.normalizeX(graph.pts[0].x, width);  
         var y0 : number = this.normalizeY(graph.pts[0].y, height);  
         for( var idx = 1; idx < graph.pts.length; idx++ ) {
@@ -164,8 +164,8 @@ export class GraphSet {
             console.log("Color=" + clr + '=' + graph.color);
             //console.log("Line: x0=" + String(x0) + ", y0=" + String(y0) + ", x1=" + String(x1) + ",y1=" + String(y1) );
             const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            //line.setAttribute('stroke', clr);
-            line.setAttribute('stroke', 'rgba(15, 5, 71, 1)'); //graph.color);
+            line.setAttribute('stroke', clr);
+            //line.setAttribute('stroke', 'rgba(15, 5, 71, 1)'); //graph.color);
             line.setAttribute('stroke-width', '2');
             
             line.setAttribute('x1', String(x0));
@@ -175,7 +175,7 @@ export class GraphSet {
             svg.appendChild(line);
 
             const circ = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            circ.setAttribute('stroke', 'rgba(15, 5, 71, 1)'); //graph.color);
+            circ.setAttribute('stroke', clr); //graph.color);
             circ.setAttribute('stroke-width', '2');
             
             circ.setAttribute('cx', String(x1));
