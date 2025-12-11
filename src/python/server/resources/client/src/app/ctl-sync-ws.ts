@@ -6,16 +6,23 @@ export class CtlSyncWS {
     private ws : WebSocket | null = null;
     private responseQueue: Array<(msg: MessageEvent) => void> = []; //string[] = [];
     public isConnected : boolean = false;
+    isAttached : boolean = false;
 
   constructor() {}
 
   public attach(other_ws : WebSocket) : void {
     this.ws = other_ws;
+    this.isAttached = true;
   }
   
   public init( some_ws : WebSocket) {
     this.ws = some_ws;
+    this.isAttached = true;
     this.postInit();
+  }
+
+  public clear() : void {
+    this.isAttached = false;
   }
 
   postInit() : void {
@@ -152,12 +159,14 @@ export class CtlSyncWS {
     if( this.ws !== null ) {
       this.ws.close();
       this.isConnected = false;
+      this.isAttached = false;
     }
   }
 
   public async connect(url : string) {
     console.log(" *** WebSocket connect: " + url);
-    this.ws = new WebSocket(url);
+    if( !this.isAttached )
+      this.ws = new WebSocket(url);
     this.postInit();
     await new Promise(resolve => {
       this.ws!.onopen = () => {

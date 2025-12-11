@@ -9,9 +9,13 @@ export class GraphSet {
     public range : Point = new Point(0.,0.);
     public scale : Point = new Point(1.,1.);
     public defRange : Point = new Point(0.,0.);
+    public lastDataRow : string = "";
 
     public addGraph(name: string, xParm: string, yParm: string) : void {
         this.graphs.set(name, new GraphItem(name, xParm, yParm));
+        if( this.lastDataRow !== "" ) {
+            this.addDataRow( this.lastDataRow );
+        }
     }
 
     public getGraph(id:string) : GraphItem | undefined {
@@ -144,9 +148,9 @@ export class GraphSet {
         svg.appendChild(line2);
         //console.log("H-line: (" + String(zp.x) + ", " + String(zp.y) + ", " + String(w-1) + ", " + String(zp.y) + ")");
 
-        //this.graphs.forEach((val, key) => {
-        //    this.drawGraph( svg, val, zp, w-2, h-2 ); 
-        //});
+        this.graphs.forEach((val, key) => {
+            this.drawGraph( svg, val, zp, w-2, h-2 ); 
+        });
         return zp;
     }
     

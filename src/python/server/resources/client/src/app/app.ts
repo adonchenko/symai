@@ -32,6 +32,7 @@ import { GraphItem } from './graph-item';
 declare function setSizes(): any;
 declare function adjustSizes(): any;
 declare function setTextareaSizes(id:string): any;
+declare function recalcPaneSizes(top:number, bottom:number): any;
 declare function wsWidth(): any;
 declare function wsHeight(): any;
 declare function refreshItem(id: string): any;
@@ -242,18 +243,9 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       //console.log('Splitter resized');
       this.splitterTop = event.sizes[0];
       this.splitterBottom = event.sizes[1];
-      //console.log('***** New panel sizes:', this.splitterTop,this.splitterBottom);
-
-      const ws = document.getElementById("workspace");
-      if(ws) {
-        switch(this.tabVal) {
-          case 0: setTextareaSizes("txtEnv"); break;
-          case 1: setTextareaSizes("txtBeh"); break;
-          case 2: setTextareaSizes("txtAct"); break;
-          case 3: setTextareaSizes("txtTgt"); break;
-          case 4: setTextareaSizes("runOutput"); break;
-        }
-      }
+      
+      console.log('***** New panel sizes:', this.splitterTop,this.splitterBottom);
+      recalcPaneSizes(this.splitterTop,this.splitterBottom);
     }
 
     // ================================== Handle uploads
@@ -298,6 +290,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
           const str = await this.waitReadFile(this.fileEnvToUpload); 
           
           this.cntEnv = String(str);
+          const inp :HTMLTextAreaElement = document.getElementById('txtEnv')! as HTMLTextAreaElement;  
+          inp.value = String(str);        
         }
         else
           console.log("fileEnvToUpload not found");
@@ -313,6 +307,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
           const str = await this.waitReadFile(this.fileActToUpload); 
           
           this.cntAct = String(str);
+          const inp :HTMLTextAreaElement = document.getElementById('txtAct')! as HTMLTextAreaElement;  
+          inp.value = String(str);        
         }
         else
           console.log("fileActToUpload not found");
@@ -328,6 +324,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
           const str = await this.waitReadFile(this.fileTgtToUpload); 
           
           this.cntTgt = String(str);
+          const inp :HTMLTextAreaElement = document.getElementById('txtTgt')! as HTMLTextAreaElement;  
+          inp.value = String(str);        
         }
         else
             console.log("fileTgtToUpload not found");
@@ -343,6 +341,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
           const str = await this.waitReadFile(this.fileBehToUpload); 
           
           this.cntBeh = String(str);
+          const inp :HTMLTextAreaElement = document.getElementById('txtBeh')! as HTMLTextAreaElement;  
+          inp.value = String(str);        
         }
         else
           console.log("fileBehToUpload not found");
@@ -352,6 +352,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     // ================================== utils
     public tabVal: number = 0;
     public getTabValue() : number { return this.tabVal; }
+    tabChange() : void { adjustSizes(); }
     switchEnv() { this.tabVal = 0; setTextareaSizes("txtEnv"); }
     switchBeh() { this.tabVal = 1; setTextareaSizes("txtBeh"); }
     switchAct() { this.tabVal = 2; setTextareaSizes("txtAct"); }
@@ -499,7 +500,6 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
           this.Diag('Error during synchronous message exchange:' + error);
       }
 
-      //this.processLoad(); 
     }
 
     doLoadEnv(loadNext : boolean) : void {
@@ -660,12 +660,6 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       const out :HTMLDivElement = document.getElementById('runOutput')! as HTMLDivElement;
       out.innerText = "";
       out.innerHTML = ""; 
-      //this.doLoad();
-      
-      //if(!this.envLoaded) { console.log('Environment not loaded'); this.msgBox('Error', 'Environment not loaded'); return; }
-      //if(!this.actLoaded) { console.log('Actions not loaded'); this.msgBox('Error', 'Actions not loaded'); return; }
-      //if(!this.behLoaded) { console.log('Actions not loaded'); this.msgBox('Error', 'Behaviors not loaded'); return; }
-      //if(!this.tgtLoaded) { console.log('Actions not loaded'); this.msgBox('Error', 'Property not loaded'); return; }
 
       if( this.isDebug ) { // if Already debugging, just send "run" subcommand
         console.log("In debug mode -- switch to batch");
@@ -790,9 +784,9 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
               var svg : SVGSVGElement = document.getElementById('myGraph')! as unknown as SVGSVGElement;
               var zp : Point = this.graphSet.repaintGraphs(svg);
 
-              this.graphSet.graphs.forEach((val, key) => {
-                  this.graphSet.drawGraph( svg, val, zp, svg.clientWidth-2, svg.clientHeight-2 ); 
-              });
+              //this.graphSet.graphs.forEach((val, key) => {
+              //    this.graphSet.drawGraph( svg, val, zp, svg.clientWidth-2, svg.clientHeight-2 ); 
+              //});
               /* ======================== DEBUG
               const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
               line.setAttribute('stroke', '#f00');
@@ -843,7 +837,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
 
       let gi : GraphItem | undefined = this.graphSet.getGraph(this.graphName);
       if( gi !== undefined )
-        gi.color = "'" + clr.value + "'";
+        gi.color = clr.value;
 
       var cont : HTMLDivElement = document.getElementById("graph")! as HTMLDivElement;
       /*
@@ -857,6 +851,12 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       cont.style.left = String(wsWidth()-420) + 'px';
       cont.style.visibility='visible';
       cont.style.zIndex='9999';
+
+      if( this.graphSet.lastDataRow !== "" ) {
+        this.graphSet.addDataRow(this.graphSet.lastDataRow); 
+        var svg : SVGSVGElement = document.getElementById('myGraph')! as unknown as SVGSVGElement;
+        var zp : Point = this.graphSet.repaintGraphs(svg);
+      }
     }
 
 }
