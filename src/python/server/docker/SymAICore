@@ -12,14 +12,24 @@ COPY ./symaiconfig.py /app/symaiconfig.py
 COPY ./symaicommands.py /app/symaicommands.py
 COPY ./symaicorecommands.py /app/symaicorecommands.py
 COPY ./symbolicexpressiongrammarvisitor.py /app/symbolicexpressiongrammarvisitor.py
+COPY ./symbolicexpressiongrammarerrorlistener.py /app/symbolicexpressiongrammarerrorlistener.py
 COPY ./extsegammarvisitor.py /app/extsegammarvisitor.py
+COPY ./eqextractvisitor.py /app/eqextractvisitor.py
+COPY ./behvisitor.py /app/behvisitor.py
 COPY ./treeedit.py /app/treeedit.py
 COPY ./treeutils.py /app/treeutils.py
 COPY ./mathutils.py /app/mathutils.py
+COPY ./BehaviorsGrammar/BehaviorsGrammarLexer.py /app/BehaviorsGrammar/BehaviorsGrammarLexer.py
+COPY ./BehaviorsGrammar/BehaviorsGrammarListener.py /app/BehaviorsGrammar/BehaviorsGrammarListener.py
+COPY ./BehaviorsGrammar/BehaviorsGrammarParser.py /app/BehaviorsGrammar/BehaviorsGrammarParser.py
+COPY ./BehaviorsGrammar/BehaviorsGrammarVisitor.py /app/BehaviorsGrammar/BehaviorsGrammarVisitor.py
 COPY ./ExpressionGrammar/ExpressionGrammarLexer.py /app/ExpressionGrammar/ExpressionGrammarLexer.py
 COPY ./ExpressionGrammar/ExpressionGrammarListener.py /app/ExpressionGrammar/ExpressionGrammarListener.py
 COPY ./ExpressionGrammar/ExpressionGrammarParser.py /app/ExpressionGrammar/ExpressionGrammarParser.py
 COPY ./ExpressionGrammar/ExpressionGrammarVisitor.py /app/ExpressionGrammar/ExpressionGrammarVisitor.py
+COPY ./coreexprgrammarlistener.py /app/coreexprgrammarlistener.py
+COPY ./actvisitor.py /app/actvisitor.py
+COPY ./exprvisitor.py /app/exprvisitor.py
 #COPY ./bash/run.sh /app/run.sh
 
 # Install any needed dependencies specified in requirements.txt

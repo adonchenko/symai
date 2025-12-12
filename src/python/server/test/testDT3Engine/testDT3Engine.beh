@@ -1,0 +1,84 @@
+B = checkCycleNum.ENGINE_WORKCYCLE.newCycle + notCheckCycleNum,
+
+ENGINE_WORKCYCLE = checkCrankshaftRotationAngle .
+(STROKE1 + isStroke2 + isStroke3 + isStroke4) .
+changeCrankshaftRotationAngle1 . ENGINE_WORKCYCLE + notCheckCrankshaftRotationAngle,
+
+STROKE1=isStroke1.STROKE1_CALCULATION,
+
+STROKE1_CALCULATION =
+INITIAL_AIR_PARAMETERS_CALCULATION .
+getInletValveCrossSectionalAreaOpen .
+(getExhaustValveCrossSectionalAreaClose + notGetExhaustValveCrossSectionalAreaClose) .
+GET_HEAT_TRANSFERRED_AMOUNT .
+getCylinderSupraPistonVolumeNew . getCylinderSupraPistonVolumeDelta .
+(GET_SubMASS_PRESSURE_CASE1 + GET_SubMASS_PRESSURE_CASE2 + GET_SubMASS_PRESSURE_CASE3 + GET_SubMASS_PRESSURE_CASE4 + GET_SubMASS_PRESSURE_CASE5) .
+getTemperatureInCylinder. 
+GET_SUBSTANCES_IN_CYLINDER_DATA ,
+
+GET_SubMASS_PRESSURE_CASE1 = 
+isIntakeCase1 .
+getSubstanceVelocityFromInletValveA .
+getSubstanceMassFromInletA .
+(getSubstanceParametersInCylinder1 + getSubstanceParametersInCylinder2) .
+getSubstanceDensityInCylinder .
+getSubstanceVelocityToExhaustValveWM .
+getSubstanceMassToExhaustWM . 
+getPressureInCylinder1 .
+recalculateIntakeParameters1,
+
+GET_SubMASS_PRESSURE_CASE2 = 
+isIntakeCase2.
+getSubstanceVelocityFromInletValveA .
+getSubstanceMassFromInletA .
+getSubstanceParametersInCylinder3 .
+getSubstanceDensityInCylinder .
+getSubstanceVelocityToExhaustValveWM .
+getSubstanceMassToExhaustWM .
+getPressureInCylinder2 .
+recalculateIntakeParameters2,
+
+GET_SubMASS_PRESSURE_CASE3 = 
+isIntakeCase3 .
+getSubstanceVelocityFromInletValveA .
+getSubstanceMassFromInletA .
+getPressureInCylinder3 .
+recalculateIntakeParameters3 .
+(getWorkStroke1T1 + getWorkStroke1T2),
+
+GET_SubMASS_PRESSURE_CASE4 = 
+isIntakeCase4 .
+getSubstanceParametersInCylinder3 .
+getSubstanceDensityInCylinder .
+getSubstanceVelocityToInletValveWM .
+getSubstanceMassToInletWM .
+getPressureInCylinder4 .
+recalculateIntakeParameters4,
+
+GET_SubMASS_PRESSURE_CASE5 = 
+isIntakeCase5 .
+getSubstanceMassFromInletA .
+(getSubstanceParametersInCylinder1 + getSubstanceParametersInCylinder2) .
+getSubstanceDensityInCylinder .
+getSubstanceVelocityFromExhValveWM .
+getSubstanceMassFromExhaustWM .
+getPressureInCylinder5 .
+recalculateIntakeParameters5,
+
+INITIAL_AIR_PARAMETERS_CALCULATION = 
+getAirDensityInInlet .
+getSubstanceVelocityFromInletValveA,
+
+GET_HEAT_TRANSFERRED_AMOUNT = 
+getCylinderWallSurfaceArea .
+getHeatTransferCoef .
+getHeatTransferredAmount,
+
+
+GET_SUBSTANCES_IN_CYLINDER_DATA = 
+getResidualGasesCoefficient .
+getWorkMixtureAmountInCylinder .
+getAirAmountInCylinder .
+getCombProdAmountInCylinder .
+getPressureVolumeInletClose .
+getCombustionProductsVolumeFraction2, 

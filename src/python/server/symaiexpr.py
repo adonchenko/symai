@@ -1,9 +1,6 @@
-from antlr4.CommonTokenStream import CommonTokenStream
-from antlr4.InputStream import InputStream
-
 from symbolicexpressiongrammarvisitor import *
-from ExpressionGrammar.ExpressionGrammarLexer import ExpressionGrammarLexer
-from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
+
+from treeutils import *
 
 class SymAIExpression:
 
@@ -24,31 +21,17 @@ class SymAIExpression:
         self.max_models = m
 
     def postprocess(self, args):
-        lexer = ExpressionGrammarLexer(InputStream(args))
-        errorListener = SymbolicExpressionGrammarErrorListener()
-        lexer.removeErrorListeners()
-        lexer.addErrorListener(errorListener)
-        stream = CommonTokenStream(lexer)
-        parser = ExpressionGrammarParser(stream)
-        parser.removeErrorListeners()
-        parser.addErrorListener(errorListener)
+        parser = TreeUtils.prepare_parser_expr(args)
         visitor = SymbolicExpressionGrammarVisitor()
         tree = parser.expression()
+
         fml = visitor.visit(tree)
 
         return (" " + fml + " ").replace("&", "&&").replace("|", "||").replace("_d_o_t_", ".").replace("__d__o__t__", "_d_o_t_").replace(" not ", "!").replace(" _n_o_t_ ", " not ").strip(" ")
 
     def preprocess(self, args):
-        expr_n = (" " + args + " ").replace(" not ", " _n_o_t_ ").replace("_d_o_t_", "__d__o__t__").strip(" ")
-        lexer = ExpressionGrammarLexer(InputStream(expr_n))
-        errorListener = SymbolicExpressionGrammarErrorListener()
-        lexer.removeErrorListeners()
-        lexer.addErrorListener(errorListener)
-        stream = CommonTokenStream(lexer)
-        parser = ExpressionGrammarParser(stream)
-        parser.removeErrorListeners()
-        parser.addErrorListener(errorListener)
-
+        expr_n = (" " + args + " ").replace(" not ", " _n_o_t_ ").replace("_d_o_t_", "__d__o__t__").strip("\\ ")
+        parser = TreeUtils.prepare_parser_expr(expr_n)
         return parser
 
     def process_body(self, args):
@@ -68,9 +51,23 @@ class SymAIExpression:
         if expr is None:
             raise Exception("Bad Request: missing formula field")
         else:
-            res = self.postprocess_simplify(self.process_body_simplify(self.preprocess_simplify(expr)))
-            source_expr.pop("formula")
-            source_expr["formula"] = res
+            cvals, vals, tail = TreeUtils.get_vars_using_assignment(expr)
+            for it in vals:
+                if len(tail) > 0:
+                    tail = tail + "&&"
+                tail = tail + str(it) + "==" + str(vals[it])
+
+            if len(tail) > 0:
+                rf = self.postprocess_simplify(self.process_body_simplify(self.preprocess_simplify(tail)))
+            else:
+                rf = ""
+
+            for it in cvals.keys():
+                if len(rf) > 0:
+                    rf = rf + "&&"
+                rf = rf + str(it) + "==" + str(cvals[it])
+
+            source_expr["formula"] = rf
             return source_expr
 
     def preprocess_check(self, args):
@@ -99,11 +96,17 @@ class SymAIExpression:
         if expr is None:
             raise Exception("Bad Request: missing formula field in check request")
         else:
-            parser = self.preprocess_check(expr)
+            cvals, vals, tail = TreeUtils.get_vars_using_assignment(expr)
+            for it in vals:
+                if len(tail) > 0:
+                    tail = tail + "&&"
+                tail = tail + str(it) + "==" + str(vals[it])
+            parser = self.preprocess_check(tail)
 
             subs = source_expr.get("substitution")
             if subs is None:
                 subs = dict()
+            # Here we should merge cvals and subst!!!!
             tree = parser.expression()
             visitor = SymbolicExpressionGrammarVisitor()
             visitor.setSubstitution(subs)
@@ -117,7 +120,14 @@ class SymAIExpression:
             source_expr["visitor"] = visitor
             source_expr["tree"] = tree
             source_expr = self.process_body_check(source_expr)
-            return self.postprocess_check(source_expr)
+            res = self.postprocess_check(source_expr)
+            rf = ""
+            for it in cvals.keys():
+                if len(rf) > 0:
+                    rf = rf + "&&"
+                rf = rf + str(it) + "==" + str(cvals[it])
+            res["formula"] = rf
+            return res
 
     def preprocess_inverse(self, args):
         return self.preprocess(args)

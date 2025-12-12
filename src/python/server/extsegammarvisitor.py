@@ -256,7 +256,7 @@ class ExtSEGrammarVisitor(SymbolicExpressionGrammarVisitor):
                 self.var_list = []
                 for s in vr:
                     if s in self.var_list:
-                        raise Exception("Syntax error. Variable '" + s + "' cannot appear both in left side of assignment and in the logical post epression")
+                        raise Exception("Syntax error. Variable '" + s + "' cannot appear both in left side of assignment and in the logical post expression")
                 self.var_list = v
             else:
                 s = self.visit(ctx.assignmentExpression(i).getChild(0))

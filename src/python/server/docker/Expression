@@ -10,6 +10,16 @@ COPY ./expression.py /app/expression.py
 COPY ./symaiconfig.py /app/symaiconfig.py
 COPY ./symaicommands.py /app/symaicommands.py
 COPY ./symaiexpressioncommands.py /app/symaiexpressioncommands.py
+COPY ./symbolicexpressiongrammarerrorlistener.py /app/symbolicexpressiongrammarerrorlistener.py
+COPY ./treeutils.py /app/treeutils.py
+COPY ./behvisitor.py /app/behvisitor.py
+COPY ./exprvisitor.py /app/exprvisitor.py
+COPY ./eqextractvisitor.py /app/eqextractvisitor.py
+COPY ./BehaviorsGrammar/BehaviorsGrammarLexer.py /app/BehaviorsGrammar/BehaviorsGrammarLexer.py
+COPY ./BehaviorsGrammar/BehaviorsGrammarListener.py /app/BehaviorsGrammar/BehaviorsGrammarListener.py
+COPY ./BehaviorsGrammar/BehaviorsGrammarParser.py /app/BehaviorsGrammar/BehaviorsGrammarParser.py
+COPY ./BehaviorsGrammar/BehaviorsGrammarVisitor.py /app/BehaviorsGrammar/BehaviorsGrammarVisitor.py
+COPY ./coreexprgrammarlistener.py /app/coreexprgrammarlistener.py
 COPY ./symaiexpr.py /app/symaiexpr.py
 COPY ./symaiexprcvc5.py /app/symaiexprcvc5.py
 COPY ./symaiexprz3.py /app/symaiexprz3.py

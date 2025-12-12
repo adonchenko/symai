@@ -17,22 +17,34 @@ class SymAIExpressionZ3(symaiexpr.SymAIExpression):
 
         simplify_vars = dict()
         lst = visitor.getVarList()
-
+        b = True
         for n in lst:
             simplify_vars[n] = Real(n)
 
         glob_vars = dict()
-        glob_vars["And"] = And
-        glob_vars["Or"] = Or
-        glob_vars["Not"] = Not
-        glob_vars["Eq"] = z3.eq
+        glob_vars["And"] = z3.And
+        glob_vars["Or"] = z3.Or
+        glob_vars["Not"] = z3.Not
+        glob_vars["Eq"] = z3.fpEQ
+        glob_vars["Ne"] = z3.fpNEQ
         glob_vars["simplify"] = z3.simplify
-        res = eval("simplify(" + fml + ")", glob_vars, simplify_vars)
+        if fml == "True" or fml == "False":
+            res = str(bool(fml))
+        elif visitor.getVarList() is None or len(visitor.getVarList()) < 0:
+            res = eval(fml)
+        else:
+            res = eval("simplify(" + fml + ")", glob_vars, simplify_vars)
+        res = str(res)
+        if res.find("...") != -1:
+            # Simplify failed somewhy so operation is impossible. Restoring source expression back.
+            b = False
+            res = fml
 
-        p = self.preprocess(self.postprocess(str(res)))
-        visitor = SymbolicExpressionGrammarVisitor()
-        tree = p.expression()
-        res = visitor.visit(tree)
+        if b:
+            p = self.preprocess(self.postprocess(str(res)))
+            visitor = SymbolicExpressionGrammarVisitor()
+            tree = p.expression()
+            res = visitor.visit(tree)
         return str(res)
 
     def all_models(self, formula, global_vars, local_vars):
@@ -40,7 +52,6 @@ class SymAIExpressionZ3(symaiexpr.SymAIExpression):
         solver = Solver()
         f2 = eval(formula, global_vars, local_vars)
         solver.add(f2)
-
         count = 0
         while count < self.get_max_models():
             count += 1
@@ -51,17 +62,20 @@ class SymAIExpressionZ3(symaiexpr.SymAIExpression):
 
                 # exclude this model
                 block = []
-                for z3_decl in model:  # FuncDeclRef
-                    arg_domains = []
-                    for i in range(z3_decl.arity()):
-                        domain, arg_domain = z3_decl.domain(i), []
-                        for j in range(domain.num_constructors()):
-                            arg_domain.append(domain.constructor(j)())
-                        arg_domains.append(arg_domain)
-                    for args in itertools.product(*arg_domains):
-                        f2  = eval(str(z3_decl(*args)) + "!=" + str(model.eval(z3_decl(*args))), global_vars, local_vars)
-                        block.append(f2)
-                        solver.add(Or(block))
+                try:
+                    for z3_decl in model:  # FuncDeclRef
+                        arg_domains = []
+                        for i in range(z3_decl.arity()):
+                            domain, arg_domain = z3_decl.domain(i), []
+                            for j in range(domain.num_constructors()):
+                                arg_domain.append(domain.constructor(j)())
+                            arg_domains.append(arg_domain)
+                        for args in itertools.product(*arg_domains):
+                            f2  = eval(str(z3_decl(*args)) + "!=" + str(model.eval(z3_decl(*args))), global_vars, local_vars)
+                            block.append(f2)
+                            solver.add(Or(block))
+                except:
+                    count = self.get_max_models() + 1 # An error appeared, exiting
 
     def process_body_check(self, args):
         visitor = args.get("visitor")
@@ -76,6 +90,7 @@ class SymAIExpressionZ3(symaiexpr.SymAIExpression):
 
         for n in lst:
             check_vars[n] = Real(n)
+
         glob_vars = dict()
         glob_vars["And"] = And
         glob_vars["Or"] = Or
@@ -84,7 +99,6 @@ class SymAIExpressionZ3(symaiexpr.SymAIExpression):
         glob_vars["solver"] = solver
 
         f2 = eval(fml, glob_vars, check_vars)
-
         solver.add(f2)
         args["satisfiable"] = False
         lst = []

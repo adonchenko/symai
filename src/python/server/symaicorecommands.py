@@ -1,4 +1,3 @@
-from mathutils import *
 from collections import deque
 from http import HTTPStatus
 
@@ -11,7 +10,9 @@ from itertools import tee
 import os
 
 from extsegammarvisitor import *
-from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
+from actvisitor import *
+from behvisitor import *
+
 from enum import Enum
 
 from treeedit import TreeEdit
@@ -123,9 +124,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 raise Exception("Cannot write content to file '" + str(filename) + "'")
         return res
 
-    def prepare_parser_expr(self, inp : str)->ExpressionGrammarParser :
-        return TreeUtils.prepare_parser_expr(inp)
-
     def do_behaviors(self, cuuid, data_received):
         if data_received is None or len(data_received.strip()) < 1:
             res = dict()
@@ -158,8 +156,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                               symaiconfig.SymAIConfig.BASE_BEHAVIORS.value,
                               cnt["filename"])
             try:
-                tree = self.prepare_parser_expr(cnt["content"]).behavior()
-                visitor = ExtSEGrammarVisitor()
+                tree = TreeUtils.prepare_parser_beh(cnt["content"]).behaviors()
+                visitor = BehGrammarVisitor()
                 res = visitor.visit(tree)
                 with open(fn, "w") as f:
                     f.write(res)
@@ -202,7 +200,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         return fn
 
     def invert_one_action(self, name, expr):
-        tree = self.prepare_parser_expr(expr).assignmentExpression()
+        tree = TreeUtils.prepare_parser_expr(expr).assignmentExpression()
         visitor = ExtSEGrammarVisitor()
         a = visitor.visit(tree)
         i = a.strip().find("=")
@@ -215,7 +213,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             headers = {'Content-type': 'application/json'}
             l = a[:i].strip()
             r = a[i+1:].strip()
-            tr = self.prepare_parser_expr(r).assignmentExpression()
+            tr =  TreeUtils.prepare_parser_expr(r).assignmentExpression()
             v = ExtSEGrammarVisitor()
             v.visit(tr)
             vl = v.getVarList()
@@ -249,7 +247,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 # inv = l + "=" + rs[str(inv)]
                 inv = l + "=" + rs[i+1:]
                 subsn = [{"name": nm, "value": l}]
-                tr = self.prepare_parser_expr(inv).assignmentExpression()
+                tr = TreeUtils.prepare_parser_expr(inv).assignmentExpression()
                 v = ExtSEGrammarVisitor()
                 v.setSubstitution(subsn)
                 res = v.visit(tr)
@@ -336,8 +334,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                               symaiconfig.SymAIConfig.BASE_ACTIONS.value,
                               cnt["filename"])
             try:
-                tree = TreeUtils.prepare_parser_expr(cnt["content"]).actionsList()
-                visitor = ExtSEGrammarVisitor()
+                tree = TreeUtils.prepare_parser_beh(cnt["content"]).actions()
+                visitor = ActGrammarVisitor()
                 res = visitor.visit(tree)
                 with open(fn, "w") as f:
                     f.write(res)
@@ -451,9 +449,9 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             try:
                 f = open(fn, "r")
                 cnt = f.read()
-                p = self.prepare_parser_expr(cnt)
-                tree = p.behavior()
-                visitor = ExtSEGrammarVisitor()
+                p = TreeUtils.prepare_parser_beh(cnt)
+                tree = p.behaviors()
+                visitor = BehGrammarVisitor()
                 res = visitor.visit(tree)
                 self.get_logger().debug(f"behaviors successful retrieved. File {fn}")
             except Exception as e:
@@ -468,8 +466,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             try:
                 f = open(fn, "r")
                 cnt = f.read()
-                tree = self.prepare_parser_expr(cnt).actionsList()
-                visitor = ExtSEGrammarVisitor()
+                tree = TreeUtils.prepare_parser_beh(cnt).actions()
+                visitor = ActGrammarVisitor()
                 res = visitor.visit(tree)
                 self.get_logger().debug(f"actions successful retrieved. File {fn}")
             except Exception as e:
@@ -484,7 +482,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             try:
                 f = open(fn, "r")
                 cnt = f.read()
-                tree = self.prepare_parser_expr(cnt).expression()
+                tree = TreeUtils.prepare_parser_expr(cnt).expression()
                 visitor = ExtSEGrammarVisitor()
                 res = visitor.visit(tree).replace("&", "&&").replace("|", "||").replace("_d_o_t_", ".").replace(
                     "__d__o__t__", "_d_o_t_").replace(" not ", "!").replace(" _n_o_t_ ", " not ").strip(" ")
@@ -501,29 +499,33 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             try:
                 f = open(fn, "r")
                 cnt = f.read()
-                tree = self.prepare_parser_expr(cnt).expression()
-                visitor = ExtSEGrammarVisitor()
-                s = visitor.visit(tree)
-                tree = self.prepare_parser_expr(s).expression()
-                res = visitor.visit(tree).replace("&", "&&").replace("|", "||").replace("_d_o_t_", ".").replace("__d__o__t__", "_d_o_t_").replace(" not ", "!").replace(" _n_o_t_ ", " not ").strip(" ")
+                tree = TreeUtils.prepare_parser_beh(cnt).expression()
+                visitor = BehGrammarVisitor()
+                cnt = visitor.visit(tree)
+                # tree = TreeUtils.prepare_parser_expr(s).expression()
+                # res = visitor.visit(tree).replace("&", "&&").replace("|", "||").replace("_d_o_t_", ".").replace("__d__o__t__", "_d_o_t_").replace(" not ", "!").replace(" _n_o_t_ ", " not ").strip(" ")
                 self.get_logger().debug(f"environment successful retrieved. File {fn}")
-
-                cvals, vals, en = TreeUtils.get_vars_using_assignment(res)
+                res = cnt
+                cvals, vals, en = TreeUtils.get_vars_using_assignment(cnt)
                 if len(cvals) > 0 and len(vals) > 0 and len(en) == 0:
                     gvals = MathUtils.fill_gvars_func()
-                    to_del = []
-                    for it in vals.keys():
-                        st = vals[str(it)]
-                        if len(st) > 0:
-                            try:
-                                r = eval(st, gvals, cvals)
-                                k = str(it)
-                                to_del.append(k)
-                                cvals[k] = r
-                            except:
-                                s = st
-                    for it in to_del:
-                        vals.pop(str(it))
+                    is_changed = True
+                    while is_changed:
+                        is_changed = False
+                        to_del = []
+                        for it in vals.keys():
+                            st = vals[str(it)]
+                            if len(st) > 0:
+                                try:
+                                    r = eval(st, gvals, cvals)
+                                    k = str(it)
+                                    to_del.append(k)
+                                    cvals[k] = r
+                                    is_changed = True
+                                except Exception as e:
+                                    s = st
+                        for it in to_del:
+                            vals.pop(str(it))
                     if en is None:
                         en = ""
                     for it in cvals.keys():
@@ -548,7 +550,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             reach_property = "True"
         if env is None:
             env = ""
-
+        self.get_logger().debug(f"check_reachability started env is {env} reach_property is {reach_property}")
         expr, ic, r = self.prepare_condition(env)
         if reach_property is not None and len(reach_property) > 0:
             s, ic, r = self.prepare_condition(reach_property)
@@ -592,7 +594,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         return res, r_env
 
     def prepare_condition(self, cnd:str):
-        p =  self.prepare_parser_expr(cnd)
+        p =  TreeUtils.prepare_parser_expr(cnd)
         tree = p.assignmentExpression()
         v = ExtSEGrammarVisitor()
         s = v.visit(tree)
@@ -657,7 +659,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         return env_exp
 
     def negate_relational_expr(self, expr: str)->str :
-        tr = self.prepare_parser_expr(expr).assignmentExpression()
+        tr = TreeUtils.prepare_parser_expr(expr).assignmentExpression()
         tokens = TreeEdit.find_all_by_tokens(tr, ["<", ">", "=", "!=", "==", ">=", "<="])
         for it in tokens:
             s = it.getText()
@@ -671,7 +673,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
         v = ExtSEGrammarVisitor()
         s = v.visit(tr)
-        tr = self.prepare_parser_expr(s).assignmentExpression()
+        tr = TreeUtils.prepare_parser_expr(s).assignmentExpression()
         v = ExtSEGrammarVisitor()
         res = v.visit(tr).replace("&", "&&").replace("|", "||")
 
@@ -687,7 +689,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             if vals is None or len(vals) < 1 or expr is None or len(expr) < 1:
                 expr = ""
                 break
-            etr = self.prepare_parser_expr(expr).assignmentExpression()
+            etr = TreeUtils.prepare_parser_expr(expr).assignmentExpression()
             tokens = TreeEdit.find_all_by_tokens(etr, ["<", ">", "=", "!=", "==", ">=", "<="])
             it = 0
             while it < len(tokens):
@@ -738,7 +740,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 if len(expr) < 1:
                     expr = ""
                     break
-                etr = self.prepare_parser_expr(expr).assignmentExpression()
+                etr = TreeUtils.prepare_parser_expr(expr).assignmentExpression()
                 expr = v.visit(etr).replace("&", "&&").replace("|", "||")
 
         return expr
@@ -748,12 +750,12 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         if res is None:
             res = ""
         if subst is not None and len(res) > 0:
-            tr = self.prepare_parser_expr(res).assignmentExpression()
+            tr = TreeUtils.prepare_parser_expr(res).assignmentExpression()
             v = ExtSEGrammarVisitor()
             if subst is not None:
                 v.setSubstitution(subst)
             s = v.visit(tr)
-            tr = self.prepare_parser_expr(s).assignmentExpression()
+            tr = TreeUtils.prepare_parser_expr(s).assignmentExpression()
             v = ExtSEGrammarVisitor()
             res = v.visit(tr).replace("&", "&&").replace("|", "||")
         return res
@@ -804,7 +806,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                     l = expr[:i].strip()
                     res = l
                     r = expr[i + 1:].strip()
-                    tr = self.prepare_parser_expr(r).assignmentExpression()
+                    tr = TreeUtils.prepare_parser_expr(r).assignmentExpression()
                     v = ExtSEGrammarVisitor()
                     v.visit(tr)
                     vl = v.getVarList()
@@ -856,7 +858,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         is_add = False
         cvals, vals, en = TreeUtils.get_vars_using_assignment(env)
         if en is None or len(en) < 1:
-            # Gong with concrete values, e is a resulting env
+            # Going with concrete values, e is a resulting env
             b = True
             for it in vals.keys():
                 ret, t = TreeUtils.check_const(vals[str(it)])
@@ -895,14 +897,14 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                         e = e + " && "
                     e = e + str(it) + " == " + str(cv[str(it)])
                 return e
-        tr = self.prepare_parser_expr(right).assignmentExpression()
+        tr = TreeUtils.prepare_parser_expr(right).assignmentExpression()
         v = ExtSEGrammarVisitor()
         s = v.visit(tr)
         vl = v.getVarList()
         if not left in vl:
             is_add = True
         if len(expr) > 0:
-            tr = self.prepare_parser_expr(expr).assignmentExpression()
+            tr = TreeUtils.prepare_parser_expr(expr).assignmentExpression()
             v = ExtSEGrammarVisitor()
             s = v.visit(tr)
             vl = v.getVarList()
@@ -924,7 +926,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         vl = dict()
         for k in vals.keys():
             # 1. Inversion by left, if any is possible
-            tr = self.prepare_parser_expr(k + "=" + vals[k]).assignmentExpression()
+            tr = TreeUtils.prepare_parser_expr(k + "=" + vals[k]).assignmentExpression()
             v = ExtSEGrammarVisitor()
             v.visit(tr)
             vls = v.getVarList()
@@ -985,7 +987,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
        num_expr = len(expr)
        pf = ""
        if num_expr > 0:
-           pe = self.prepare_parser_expr(expr[-1])
+           pe = TreeUtils.prepare_parser_expr(expr[-1])
            ev = ExtSEGrammarVisitor()
            has_log = ev.action_has_logical(pe.assignmentExpressionList())
 
@@ -1006,7 +1008,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
            vals[it] = str(vals[it])
        return env, is_const, vals
 
-
     def step_modelling(self, ctx, act):
         act_visitor = ctx["act_visitor"]
         cnd = ""
@@ -1014,7 +1015,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         for r in a:
             if r[0] == act:
                 cnd = str(r[1])
-                pe = self.prepare_parser_expr(r[2])
+                pe = TreeUtils.prepare_parser_expr(r[2])
                 ev = ExtSEGrammarVisitor()
                 if ev.action_has_logical(pe.assignmentExpressionList()):
                     st = r[2].split(";")
