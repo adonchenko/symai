@@ -1,4 +1,5 @@
 from collections import deque
+from antlr4.tree.Tree import TerminalNodeImpl
 
 class TreeEdit:
     @staticmethod
@@ -9,7 +10,7 @@ class TreeEdit:
                 token = v
                 break
 
-        if str(type(node)) == "<class 'antlr4.tree.Tree.TerminalNodeImpl'>":
+        if type(node) == TerminalNodeImpl:
             if node.symbol.text == token:
                 return True
         return False
@@ -22,7 +23,7 @@ class TreeEdit:
                 tokens = v
                 break
 
-        if str(type(node)) == "<class 'antlr4.tree.Tree.TerminalNodeImpl'>":
+        if type(node) == TerminalNodeImpl:
             if node.symbol.text in tokens:
                 return True
         return False
@@ -49,7 +50,7 @@ class TreeEdit:
             n = stk.pop()
             if cnd(n, args, kwargs):
                 return n
-            if str(type(n)) != "<class 'antlr4.tree.Tree.TerminalNodeImpl'>":
+            if type(n) != TerminalNodeImpl:
                 i = n.getChildCount() - 1
                 while i >= 0:
                     c = n.getChild(i)
@@ -68,7 +69,7 @@ class TreeEdit:
                 n = stk.pop()
                 if cnd(n, args, kwargs):
                     res.append(n)
-                if str(type(n)) != "<class 'antlr4.tree.Tree.TerminalNodeImpl'>":
+                if type(n) != TerminalNodeImpl:
                     i = n.getChildCount() - 1
                     while i >= 0:
                         c = n.getChild(i)
@@ -87,7 +88,7 @@ class TreeEdit:
                 n = stk.pop()
                 if cnd(n, args, kwargs):
                     return n
-                if str(type(n)) != "<class 'antlr4.tree.Tree.TerminalNodeImpl'>":
+                if type(n) != TerminalNodeImpl:
                     i = n.getChildCount() - 1
                     while i >= 0:
                         c = n.getChild(i)

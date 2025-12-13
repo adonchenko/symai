@@ -6,6 +6,20 @@ class SymAIBehaviorsTestCase(unittest.TestCase):
     def setUp(self):
         self.parser = None
 
+    def test_do_parse_expr(self):
+        test_data = [
+            [
+                "a.b(0)!=c==q&&g==5||v==10",
+                "a.b(0)!=c&&c==q&&g==5||v==10"
+            ]
+        ]
+        for it in test_data:
+            self.parser = TreeUtils.prepare_parser_beh(it[0])
+            tr = self.parser.expression()
+            v = BehGrammarVisitor()
+            s = v.visit(tr)
+            self.assertEqual(s, it[1], "Expression does not match to expected")
+
     def test_do_parse_beh(self):
         test_data = [
             [
@@ -17,14 +31,6 @@ class SymAIBehaviorsTestCase(unittest.TestCase):
                 ["ENGINE_WORKCYCLE(0+1)"]
             ]
         ]
-
-        ln = "a.b(0)!=c==q&&g==5||v==10"
-        self.parser = TreeUtils.prepare_parser_beh(ln)
-        tr = self.parser.expression()
-        v = BehGrammarVisitor()
-        s = v.visit(tr)
-        #print(f"Final after visit: {s}")
-        #self.assertEqual(ln,s, "Results are not equal")
 
         for it in test_data:
             s = str(it[0])

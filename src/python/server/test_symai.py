@@ -48,7 +48,7 @@ class SymAITestCase(unittest.TestCase):
         for it in test_data:
             s = cc.do_remove_vars(it[0], it[1])
             self.assertEqual(s, it[2], "Incorrect result")
-            p = TreeUtils.prepare_parser_expr(s)
+            p = TreeUtils.prepare_parser_beh(s)
             self.assertIsNotNone(p, "Incorrect syntax of the result")
             if len(s) > 0:
                 tr = p.assignmentExpression()
@@ -59,13 +59,14 @@ class SymAITestCase(unittest.TestCase):
                      ["a = a + 1; y = y + 1; c >= 10 && b == x", True],
                      ["h = 123;((a > b && c > d || (e == f) && (a == 4 && c == g)))", True]]
         for it in test_data:
-            tr = TreeUtils.prepare_parser_expr(it[0]).assignmentExpressionList()
-            v = ExtSEGrammarVisitor()
+            tr = TreeUtils.prepare_parser_beh(it[0]).assignmentExpressionList()
+            v = ActGrammarVisitor()
             b = v.action_has_logical(tr)
             self.assertEqual(b, it[1], "Incorrect result")
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
+    suite.addTest(SymAIBehaviorsTestCase('test_do_parse_expr'))
     suite.addTest(SymAIBehaviorsTestCase('test_do_parse_beh'))
     suite.addTest(SymAITestCase('test_get_vars_using_assignment'))
     suite.addTest(SymAITestCase('test_do_remove_vars'))
