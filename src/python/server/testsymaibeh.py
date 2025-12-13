@@ -10,15 +10,27 @@ class SymAIBehaviorsTestCase(unittest.TestCase):
         test_data = [
             [
                 "a.b(0)!=c==q&&g==5||v==10",
-                "a.b(0)!=c&&c==q&&g==5||v==10"
+                "a.b(0)!=c&&c==q&&g==5||v==10",
+                ["a.b(0)", "c", "q", "g", "v"]
             ]
         ]
+
         for it in test_data:
             self.parser = TreeUtils.prepare_parser_beh(it[0])
             tr = self.parser.expression()
-            v = BehGrammarVisitor()
+            v = ExprGrammarVisitor()
             s = v.visit(tr)
             self.assertEqual(s, it[1], "Expression does not match to expected")
+            vl = v.getVarList()
+            if len(vl) != len(it[2]):
+                self.assertTrue(False, "Incorrect number of variables retrieved")
+            for s in vl:
+                b = True
+                for i in it[2]:
+                    if s == i:
+                        b = False
+                        break
+                self.assertFalse(b, f"Variable {s} is not found")
 
     def test_do_parse_beh(self):
         test_data = [

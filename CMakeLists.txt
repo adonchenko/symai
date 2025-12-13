@@ -74,7 +74,7 @@ ADD_CUSTOM_COMMAND(TARGET symai-frontend-docker-build
 
 ADD_CUSTOM_TARGET(symai-docker-build DEPENDS symai-expression-docker-build symai-core-docker-build symai-frontend-docker-build)
 
-ADD_CUSTOM_TARGET(symai-docker DEPENDS antlr4-generate-expression)
+ADD_CUSTOM_TARGET(symai-docker DEPENDS antlr4-generate-expression antlr4-generate-behaviors)
 ADD_CUSTOM_COMMAND(TARGET symai-docker
 		   WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/python/etc/tools"
     COMMAND sudo ./build-docker.sh
