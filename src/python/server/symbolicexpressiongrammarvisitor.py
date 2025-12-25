@@ -1,11 +1,11 @@
 from antlr4.tree.Tree import TerminalNodeImpl
 
-from ExpressionGrammar.ExpressionGrammarVisitor import ExpressionGrammarVisitor
-from ExpressionGrammar.ExpressionGrammarParser import ExpressionGrammarParser
+from BehaviorsGrammar.BehaviorsGrammarVisitor import BehaviorsGrammarVisitor
+from BehaviorsGrammar.BehaviorsGrammarParser import BehaviorsGrammarParser
 
 from mathutils import *
 
-class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
+class SymbolicExpressionGrammarVisitor(BehaviorsGrammarVisitor):
 
     def __init__(self):
         self.arg_list_start = "("
@@ -52,8 +52,8 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
     def getVarList(self):
         return self.var_list
 
-    # Visit a parse tree produced by ExpressionGrammarParser#primaryExpression.
-    def visitPrimaryExpression(self, ctx:ExpressionGrammarParser.PrimaryExpressionContext):
+    # Visit a parse tree produced by BehaviorsGrammarParser#primaryExpression.
+    def visitPrimaryExpression(self, ctx:BehaviorsGrammarParser.PrimaryExpressionContext):
         if ctx.LeftParen() is not None:
             result = self.visit(ctx.expression())
             if result is not None and len(result) > 0:
@@ -65,8 +65,8 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
                 result = ctx.Constant().getText()
         return result
 
-    # Visit a parse tree produced by ExpressionGrammarParser#postfixExpression.
-    def visitPostfixExpression(self, ctx:ExpressionGrammarParser.PostfixExpressionContext):
+    # Visit a parse tree produced by BehaviorsGrammarParser#postfixExpression.
+    def visitPostfixExpression(self, ctx:BehaviorsGrammarParser.PostfixExpressionContext):
         trig_funct=["sin", "cos", "tan", "cotan","asin", "acos", "atan", "acotan"]
         nl_funct=["log", "lg", "sqrt", "exp", "pow"]
         tmp_arg_list_start = self.arg_list_start
@@ -178,8 +178,8 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             result = s
         return result
 
-    # Visit a parse tree produced by ExpressionGrammarParser#argumentExpressionList.
-    def visitArgumentExpressionList(self, ctx:ExpressionGrammarParser.ArgumentExpressionListContext):
+    # Visit a parse tree produced by BehaviorsGrammarParser#argumentExpressionList.
+    def visitArgumentExpressionList(self, ctx:BehaviorsGrammarParser.ArgumentExpressionListContext):
         i = 0
         result = self.visit(ctx.assignmentExpression(i))
         i = i + 1
@@ -192,8 +192,8 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             i = i + 1
         return result
 
-    # Visit a parse tree produced by ExpressionGrammarParser#unaryExpression.
-    def visitUnaryExpression(self, ctx:ExpressionGrammarParser.UnaryExpressionContext):
+    # Visit a parse tree produced by BehaviorsGrammarParser#unaryExpression.
+    def visitUnaryExpression(self, ctx:BehaviorsGrammarParser.UnaryExpressionContext):
         if ctx.getChildCount() < 1:
             return ""
         result = self.visit(ctx.postfixExpression()).strip()
@@ -206,13 +206,13 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
                 result = op + result
         return result
 
-    # Visit a parse tree produced by ExpressionGrammarParser#unaryOperator.
-    def visitUnaryOperator(self, ctx:ExpressionGrammarParser.UnaryOperatorContext):
+    # Visit a parse tree produced by BehaviorsGrammarParser#unaryOperator.
+    def visitUnaryOperator(self, ctx:BehaviorsGrammarParser.UnaryOperatorContext):
         result = ctx.getChild(0).getText()
         return result
 
-    # Visit a parse tree produced by ExpressionGrammarParser#multiplicativeExpression.
-    def visitMultiplicativeExpression(self, ctx:ExpressionGrammarParser.MultiplicativeExpressionContext):
+    # Visit a parse tree produced by BehaviorsGrammarParser#multiplicativeExpression.
+    def visitMultiplicativeExpression(self, ctx:BehaviorsGrammarParser.MultiplicativeExpressionContext):
         i = 0
         result = self.visit(ctx.unaryExpression(i))
         i = i + 1
@@ -225,8 +225,8 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             i = i + 1
         return result
 
-    # Visit a parse tree produced by ExpressionGrammarParser#additiveExpression.
-    def visitAdditiveExpression(self, ctx:ExpressionGrammarParser.AdditiveExpressionContext):
+    # Visit a parse tree produced by BehaviorsGrammarParser#additiveExpression.
+    def visitAdditiveExpression(self, ctx:BehaviorsGrammarParser.AdditiveExpressionContext):
         if ctx.getChildCount() < 1:
             return ""
         result = self.visit(ctx.getChild(0))
@@ -238,8 +238,8 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             i = i + 1
         return result
 
-    # Visit a parse tree produced by ExpressionGrammarParser#relationalExpression.
-    def visitRelationalExpression(self, ctx:ExpressionGrammarParser.RelationalExpressionContext):
+    # Visit a parse tree produced by BehaviorsGrammarParser#relationalExpression.
+    def visitRelationalExpression(self, ctx:BehaviorsGrammarParser.RelationalExpressionContext):
         if ctx.getChildCount() < 1:
             return ""
         i = 0
@@ -256,8 +256,8 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             i = i + 1
         return result
 
-    # Visit a parse tree produced by ExpressionGrammarParser#equalityExpression.
-    def visitEqualityExpression(self, ctx:ExpressionGrammarParser.EqualityExpressionContext):
+    # Visit a parse tree produced by BehaviorsGrammarParser#equalityExpression.
+    def visitEqualityExpression(self, ctx:BehaviorsGrammarParser.EqualityExpressionContext):
         if ctx.getChildCount() < 1:
             return ""
         i = 0
@@ -284,8 +284,8 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             i = i + 1
         return result
 
-    # Visit a parse tree produced by ExpressionGrammarParser#logicalAndExpression.
-    def visitLogicalAndExpression(self, ctx:ExpressionGrammarParser.LogicalAndExpressionContext):
+    # Visit a parse tree produced by BehaviorsGrammarParser#logicalAndExpression.
+    def visitLogicalAndExpression(self, ctx:BehaviorsGrammarParser.LogicalAndExpressionContext):
         if ctx.getChildCount() < 1:
             return ""
         result = self.visit(ctx.getChild(0))
@@ -300,8 +300,8 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             i = i + 1
         return result
 
-    # Visit a parse tree produced by ExpressionGrammarParser#logicalOrExpression.
-    def visitLogicalOrExpression(self, ctx:ExpressionGrammarParser.LogicalOrExpressionContext):
+    # Visit a parse tree produced by BehaviorsGrammarParser#logicalOrExpression.
+    def visitLogicalOrExpression(self, ctx:BehaviorsGrammarParser.LogicalOrExpressionContext):
         if ctx.getChildCount() < 1:
             return ""
         result = self.visit(ctx.getChild(0))
@@ -316,8 +316,8 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             i = i + 1
         return result
 
-    # Visit a parse tree produced by ExpressionGrammarParser#assignmentExpression.
-    def visitAssignmentExpression(self, ctx:ExpressionGrammarParser.AssignmentExpressionContext):
+    # Visit a parse tree produced by BehaviorsGrammarParser#assignmentExpression.
+    def visitAssignmentExpression(self, ctx:BehaviorsGrammarParser.AssignmentExpressionContext):
         if ctx.getChildCount() < 1:
             return ""
         if ctx.logicalOrExpression() is not None:
@@ -326,12 +326,12 @@ class SymbolicExpressionGrammarVisitor(ExpressionGrammarVisitor):
             result = self.visit(ctx.unaryExpression()) + "=" + self.visit(ctx.assignmentExpression())
         return result
 
-    # Visit a parse tree produced by ExpressionGrammarParser#assignmentOperator.
-    def visitAssignmentOperator(self, ctx:ExpressionGrammarParser.AssignmentOperatorContext):
+    # Visit a parse tree produced by BehaviorsGrammarParser#assignmentOperator.
+    def visitAssignmentOperator(self, ctx:BehaviorsGrammarParser.AssignmentOperatorContext):
         return self.visitChildren(ctx)
 
-    # Visit a parse tree produced by ExpressionGrammarParser#expression.
-    def visitExpression(self, ctx:ExpressionGrammarParser.ExpressionContext):
+    # Visit a parse tree produced by BehaviorsGrammarParser#expression.
+    def visitExpression(self, ctx:BehaviorsGrammarParser.ExpressionContext):
         result = self.visit(ctx.assignmentExpression(0))
         i = 1
         while i < len(ctx.assignmentExpression()):

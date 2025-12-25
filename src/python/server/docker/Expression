@@ -26,10 +26,6 @@ COPY ./symaiexprz3.py /app/symaiexprz3.py
 COPY ./symaiexprsympy.py /app/symaiexprsympy.py
 COPY ./symbolicexpressiongrammarvisitor.py /app/symbolicexpressiongrammarvisitor.py
 COPY ./mathutils.py /app/mathutils.py
-COPY ./ExpressionGrammar/ExpressionGrammarLexer.py /app/ExpressionGrammar/ExpressionGrammarLexer.py
-COPY ./ExpressionGrammar/ExpressionGrammarListener.py /app/ExpressionGrammar/ExpressionGrammarListener.py
-COPY ./ExpressionGrammar/ExpressionGrammarParser.py /app/ExpressionGrammar/ExpressionGrammarParser.py
-COPY ./ExpressionGrammar/ExpressionGrammarVisitor.py /app/ExpressionGrammar/ExpressionGrammarVisitor.py
 COPY ./bash/run.sh /app/run.sh
 
 # Install any needed dependencies specified in requirements.txt
