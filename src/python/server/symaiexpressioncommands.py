@@ -4,7 +4,6 @@ import symaiconfig
 import symaiexpr
 import symaiexprsympy
 import symaiexprz3
-import symaiexprcvc5
 
 class SymAIExpressionCommands(symaicommands.SymAICommands):
 
@@ -13,10 +12,6 @@ class SymAIExpressionCommands(symaicommands.SymAICommands):
         match solver_name:
             case symaiconfig.SymAISolvers.SYMPY.value:
                 res = symaiexprsympy.SymAIExpressionSymPy()
-                res.set_max_models(max_models)
-                return res
-            case symaiconfig.SymAISolvers.CVC5.value:
-                res = symaiexprcvc5.SymAIExpressionCVC5()
                 res.set_max_models(max_models)
                 return res
             case symaiconfig.SymAISolvers.Z3.value:

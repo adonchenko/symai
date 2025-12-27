@@ -21,7 +21,6 @@ COPY ./BehaviorsGrammar/BehaviorsGrammarParser.py /app/BehaviorsGrammar/Behavior
 COPY ./BehaviorsGrammar/BehaviorsGrammarVisitor.py /app/BehaviorsGrammar/BehaviorsGrammarVisitor.py
 COPY ./coreexprgrammarlistener.py /app/coreexprgrammarlistener.py
 COPY ./symaiexpr.py /app/symaiexpr.py
-COPY ./symaiexprcvc5.py /app/symaiexprcvc5.py
 COPY ./symaiexprz3.py /app/symaiexprz3.py
 COPY ./symaiexprsympy.py /app/symaiexprsympy.py
 COPY ./symbolicexpressiongrammarvisitor.py /app/symbolicexpressiongrammarvisitor.py
@@ -29,9 +28,9 @@ COPY ./mathutils.py /app/mathutils.py
 COPY ./bash/run.sh /app/run.sh
 
 # Install any needed dependencies specified in requirements.txt
-RUN pip3 install sympy antlr4-python3-runtime cvc5 z3-solver
+RUN pip3 install sympy antlr4-python3-runtime z3-solver
 # RUN pip3 install --no-cache-dir -r requirements.txt
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
 # Run app.py when the container launches
-CMD ["bash", "run.sh", "python", "expression.py"]
+CMD ["python3", "expression.py"]
