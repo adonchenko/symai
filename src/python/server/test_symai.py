@@ -1,3 +1,4 @@
+from testsymaiact import *
 from testsymaibeh import *
 from testsymaicore import *
 
@@ -66,6 +67,7 @@ class SymAITestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
+    suite.addTest(SymAIActivitiesTestCase('test_do_parse_act'))
     suite.addTest(SymAIBehaviorsTestCase('test_do_parse_expr'))
     suite.addTest(SymAIBehaviorsTestCase('test_do_parse_beh'))
     suite.addTest(SymAITestCase('test_get_vars_using_assignment'))

@@ -1,5 +1,6 @@
 from BehaviorsGrammar.BehaviorsGrammarParser import BehaviorsGrammarParser
 from exprvisitor import ExprGrammarVisitor
+from antlr4.tree.Tree import TerminalNodeImpl
 
 class ActGrammarVisitor( ExprGrammarVisitor ):
 
@@ -31,21 +32,50 @@ class ActGrammarVisitor( ExprGrammarVisitor ):
         i = 0
         j = 0
         r = list()
-        while i < len(ctx.postfixExpression()):
+        cnt = 0
+        while i < len(ctx.postfixExpression()) and cnt < ctx.getChildCount():
+            cnt = cnt + 1
             t = [self.visit(ctx.postfixExpression(i))]
-            if ctx.getChild(i * 4 + j * 2 + 1).getText() == ":" and ctx.getChild(i * 4 + j * 2 + 3).getText() == "->":
-                st = self.visit(ctx.logicalOrExpression(j))
-                if self.is_float_const(st):
-                    if eval(st) == 1 or eval(st):
+            c = ctx.getChild(cnt)
+            tp = type(c)
+            if tp == TerminalNodeImpl and c.getText() == ":":
+                cnt = cnt + 1
+                c = ctx.getChild(cnt)
+                tp = type(c)
+                if tp == BehaviorsGrammarParser.LogicalOrExpressionContext:
+                    st = self.visit(c)
+                    if str(st).lower() == "true":
                         st = "0<1"
-                t.append(st)
-                j = j + 1
-            else:
-                t.append(None)
-            self.action_has_logical(ctx.assignmentExpressionList(i))
-            t.append(self.visitAssignmentExpressionList(ctx.assignmentExpressionList(i)))
+                    elif str(st).lower() == "false":
+                            st = "1>0"
+                    elif self.is_float_const(st):
+                        if eval(st) == 1 or eval(st):
+                            st = "0<1"
+                        else:
+                            st = "0>1"
+                    t.append(st)
+                else:
+                    t.append("0>1")
+
+                cnt = cnt + 1
+                c = ctx.getChild(cnt)
+                tp = type(c)
+                if tp == TerminalNodeImpl and c.getText() == "->":
+                    cnt = cnt + 1
+                    c = ctx.getChild(cnt)
+                    tp = type(c)
+                    st = "1"
+                    if tp == BehaviorsGrammarParser.AssignmentExpressionListContext:
+                        st = self.visit(c)
+                        cnt = cnt + 1
+                    elif tp == TerminalNodeImpl and c.getText() == ",":
+                        st = "1"
+                    t.append(st)
+                else:
+                    t.append("1")
+                cnt = cnt + 1
             i = i + 1
-            self.results.append(t)
+            self.addResults(t)
             result = result + str(t[0]) + ":"
             if t[1] is not None:
                 result = result + str(t[1]) + "->"
