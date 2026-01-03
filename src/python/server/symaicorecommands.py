@@ -124,6 +124,18 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 raise Exception("Cannot write content to file '" + str(filename) + "'")
         return res
 
+    def do_reset(self, cuuid, msg:str):
+        s = ""
+        names = ["ai", "behaviors", "debug", "inverted", "actions", "environment", "property", "trace_file", "solver", "inverted", "max_models", "reenter_count"]
+
+        for nm in names:
+            if hasattr(self, str(nm)):
+                delattr(self, str(nm))
+
+        self.remove_directory_tree(os.path.join(self.get_temp_dir(),
+                                                str(cuuid)))
+        return s
+
     def do_behaviors(self, cuuid, data_received):
         if data_received is None or len(data_received.strip()) < 1:
             res = dict()
@@ -1261,18 +1273,28 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         res["formula"] = rsp["formula"]
         return res
 
-    def do_ai(self, cuuid, msg:str):
+    def get_ai(self):
+        msg = ""
         b = False
         if hasattr(self, "ai"):
             b = getattr(self, "ai")
         else:
             try:
-                s = self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.AI.value)
-                if s is not None:
-                    if s.lower() == "true" or s.lower() == "yes" or s.lower() == "1":
+                msg = self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.AI.value)
+                if msg is not None:
+                    if msg.lower() == "true" or msg.lower() == "yes" or msg.lower() == "1":
                         b = True
-            except:
-                b = False
+                msg = ""
+                setattr(self, "ai", b)
+            except Exception as e:
+                msg = str(e)
+        return b, msg
+
+    def do_ai(self, cuuid, msg:str):
+        b, s = self.get_ai()
+        if s != "":
+            raise Exception(s)
+
         s = str(msg).strip().split()
         if len(s) < 1:
             if not hasattr(self, "ai"):
