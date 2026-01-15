@@ -9,7 +9,7 @@ import uuid
 from itertools import tee
 import os
 
-from extsegammarvisitor import *
+from symbolicexpressiongrammarvisitor import *
 from actvisitor import *
 from behvisitor import *
 
@@ -124,6 +124,18 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 raise Exception("Cannot write content to file '" + str(filename) + "'")
         return res
 
+    def do_reset(self, cuuid, msg:str):
+        s = ""
+        names = ["ai", "behaviors", "debug", "inverted", "actions", "environment", "property", "trace_file", "solver", "inverted", "max_models", "reenter_count"]
+
+        for nm in names:
+            if hasattr(self, str(nm)):
+                delattr(self, str(nm))
+
+        self.remove_directory_tree(os.path.join(self.get_temp_dir(),
+                                                str(cuuid)))
+        return s
+
     def do_behaviors(self, cuuid, data_received):
         if data_received is None or len(data_received.strip()) < 1:
             res = dict()
@@ -200,8 +212,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         return fn
 
     def invert_one_action(self, name, expr):
-        tree = TreeUtils.prepare_parser_expr(expr).assignmentExpression()
-        visitor = ExtSEGrammarVisitor()
+        tree = TreeUtils.prepare_parser_beh(expr).assignmentExpression()
+        visitor = SymbolicExpressionGrammarVisitor()
         a = visitor.visit(tree)
         i = a.strip().find("=")
         if i == -1:
@@ -213,8 +225,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             headers = {'Content-type': 'application/json'}
             l = a[:i].strip()
             r = a[i+1:].strip()
-            tr =  TreeUtils.prepare_parser_expr(r).assignmentExpression()
-            v = ExtSEGrammarVisitor()
+            tr =  TreeUtils.prepare_parser_beh(r).assignmentExpression()
+            v = SymbolicExpressionGrammarVisitor()
             v.visit(tr)
             vl = v.getVarList()
             if l in vl:
@@ -247,8 +259,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 # inv = l + "=" + rs[str(inv)]
                 inv = l + "=" + rs[i+1:]
                 subsn = [{"name": nm, "value": l}]
-                tr = TreeUtils.prepare_parser_expr(inv).assignmentExpression()
-                v = ExtSEGrammarVisitor()
+                tr = TreeUtils.prepare_parser_beh(inv).assignmentExpression()
+                v = SymbolicExpressionGrammarVisitor()
                 v.setSubstitution(subsn)
                 res = v.visit(tr)
             else:
@@ -482,8 +494,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             try:
                 f = open(fn, "r")
                 cnt = f.read()
-                tree = TreeUtils.prepare_parser_expr(cnt).expression()
-                visitor = ExtSEGrammarVisitor()
+                tree = TreeUtils.prepare_parser_beh(cnt).expression()
+                visitor = SymbolicExpressionGrammarVisitor()
                 res = visitor.visit(tree).replace("&", "&&").replace("|", "||").replace("_d_o_t_", ".").replace(
                     "__d__o__t__", "_d_o_t_").replace(" not ", "!").replace(" _n_o_t_ ", " not ").strip(" ")
                 self.get_logger().debug(f"property successful retrieved. File {fn}")
@@ -502,7 +514,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 tree = TreeUtils.prepare_parser_beh(cnt).expression()
                 visitor = BehGrammarVisitor()
                 cnt = visitor.visit(tree)
-                # tree = TreeUtils.prepare_parser_expr(s).expression()
+                # tree = TreeUtils.prepare_parser_beh(s).expression()
                 # res = visitor.visit(tree).replace("&", "&&").replace("|", "||").replace("_d_o_t_", ".").replace("__d__o__t__", "_d_o_t_").replace(" not ", "!").replace(" _n_o_t_ ", " not ").strip(" ")
                 self.get_logger().debug(f"environment successful retrieved. File {fn}")
                 res = cnt
@@ -594,9 +606,9 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         return res, r_env
 
     def prepare_condition(self, cnd:str):
-        p =  TreeUtils.prepare_parser_expr(cnd)
+        p =  TreeUtils.prepare_parser_beh(cnd)
         tree = p.assignmentExpression()
-        v = ExtSEGrammarVisitor()
+        v = SymbolicExpressionGrammarVisitor()
         s = v.visit(tree)
         vl = v.getVarList()
         is_const = False
@@ -610,7 +622,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 r = False
             else:
                 try:
-                    t = float(s)
+                    t = float(str(s))
                     if t == 0:
                         r = False
                     else:
@@ -659,7 +671,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         return env_exp
 
     def negate_relational_expr(self, expr: str)->str :
-        tr = TreeUtils.prepare_parser_expr(expr).assignmentExpression()
+        tr = TreeUtils.prepare_parser_beh(expr).assignmentExpression()
         tokens = TreeEdit.find_all_by_tokens(tr, ["<", ">", "=", "!=", "==", ">=", "<="])
         for it in tokens:
             s = it.getText()
@@ -671,10 +683,10 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 case default: s = s
             it.symbol.text = s
 
-        v = ExtSEGrammarVisitor()
+        v = SymbolicExpressionGrammarVisitor()
         s = v.visit(tr)
-        tr = TreeUtils.prepare_parser_expr(s).assignmentExpression()
-        v = ExtSEGrammarVisitor()
+        tr = TreeUtils.prepare_parser_beh(s).assignmentExpression()
+        v = SymbolicExpressionGrammarVisitor()
         res = v.visit(tr).replace("&", "&&").replace("|", "||")
 
         return res
@@ -689,11 +701,11 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             if vals is None or len(vals) < 1 or expr is None or len(expr) < 1:
                 expr = ""
                 break
-            etr = TreeUtils.prepare_parser_expr(expr).assignmentExpression()
+            etr = TreeUtils.prepare_parser_beh(expr).assignmentExpression()
             tokens = TreeEdit.find_all_by_tokens(etr, ["<", ">", "=", "!=", "==", ">=", "<="])
             it = 0
             while it < len(tokens):
-                v = ExtSEGrammarVisitor()
+                v = SymbolicExpressionGrammarVisitor()
                 v.visit(tokens[it].parentCtx)
                 vrs = v.var_list
                 b = False
@@ -732,7 +744,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 if is_cnt:
                     break
                 it = it + 1
-            v = ExtSEGrammarVisitor()
+            v = SymbolicExpressionGrammarVisitor()
             expr = v.visit(etr).replace("&", "&&").replace("|", "||")
             if expr is None:
                 expr = ""
@@ -740,7 +752,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 if len(expr) < 1:
                     expr = ""
                     break
-                etr = TreeUtils.prepare_parser_expr(expr).assignmentExpression()
+                etr = TreeUtils.prepare_parser_beh(expr).assignmentExpression()
                 expr = v.visit(etr).replace("&", "&&").replace("|", "||")
 
         return expr
@@ -750,13 +762,13 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         if res is None:
             res = ""
         if subst is not None and len(res) > 0:
-            tr = TreeUtils.prepare_parser_expr(res).assignmentExpression()
-            v = ExtSEGrammarVisitor()
+            tr = TreeUtils.prepare_parser_beh(res).assignmentExpression()
+            v = SymbolicExpressionGrammarVisitor()
             if subst is not None:
                 v.setSubstitution(subst)
             s = v.visit(tr)
-            tr = TreeUtils.prepare_parser_expr(s).assignmentExpression()
-            v = ExtSEGrammarVisitor()
+            tr = TreeUtils.prepare_parser_beh(s).assignmentExpression()
+            v = SymbolicExpressionGrammarVisitor()
             res = v.visit(tr).replace("&", "&&").replace("|", "||")
         return res
 
@@ -806,8 +818,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                     l = expr[:i].strip()
                     res = l
                     r = expr[i + 1:].strip()
-                    tr = TreeUtils.prepare_parser_expr(r).assignmentExpression()
-                    v = ExtSEGrammarVisitor()
+                    tr = TreeUtils.prepare_parser_beh(r).assignmentExpression()
+                    v = SymbolicExpressionGrammarVisitor()
                     v.visit(tr)
                     vl = v.getVarList()
                     if l in vl:
@@ -897,15 +909,15 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                         e = e + " && "
                     e = e + str(it) + " == " + str(cv[str(it)])
                 return e
-        tr = TreeUtils.prepare_parser_expr(right).assignmentExpression()
-        v = ExtSEGrammarVisitor()
+        tr = TreeUtils.prepare_parser_beh(right).assignmentExpression()
+        v = SymbolicExpressionGrammarVisitor()
         s = v.visit(tr)
         vl = v.getVarList()
         if not left in vl:
             is_add = True
         if len(expr) > 0:
-            tr = TreeUtils.prepare_parser_expr(expr).assignmentExpression()
-            v = ExtSEGrammarVisitor()
+            tr = TreeUtils.prepare_parser_beh(expr).assignmentExpression()
+            v = SymbolicExpressionGrammarVisitor()
             s = v.visit(tr)
             vl = v.getVarList()
         if len(expr) < 1 or not left in vl:
@@ -926,8 +938,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         vl = dict()
         for k in vals.keys():
             # 1. Inversion by left, if any is possible
-            tr = TreeUtils.prepare_parser_expr(k + "=" + vals[k]).assignmentExpression()
-            v = ExtSEGrammarVisitor()
+            tr = TreeUtils.prepare_parser_beh(k + "=" + vals[k]).assignmentExpression()
+            v = SymbolicExpressionGrammarVisitor()
             v.visit(tr)
             vls = v.getVarList()
             if left in vls:
@@ -987,8 +999,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
        num_expr = len(expr)
        pf = ""
        if num_expr > 0:
-           pe = TreeUtils.prepare_parser_expr(expr[-1])
-           ev = ExtSEGrammarVisitor()
+           pe = TreeUtils.prepare_parser_beh(expr[-1])
+           ev = ActGrammarVisitor()
            has_log = ev.action_has_logical(pe.assignmentExpressionList())
 
            if has_log:
@@ -1015,8 +1027,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         for r in a:
             if r[0] == act:
                 cnd = str(r[1])
-                pe = TreeUtils.prepare_parser_expr(r[2])
-                ev = ExtSEGrammarVisitor()
+                pe = TreeUtils.prepare_parser_beh(r[2])
+                ev = ActGrammarVisitor()
                 if ev.action_has_logical(pe.assignmentExpressionList()):
                     st = r[2].split(";")
                     lg = st[-1]
@@ -1261,18 +1273,28 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         res["formula"] = rsp["formula"]
         return res
 
-    def do_ai(self, cuuid, msg:str):
+    def get_ai(self):
+        msg = ""
         b = False
         if hasattr(self, "ai"):
             b = getattr(self, "ai")
         else:
             try:
-                s = self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.AI.value)
-                if s is not None:
-                    if s.lower() == "true" or s.lower() == "yes" or s.lower() == "1":
+                msg = self.get_config().get(symaiconfig.SymAIConfig.SYMAICORE.value, symaiconfig.SymAIConfig.AI.value)
+                if msg is not None:
+                    if msg.lower() == "true" or msg.lower() == "yes" or msg.lower() == "1":
                         b = True
-            except:
-                b = False
+                msg = ""
+                setattr(self, "ai", b)
+            except Exception as e:
+                msg = str(e)
+        return b, msg
+
+    def do_ai(self, cuuid, msg:str):
+        b, s = self.get_ai()
+        if s != "":
+            raise Exception(s)
+
         s = str(msg).strip().split()
         if len(s) < 1:
             if not hasattr(self, "ai"):

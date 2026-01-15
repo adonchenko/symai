@@ -83,7 +83,7 @@ assignmentExpressionList
     ;
 
 actions
-    : (postfixExpression ':' logicalOrExpression '->'  assignmentExpressionList ',')+
+    : (postfixExpression ':' logicalOrExpression '->' (assignmentExpressionList)? ',')+
     ;
 
 behaviors

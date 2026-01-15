@@ -1,5 +1,4 @@
 from symaicorecommands import *
-
 import unittest
 
 class SymAIBehaviorsTestCase(unittest.TestCase):
@@ -36,11 +35,13 @@ class SymAIBehaviorsTestCase(unittest.TestCase):
         test_data = [
             [
                 "ENGINE_WORKCYCLE(0)= checkCrankshaftRotationAngle . getCrankshaftRotationSin .(STROKE1 + isStroke2 + isStroke3 + isStroke4) .changeCrankshaftRotationAngle1 . ENGINE_WORKCYCLE + notCheckCrankshaftRotationAngle,",
-                ["ENGINE_WORKCYCLE(0)"]
+                ["ENGINE_WORKCYCLE(0)"],
+                "ENGINE_WORKCYCLE(0)=checkCrankshaftRotationAngle.getCrankshaftRotationSin.(STROKE1+isStroke2+isStroke3+isStroke4).changeCrankshaftRotationAngle1.ENGINE_WORKCYCLE+notCheckCrankshaftRotationAngle,"
             ],
             [
                 "ENGINE_WORKCYCLE(0+1)= checkCrankshaftRotationAngle . getCrankshaftRotationSin .(STROKE1 + isStroke2 + isStroke3 + isStroke4) .changeCrankshaftRotationAngle1 . ENGINE_WORKCYCLE + notCheckCrankshaftRotationAngle,",
-                ["ENGINE_WORKCYCLE(0+1)"]
+                ["ENGINE_WORKCYCLE(0+1)"],
+                "ENGINE_WORKCYCLE(0+1)=checkCrankshaftRotationAngle.getCrankshaftRotationSin.(STROKE1+isStroke2+isStroke3+isStroke4).changeCrankshaftRotationAngle1.ENGINE_WORKCYCLE+notCheckCrankshaftRotationAngle,"
             ]
         ]
 
@@ -49,13 +50,13 @@ class SymAIBehaviorsTestCase(unittest.TestCase):
             self.parser = TreeUtils.prepare_parser_beh(s)
             tr = self.parser.behaviors()
             v = BehGrammarVisitor()
-            v.visit(tr)
+            res = v.visit(tr)
+            self.assertEqual(it[2], res, "Expected behaviors are not equal to expected result")
             behaviors = v.getBehaviors()
             self.assertEqual(len(it[1]), len(behaviors), "does not match behaviors number")
             bk = behaviors.keys()
             for bname in it[1]:
                 self.assertTrue(bname in bk, "does not match behaviors key")
-
 
     def tearDown(self):
         self.parser = None

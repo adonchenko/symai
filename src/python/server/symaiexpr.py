@@ -21,7 +21,7 @@ class SymAIExpression:
         self.max_models = m
 
     def postprocess(self, args):
-        parser = TreeUtils.prepare_parser_expr(args)
+        parser = TreeUtils.prepare_parser_beh(args)
         visitor = SymbolicExpressionGrammarVisitor()
         tree = parser.expression()
 
@@ -31,7 +31,7 @@ class SymAIExpression:
 
     def preprocess(self, args):
         expr_n = (" " + args + " ").replace(" not ", " _n_o_t_ ").replace("_d_o_t_", "__d__o__t__").strip("\\ ")
-        parser = TreeUtils.prepare_parser_expr(expr_n)
+        parser = TreeUtils.prepare_parser_beh(expr_n)
         return parser
 
     def process_body(self, args):

@@ -7,7 +7,6 @@ config_file:str = ""
 class SymAISolvers(Enum):
     SYMPY = "SymPy"
     Z3 = "Z3"
-    CVC5= "CVC5"
 
 class SymAIConfig(Enum):
     EXPRESSION = "Expression"
@@ -16,7 +15,7 @@ class SymAIConfig(Enum):
     TEMP = "tempdir"
     EXPRESSION_HOST="expression_host"
     EXPRESSION_PORT="expression_port"
-    EXPRESSION_SOLVER="expression_solver"   # Math package i.e. SymPy, Z3, CVC5
+    EXPRESSION_SOLVER="expression_solver"   # Math package i.e. SymPy, Z3
     SOLVER_MAX_MODELS="solver_max_models"
     AI='AI'
     HOST = "host"

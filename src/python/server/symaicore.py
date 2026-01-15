@@ -58,6 +58,22 @@ async def handle_client(websocket):
                     except:
                         pass
                     await websocket.close()
+                case "reset":
+                    sc.get_logger().info("reset command received")
+                    if connected_clients.get(websocket) is None:
+                        sc.get_logger().error("UUID not found.Cannot process " + message)
+                        await websocket.send("nok UUID not found.Cannot process " + message)
+                    else:
+                        try:
+                            res = "ok " + sc.do_reset(str(connected_clients.get(websocket).get_uuid()),
+                                                      str(message))
+                        except Exception as e:
+                            sc.get_logger().error(f"reset command error {str(e)}")
+                            res = f"nok {str(e)}"
+                        try:
+                            await websocket.send(res)
+                        except:
+                            pass
                 case "ai":
                     sc.get_logger().info("ai command received")
                     if connected_clients.get(websocket) is None:

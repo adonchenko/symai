@@ -27,13 +27,6 @@ ADD_CUSTOM_COMMAND(TARGET make-work-dirs
     DEPENDS "${PROJECT_SOURCE_DIR}/src/python/antlr4/ExpressionGrammar.g4"
 )
 
-ADD_CUSTOM_TARGET(antlr4-generate-expression)
-ADD_CUSTOM_COMMAND(TARGET antlr4-generate-expression
-          WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/python/server"
-    COMMAND java -jar ${PROJECT_SOURCE_DIR}/src/python/bin/antlr-4.13.1-complete.jar ${PROJECT_SOURCE_DIR}/src/python/server/antlr4/ExpressionGrammar.g4 -Dlanguage=Python3 -encoding UTF8 -package ExpressionGrammar -o ExpressionGrammar -visitor
-    DEPENDS "${PROJECT_SOURCE_DIR}/src/python/antlr4/ExpressionGrammar.g4"
-)
-
 ADD_CUSTOM_TARGET(antlr4-generate-behaviors)
 ADD_CUSTOM_COMMAND(TARGET antlr4-generate-behaviors
           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/python/server"
@@ -41,20 +34,20 @@ ADD_CUSTOM_COMMAND(TARGET antlr4-generate-behaviors
     DEPENDS "${PROJECT_SOURCE_DIR}/src/python/antlr4/BehaviorsGrammar.g4"
 )
 
-ADD_CUSTOM_TARGET(symai-test DEPENDS antlr4-generate-behaviors antlr4-generate-expression)
+ADD_CUSTOM_TARGET(symai-test DEPENDS antlr4-generate-behaviors)
 ADD_CUSTOM_COMMAND(TARGET symai-test
           WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/python/server"
     COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/src/python/server/test_symai.py
-    DEPENDS antlr4-generate-expression
+    DEPENDS antlr4-generate-behaviors
 )
 
-ADD_CUSTOM_TARGET(symai-expression-docker-build DEPENDS antlr4-generate-expression antlr4-generate-behaviors make-work-dirs)
+ADD_CUSTOM_TARGET(symai-expression-docker-build DEPENDS antlr4-generate-behaviors make-work-dirs)
 ADD_CUSTOM_COMMAND(TARGET symai-expression-docker-build
 		   WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/python/server/docker"
     COMMAND sudo LOGDIR=${BASE_PATH}/logdir PROPERTIES=${BASE_PATH}/properties TMPDIR=${BASE_PATH}/temp RESOURCES=${BASE_PATH}/resources docker compose build expression
 )
 
-ADD_CUSTOM_TARGET(symai-core-docker-build DEPENDS antlr4-generate-expression antlr4-generate-behaviors make-work-dirs)
+ADD_CUSTOM_TARGET(symai-core-docker-build DEPENDS antlr4-generate-behaviors make-work-dirs)
 ADD_CUSTOM_COMMAND(TARGET symai-core-docker-build
 		   WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/python/server/docker"
     COMMAND sudo LOGDIR=${BASE_PATH}/logdir PROPERTIES=${BASE_PATH}/properties TMPDIR=${BASE_PATH}/temp RESOURCES=${BASE_PATH}/resources docker compose build core
@@ -74,7 +67,7 @@ ADD_CUSTOM_COMMAND(TARGET symai-frontend-docker-build
 
 ADD_CUSTOM_TARGET(symai-docker-build DEPENDS symai-expression-docker-build symai-core-docker-build symai-frontend-docker-build)
 
-ADD_CUSTOM_TARGET(symai-docker DEPENDS antlr4-generate-expression antlr4-generate-behaviors)
+ADD_CUSTOM_TARGET(symai-docker DEPENDS antlr4-generate-behaviors)
 ADD_CUSTOM_COMMAND(TARGET symai-docker
 		   WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/python/etc/tools"
     COMMAND sudo ./build-docker.sh
@@ -108,7 +101,6 @@ ADD_CUSTOM_TARGET(symai ALL DEPENDS symai-docker
 )
 ADD_CUSTOM_TARGET(cleanall
   COMMAND rm -rf "${PROJECT_SOURCE_DIR}/build/*"
-  COMMAND rm -rf "${PROJECT_SOURCE_DIR}/src/python/server/ExpressionGrammar"
   COMMAND rm -rf "${PROJECT_SOURCE_DIR}/src/python/server/BehaviorsGrammar"
   COMMAND rm -rf "${PROJECT_SOURCE_DIR}/src/python/server/__pycache__"
 )
