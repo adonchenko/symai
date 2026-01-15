@@ -1,0 +1,2 @@
+Вісь Ox - crankshaftRotationAngle - кут повороту колінвала
+Вісь Oy - pressureInCylinder - тиск у циліндрі
