@@ -1,4 +1,9 @@
 .git
 .idea
+.venv
+.vscode
 build/
 src/python/server/ExpressionGrammar/
+src/python/server/BehaviorsGrammar/
+src/python/server/__pycache__/
+src/go/server/BehaviorsGrammar/

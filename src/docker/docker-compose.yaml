@@ -3,8 +3,8 @@ services:
     image: docker/symai-expression.0.0.1
     container_name: symai-expression.0.0.1
     build:
-      context: ..
-      dockerfile: docker/Expression
+      context: ../python/server
+      dockerfile: ../../docker/Expression
     ports:
       - 8080:8080
     working_dir: /app
@@ -17,8 +17,8 @@ services:
     image: docker/symai-core.0.0.1
     container_name: symai-core.0.0.1
     build:
-      context: ..
-      dockerfile: docker/SymAICore
+      context: ../python/server
+      dockerfile:  ../../docker/SymAICore
     ports:
       - 12345:12345
     working_dir: /app
@@ -27,18 +27,18 @@ services:
         - ${PROPERTIES}:/properties
         - ${LOGDIR}:/logdir
         - ${TMPDIR}:/tmpdir
-  frontend:
-    image: docker/symai-front.0.0.1
-    container_name: symai-front.0.0.1
+  frontend_go:
+    image: docker/symai-front_go.0.0.1
+    container_name: symai-front_go.0.0.1
     build:
-      context: ..
-      dockerfile: docker/Frontend
+      context: ../../
+      dockerfile:  ./src/docker/Frontend_go
     ports:
       - 8000:8000
     working_dir: /app
     network_mode: host
     volumes:
-        - ${PROPERTIES}:/properties
-        - ${LOGDIR}:/logdir
-        - ${TMPDIR}:/tmpdir
+      - ${PROPERTIES}:/properties
+      - ${LOGDIR}:/logdir
+      - ${TMPDIR}:/tmpdir
 

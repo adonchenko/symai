@@ -1,6 +1,5 @@
 # Use an official Python runtime as a parent image
 FROM python:3.12-slim
-#FROM python:3.12-slim
 #voumes
 VOLUME /properties 
 VOLUME /logdir
@@ -17,20 +16,7 @@ COPY ./bash/run.sh /app/run.sh
 
 RUN mkdir /app/resources
 
-#COPY ./resources/client/dist/app2/browser/chunk-HOQYSINP.js /app/resources/chunk-HOQYSINP.js
-#COPY ./resources/client/dist/app2/browser/chunk-MCN25UJG.js /app/resources/chunk-MCN25UJG.js
-#COPY ./resources/client/dist/app2/browser/main-7AD4CJBU.js /app/resources/main-SAYXQRGP.js 
-#COPY ./resources/client/dist/app2/browser/styles-5INURTSO.css /app/resources/styles-5INURTSO.css
-#COPY ./resources/client/dist/app2/browser/index.html /app/resources/index.html
 ADD ./resources/client/dist/app2/browser /app/resources
-#ADD ./resources /app/resources
-
-#COPY  ./resources/index.html  /app/resources/index.html
-#COPY  ./resources/index.html  /app/resources/ind.html
-COPY  ./resources/favicon.ico  /app/resources/favicon.ico
-
-RUN ls /app/resources
-
 # Install any needed dependencies specified in requirements.txt
 #RUN pip3 install --no-cache-dir -r requirements.txt
 # Make port 8000 available to the world outside this container
