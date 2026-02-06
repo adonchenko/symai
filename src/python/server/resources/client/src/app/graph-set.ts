@@ -3,6 +3,8 @@ import { GraphItem } from './graph-item';
 import { parmVal } from './parm-val';
 
 export class GraphSet {
+    public graphSize : Point = new Point(400., 400.);
+
     public graphs: Map<string,GraphItem> = new Map<string,GraphItem>();
     public max : Point = new Point(0.,0.);
     public min : Point = new Point(0.,0.);
@@ -85,6 +87,7 @@ export class GraphSet {
     }
 
     public normalizeX(x:number, width:number) : number {
+        if(this.range.x === 0.) return x;
         if(this.min.x < 0.) x -= this.min.x;
 
         let ret : number = (x*width)/this.range.x;
@@ -94,6 +97,7 @@ export class GraphSet {
     }
 
     public normalizeY(y:number, height:number) : number {
+        if(this.range.y === 0.) return y;
         if(this.min.y < 0.) y -= this.min.y;
 
         let ret : number = (y*height)/this.range.y;
@@ -149,7 +153,7 @@ export class GraphSet {
         //console.log("H-line: (" + String(zp.x) + ", " + String(zp.y) + ", " + String(w-1) + ", " + String(zp.y) + ")");
 
         this.graphs.forEach((val, key) => {
-            this.drawGraph( svg, val, zp, w-2, h-2 ); 
+            this.drawGraph( svg, val, zp, w-8, h-8 ); // w-2, h-2
         });
         return zp;
     }
@@ -187,13 +191,17 @@ export class GraphSet {
             circ.setAttribute('r', '2');
             svg.appendChild(circ);
 
-            var t : string = '('+String(graph.pts[idx].x)+','+String(graph.pts[idx].y)+')';
-            const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            txt.setAttribute('x', String(x1+2));
-            txt.setAttribute('y', String(y1-2));
-            txt.setAttribute('class', 'smallTxt');
-            txt.innerHTML=t;
-            svg.appendChild(txt);
+            if( graph.labels ) {
+                var t : string = '('+String(graph.pts[idx].x)+','+String(graph.pts[idx].y)+')';
+                const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                txt.setAttribute('x', String(x1+2));
+                txt.setAttribute('y', String(y1-2));
+                //txt.setAttribute('class', 'smallTxt');
+                txt.setAttribute('font-size', '6');
+                txt.setAttribute('letter-spacing', '1');
+                txt.innerHTML=t;
+                svg.appendChild(txt);
+            }
 
             x0 = x1;
             y0 = y1;

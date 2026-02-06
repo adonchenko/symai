@@ -3,6 +3,9 @@ import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
 import { PrimeNG } from 'primeng/config';
+//import { providePrimeNG } from 'primeng/config';
+import Aura from '@primeuix/themes/aura';
+
 import { FormsModule } from '@angular/forms'
 import { TabsModule } from 'primeng/tabs';
 import { SplitterModule } from 'primeng/splitter';
@@ -31,7 +34,7 @@ import { GraphItem } from './graph-item';
 // ============================================ JS exports
 declare function setSizes(): any;
 declare function adjustSizes(): any;
-declare function setTextareaSizes(id:string): any;
+//declare function setTextareaSizes(id:string): any;
 declare function recalcPaneSizes(top:number, bottom:number): any;
 declare function wsWidth(): any;
 declare function wsHeight(): any;
@@ -110,7 +113,10 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
               { separator:true },
               { label:'Stop', icon:'pi pi-fw', disabled: this.isRunning, command: () => this.doStop() },
               { label:'Shutdown', icon:'pi pi-fw', command: () => this.doShutdown() },
-            ]
+              { separator:true },
+              { label:'Test output', icon:'pi pi-fw', command: () => this.testOutput() },
+              { label:'Test diag', icon:'pi pi-fw', command: () => this.testDiag() }, 
+           ]
         },
         {
           label:'Data', icon:'pi pi-fw pi-file',
@@ -353,11 +359,11 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     public tabVal: number = 0;
     public getTabValue() : number { return this.tabVal; }
     tabChange() : void { adjustSizes(); }
-    switchEnv() { this.tabVal = 0; setTextareaSizes("txtEnv"); }
-    switchBeh() { this.tabVal = 1; setTextareaSizes("txtBeh"); }
-    switchAct() { this.tabVal = 2; setTextareaSizes("txtAct"); }
-    switchTgt() { this.tabVal = 3; setTextareaSizes("txtTgt"); }
-    switchCons() { this.tabVal = 4; setTextareaSizes("runOutput"); }
+    switchEnv() { this.tabVal = 0; adjustSizes(); }
+    switchBeh() { this.tabVal = 1; adjustSizes(); }
+    switchAct() { this.tabVal = 2; adjustSizes(); }
+    switchTgt() { this.tabVal = 3; adjustSizes(); }
+    switchCons() { this.tabVal = 4; adjustSizes(); }
 
     dlgVisible : boolean = false;
     isRunning : boolean = false;
@@ -446,6 +452,22 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.behLoaded = false;
       this.actLoaded = false;
       this.tgtLoaded = false;
+    }
+
+    testOutput() : void {
+      var i = 1;
+      var msg = "Message text: jkjlkjlkl lgkll tyfuy uyi piijh;njb ;kjn.,nb,bcbcxdx jkhhvhgvjhcgj yigcgfchgdfhd gyfgfhjgf ouyuhk;jklj"
+      for( ; i < 1000; i++ ) {
+        output( String(i) + msg);
+      }
+    }
+
+    testDiag() : void {
+      var i = 1;
+      var msg = "Diag text: jkjlkjlkl lgkll tyfuy uyi piijh;njb ;kjn.,nb,bcbcxdx jkhhvhgvjhcgj yigcgfchgdfhd gyfgfhjgf ouyuhk;jklj"
+      for( ; i < 1000; i++ ) {
+        diag( String(i) + msg);
+      }
     }
 
     // ===================================================
@@ -784,21 +806,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
               var svg : SVGSVGElement = document.getElementById('myGraph')! as unknown as SVGSVGElement;
               var zp : Point = this.graphSet.repaintGraphs(svg);
 
-              //this.graphSet.graphs.forEach((val, key) => {
-              //    this.graphSet.drawGraph( svg, val, zp, svg.clientWidth-2, svg.clientHeight-2 ); 
-              //});
-              /* ======================== DEBUG
-              const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-              line.setAttribute('stroke', '#f00');
-              line.setAttribute('stroke-width', '2');
-              
-              line.setAttribute('x1', String(25));
-              line.setAttribute('y1', String(25));
-              line.setAttribute('x2', String(300));
-              line.setAttribute('y2', String(200));
-              svg.appendChild(line);
-              */
-              console.log("SVG: " + svg.innerHTML);
+              //console.log("SVG: " + svg.innerHTML);
             }
             return true;
           default:
@@ -816,6 +824,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     // Graphs
 
     dlgAddGraph : boolean = false;
+    dlgGraphSize : boolean = false;
     private graphName : string = "";
     graphSet : GraphSet = new GraphSet();
     
@@ -836,18 +845,13 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.dlgAddGraph = false;
 
       let gi : GraphItem | undefined = this.graphSet.getGraph(this.graphName);
-      if( gi !== undefined )
+      if( gi !== undefined ) {
         gi.color = clr.value;
+        gi.labels = (document.getElementById("gr_Lbl")! as HTMLInputElement).checked ? true : false;
+      }
 
       var cont : HTMLDivElement = document.getElementById("graph")! as HTMLDivElement;
-      /*
-      var svg = document.createElement("svg")!;
-      svg.style.width='400px';
-      svg.style.height='400px';
-      svg.id=this.graphName;
 
-      cont.appendChild(svg);
-      */
       cont.style.left = String(wsWidth()-420) + 'px';
       cont.style.visibility='visible';
       cont.style.zIndex='9999';
@@ -857,6 +861,42 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         var svg : SVGSVGElement = document.getElementById('myGraph')! as unknown as SVGSVGElement;
         var zp : Point = this.graphSet.repaintGraphs(svg);
       }
+    }
+
+    sizeGraph() : void {
+      this.dlgGraphSize = true;
+    }
+
+    sizeGraphCancel() : void {
+      this.dlgGraphSize = false;
+    }
+
+    sizeGraphConfirm() : void {
+      this.graphSet.graphSize.x = (document.getElementById("gr_W")! as HTMLInputElement).valueAsNumber;
+      if( this.graphSet.graphSize.x < 200 ) {
+        if( this.graphSet.graphSize.x <= 0 )
+          this.graphSet.graphSize.x = 400.;
+        else 
+          this.graphSet.graphSize.x = 200.;
+      }
+      this.graphSet.graphSize.y = (document.getElementById("gr_H")! as HTMLInputElement).valueAsNumber;
+      if( this.graphSet.graphSize.y < 200 ) {
+        if( this.graphSet.graphSize.y <= 0 )
+          this.graphSet.graphSize.y = 400.;
+        else 
+          this.graphSet.graphSize.y = 200.;
+      }
+
+      this.dlgGraphSize = false;
+      var grDiv : HTMLDivElement = document.getElementById('graph')! as HTMLDivElement;
+      grDiv.style.width = String(this.graphSet.graphSize.x) + 'px';
+      grDiv.style.height = String(this.graphSet.graphSize.y) + 'px';
+      var grSvg : SVGSVGElement = document.getElementById('myGraph')! as unknown as SVGSVGElement;
+      grSvg.style.width = String(this.graphSet.graphSize.x) + 'px';
+      grSvg.style.height = String(this.graphSet.graphSize.y) + 'px';
+
+      if( grDiv.style.visibility === "visible" )
+        this.graphSet.repaintGraphs( grSvg );
     }
 
 }

@@ -55,9 +55,9 @@
   
 </style>
 
-<main class="main"><div class="div-table" style="overflow:auto;">
+<main class="main"><div class="div-table" style="overflow:visible;">
 
-    <div id="menuBar" class="div-table-row">
+    <div id="menuBar" class="div-table-row"  style="overflow:visible;">
       <p-menubar [model]="items" [style]="{height:'36px'}"/>
       <!--
       <input type="button" id="envLoader" (click)="doLoadEnv(true)" style="visibility: hidden;" />
@@ -69,7 +69,7 @@
       <input type="button" id="cmdRefresh" style="visibility: hidden; width: 0px; height: 0px; overflow: hidden;" onclick="do_refresh();" />
       -->
     </div>
-    <div class="div-table-row" style="margin: 4px;"></div>
+    <div class="div-table-row" style="margin: 2px;">&nbsp;</div>
     <div id="workspace" class="div-table-row">
       <p-splitter id="splitter"
                   [style]="{ height: '700px', width: '100%' }" class="mb-8" layout="vertical" 
@@ -79,7 +79,7 @@
         
         <ng-template #panel>
         <div id="theTabs">
-        <p-tabs [(value)]="tabVal" (valueChange)="tabChange();"  onchange="adjustSizes();">
+        <p-tabs scrollable [(value)]="tabVal" (valueChange)="tabChange();"  onchange="adjustSizes();">
           <p-tablist>
               <p-tab [value]="0">Environment</p-tab>
               <p-tab [value]="1">Behavior</p-tab>
@@ -142,21 +142,19 @@
             </p-tabpanel>
 
             <!--<p-tabpanel [value]="4" *ngIf="isRunning">-->
-            <p-tabpanel [value]="4">
+            <p-tabpanel [value]="4"  scrollable>
               <!-- <div #menuRun id="menuRun" layout="row" class="div-table-row"> -->
                 <!-- Controls -->
                 <!-- <p-menubar [model]="itemsRun" [style]="{height:'48px'}"/> -->
               <!-- </div> -->
-              <div>
-              <div id="runOutput" style="font-family: Arial, Helvetica, sans-serif; font-size: 10pt; overflow: scroll; padding: 3pt;"></div>
-              </div>
+              <div id="runOutput" class="scrollable-content"></div>
             </p-tabpanel>  
           </p-tabpanels>
         </p-tabs>
         </div>
         </ng-template>
-        <ng-template #panel>
-          <div id="diag" style="font-family: Arial, Helvetica, sans-serif; font-size: 8pt; overflow: scroll; padding: 3pt; margin: 16px;"></div>
+        <ng-template #panel scrollable>
+          <div id="diag" class="scrollable-diag"></div>
         </ng-template>
     </p-splitter>
     </div>
@@ -189,7 +187,7 @@
 <p-dialog header="Add graph" [modal]="true" [(visible)]="dlgAddGraph">
     <div class="flex items-center mb-4">
         <label for="gr_name" class="font-semibold w-24">Graph name: </label>
-        <input #gr_name type="text" id="gr_name" class="flex-auto" autocomplete="off" />
+        <input #gr_name type="text" id="gr_name" class="flex-auto" autocomplete="off" />&nbsp;
         <input #gr_color type="color" id="gr_color" class="flex-auto" />
     </div>
     <div class="flex items-center mb-4">
@@ -198,11 +196,29 @@
         <br />
         <label for="gr_Y" class="font-semibold w-24">Y-axis parameter: </label>
         <input type="text" #gr_Y id="gr_Y" class="flex-auto" autocomplete="off" />
+        <br />
+        <label for="gr_Pts" class="font-semibold w-24">Point labels: </label>
+        <input type="checkbox" #gr_Lbl id="gr_Lbl" class="flex-auto" checked />
     </div>
     <hr />  
     <div class="flex justify-end">
         <p-button label="Cancel" severity="secondary" (click)="addGraphCancel();" />
         <p-button label="OK" (click)="addGraphConfirm();" />
+    </div>
+</p-dialog>
+
+<p-dialog hrader="Graph size" [modal]="true" [(visible)]="dlgGraphSize">
+    <div class="flex items-center mb-4">
+        <label for="gr_W" class="font-semibold w-24">Width: </label>
+        <input type="number" #gr_W id="gr_W" class="flex-auto" value="400" min="200" />
+        <br />
+        <label for="gr_H" class="font-semibold w-24">Height: </label>
+        <input type="number" #gr_H id="gr_H" class="flex-auto" value="400" min="200" />
+    </div>
+    <hr />  
+    <div class="flex justify-end">
+        <p-button label="Cancel" severity="secondary" (click)="sizeGraphCancel();" />
+        <p-button label="OK" (click)="sizeGraphConfirm();" />
     </div>
 </p-dialog>
 

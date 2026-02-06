@@ -7,6 +7,7 @@ export class GraphItem {
     public parmY : string = "";
     public max : Point = new Point(0.,0.);
     public min : Point = new Point(0.,0.);
+    public labels : boolean = true;
     
     private newPt : Point | null = null;
 
