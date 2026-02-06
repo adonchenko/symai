@@ -16,7 +16,7 @@ function getItemText(id) {
 }  
 
 function adjustSizes() {
-    //console.log("AdjustSizes");
+    console.log("AdjustSizes");
     if( window.myApp ) {
         var idx = window.myApp.getTabValue();
         var id="";
@@ -25,56 +25,71 @@ function adjustSizes() {
           case 1: id="txtBeh"; break;
           case 2: id="txtAct"; break;
           case 3: id="txtTgt"; break;
+          default: return;
         }
         setTextareaSizes(id);
     }
 }  
 
+var splitterTop = 75.;
+var splitterBottom = 25.;
+
+function recalcPaneSizes(top,bottom) {
+    var w = window.innerWidth;
+    var h = window.innerHeight-36;
+
+    splitterTop = top;
+    splitterBottom = bottom;
+
+    var ht = Math.round(h*splitterTop/100.);
+    var hb = Math.round(h*splitterBottom/100.);
+    while(ht+hb+4 >= h) {
+      ht--;
+      hb--;
+    }
+
+    //console.log("Window: "  + w + " x " + h );
+    var diagPanel =  document.getElementById("diag");
+    if( diagPanel ) {
+      //diagPanel.style.height = String(hb) + 'px';
+      diagPanel.style.overflow = 'scroll';
+      //console.log ("Diag height: " + diagPanel.style.height);
+    }
+    var theTabs =  document.getElementById("theTabs");
+    if( theTabs ) {
+      theTabs.style.height = String(ht) + 'px';
+      //console.log ("Tabs height: " + theTabs.style.height);
+    }
+
+    diag( "Window height: " + String(h));
+    diag("Top: " + String(ht) + ", Bottom: " + String(hb));
+    diag("Tabs height: " + theTabs.style.height);
+    adjustSizes();
+}
+
 function setTextareaSizes( taId ) {
     const inp = document.getElementById(taId);
-    //console.log("setTextareaSizes for "+ taId);
     if(inp) {
-      var inpParent = inp.parentElement;
+      var w = window.innerWidth;
+      var h = window.innerHeight-36;
 
-      while( inpParent && inpParent.width === undefined)
-        inpParent = inpParent.parentElement;
       //console.log("inpParent is" + inpParent.tagName + 
       //            ", sizeClient: " + inpParent.clientWidth + " x " + inpParent.clientHeight +
       //            ", size: " + inpParent.width + " x " + inpParent.height);
+      var ht = Math.round(h*splitterTop/100.);
+      var hb = Math.round(h*splitterBottom/100.);
+      while(ht+hb+4 >= h) {
+        ht--;
+        hb--;
+      }
 
       inp.style.top = '50px';
       inp.style.left = '4px';
-      if(inp.style.width)
-        inp.style.width = String(inpParent.width-24) + "px";
-      if(inp.width)
-        inp.width = String(inpParent.width-24) + "px";
-      
-      if( window.myApp ) {
-        //console.log("SplitterTop:" + window.myApp.getSplitterTop());
-        var t1 =  Math.trunc((inpParent.height * Math.trunc(window.myApp.getSplitterTop()))  / 100) - 40;
-        if(inp.style.height)
-          inp.style.height = String(t1) + "px";
-        if(inp.height)
-          inp.height =  String(t1) + "px";
+      inp.style.width = String(w-32) + 'px';
+      ht -= 256;
+      inp.style.height = String(ht) + 'px';
 
-        const diagPanel =  document.getElementById("diag");
-        if(diagPanel) {
-          var diagParent = diagPanel.parentElement;
-
-          while( diagParent && diagParent.clientHeight === undefined)
-            diagParent = diagParent.parentElement;
-            
-          diagPanel.style.height = diagParent.clientHeight + 'px';
-            //console.log("setTextareaSizes-diagHeight="+diagPanel.style.height);
-            //inp.style.width = String(inpParent.width-24) + "px";
-        }
-      }            
-      else {
-        console.log("theApp not accessible");              
-        //inpEnv.style.height = String(inpEnvParent.clientHeight-256) + "px";
-        //inpEnv.height =  String(inpEnvParent.clientHeight-256) + "px";
-      }
-      //console.log("Element sizes: " + inp.width + " x " + inp.height);
+      diag(" ---------- textarea calculated height " + ht);
     }
     else
       console.log("Element not found: " + taId);
@@ -85,7 +100,7 @@ function wsWidth() {
 } 
 
 function wsHeight() {
-  return window.innerHeight-48;
+  return window.innerHeight-36; //48;
 }
 
 function setSizes() {
@@ -93,31 +108,68 @@ function setSizes() {
   var h = window.innerHeight;
   const menuBar = document.getElementById("menuBar");
   const ws = document.getElementById("workspace");
-  //console.log("SET SIZES, window: "  + w + " x " + h );
+  //diag("SET SIZES, window: "  + w + " x " + h );
+  //diag("SET SIZES, document: "  + document.body.width + " x " + document.body.height );
   if(ws) {
-    ws.width = w;
-    if(menuBar && menuBar.height)
-      ws.height = h - menuBar.height;
-    else
-      ws.height = h - 48;
-    //console.log("Workspace size: " + ws.width + " x " + ws.height);
-
-    const diagPanel =  document.getElementById("diag");
-    if(diagPanel) {
-      const dPanel = diagPanel.parentElement;  
-      diagPanel.style.height =  ws.height / 4 + 'px';
-      diagPanel.style.width =  ws.width - 8 + 'px';
-      //console.log("setSizes-diagHeight="+diagPanel.style.height);
-      dPanel.clientHeight = ws.height / 4;
-      dPanel.clientWidth = ws.width -8;
+    ws.style.width= w + 'px'; 
+    //ws.width = w;
+    if(menuBar && menuBar.height) {
+      //ws.height = h - menuBar.height;
+      ws.style.height = (h-menuBar.height) + 'px';
+      h -= menuBar.height;
+      //console.log("           workspace(1): "  + ws.style.height );
     }
-    else
-      console.log("diagPanel not found");
+    else {
+      //ws.height = h - 48;
+      ws.style.height = (h-36) + 'px';
+      h -= 36;
+      //console.log("           workspace(2): "  + ws.style.height );
+    }
+    //diag("           workspace: "  + ws.style.width + " x " + ws.style.height );
 
-    setTextareaSizes("txtEnv");
-    setTextareaSizes("txtBeh");
-    setTextareaSizes("txtAct");
-    setTextareaSizes("txtTgt");
+    var ht = Math.round(h*splitterTop/100.);
+    var hb = Math.round(h*splitterBottom/100.);
+    while(ht+hb+4 >= h) {
+      ht--;
+      hb--;
+    }
+
+    var diagPanel =  document.getElementById("diag");
+    if( diagPanel ) {
+      diagPanel.style.width = (w - 4) + 'px';
+      //console.log("           Diag width: "  + diagPanel.style.width );
+      //diagPanel.style.height =  String(hb)+'px'; //Math.round(h*splitterBottom/100.) + 'px';
+      //console.log("           Diag height: "  + diagPanel.style.height );
+
+      const rc = diagPanel.getBoundingClientRect();
+      //console.log("           Diag rect at: ("  + rc.left + "," + rc.top + ")" );
+      if( rc.left < 0 )
+        diagPanel.style.left = '2px';
+
+      //diagPanel.style.position = 'relative';
+      diagPanel.style.overflow = 'scroll';
+      diagPanel.style.margin = '16px';
+      diagPanel.style.padding = '3pt';
+      //diag("           diagPanel: "  + diagPanel.style.width + " x " + diagPanel.style.height );
+    }  
+    
+    var theTabs =  document.getElementById("theTabs");
+    if( theTabs ) {
+      theTabs.style.width = (w-4) + 'px';
+      //console.log("           Tabs width: "  + theTabs.style.width );
+      theTabs.style.height = String(ht)+'px'; //Math.round(h*splitterTop/100.) + 'px';
+      //console.log("           Tabs height: "  + theTabs.style.height );
+
+      const rc = theTabs.getBoundingClientRect();
+      //console.log("           Tabs rect at: ("  + rc.left + "," + rc.top + ")" );
+      if( rc.left < 0 )
+        theTabs.style.left = '2px';
+
+      //theTabs.style.position = 'relative';
+      theTabs.style.padding = '3pt';
+      //diag("           tabs: "  + theTabs.style.width + " x " + theTabs.style.height );
+    }
+    adjustSizes();
   }
   else
     console.log("Workspace not found");
@@ -144,12 +196,16 @@ function refreshItem(id) {
 function diag(msg) {
     var element = document.getElementById("diag");
     var n = document.createTextNode(msg);
-    if(element)
+    if(element) {
       element.appendChild(n);
 
-    var br = document.createElement("br");  
-    element.append(br)
-}
+      var br = document.createElement("br");  
+      element.append(br)
+
+      element.scrollTop = element.scrollHeight;
+      element.lastElementChild.scrollIntoView(false);
+    }
+  }
 
 function output(msg) {
     var element = document.getElementById("runOutput");
@@ -159,6 +215,9 @@ function output(msg) {
 
       var br = document.createElement("br");  
       element.append(br)
+
+      element.scrollTop = element.scrollHeight;
+      element.lastElementChild.scrollIntoView(false);
     }
 }
 
@@ -177,10 +236,54 @@ function clickHiddenRefresh(arg) {
     }
 }
 
+var mousePosition;
+var offset = [0,0];
+var div;
+var isDown = false;
+
+function setGraphMoveable() {
+  div = document.getElementById('graph');
+  if(!div) {
+    console.log("ERROR: Element 'graph' not found");
+    return;
+  }   
+  div.addEventListener('mousedown', function(e) {
+        isDown = true;
+        offset = [
+            div.offsetLeft - e.clientX,
+            div.offsetTop - e.clientY
+        ];
+    }, true);
+
+  document.addEventListener('mouseup', function() {
+      isDown = false;
+  }, true);
+
+  document.addEventListener('mousemove', function(event) {
+      event.preventDefault();
+      if (isDown) {
+          mousePosition = {
+              x : event.clientX,
+              y : event.clientY
+          };
+          div.style.left = (mousePosition.x + offset[0]) + 'px';
+          div.style.top  = (mousePosition.y + offset[1]) + 'px';
+      }
+  }, true);  
+}
+
+function setInit() {
+  setSizes();
+  window.addEventListener('resize', function(event) { 
+      //event.preventDefault();
+      setSizes();
+  });
+  setGraphMoveable();
+}
 
 </script>
-<link rel="stylesheet" href="styles-5INURTSO.css"></head>
-<body onload="setSizes()" onresize="setSizes()">
+<link rel="stylesheet" href="styles-52VOE6ID.css" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="styles-52VOE6ID.css"></noscript></head>
+<body onload="setInit();">
   <app-root></app-root>
-<link rel="modulepreload" href="chunk-UCN7HI4K.js"><script src="main-DDK3PNCI.js" type="module"></script></body>
+<link rel="modulepreload" href="chunk-SA3TWFJI.js"><script src="main-JD4X42WX.js" type="module"></script></body>
 </html>
