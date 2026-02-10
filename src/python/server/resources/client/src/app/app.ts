@@ -42,6 +42,7 @@ declare function refreshItem(id: string): any;
 declare function diag(msg: string): any;
 declare function output(msg: string): any;
 declare function getItemText(id : string) : any;
+declare function setItemText(id : string, value: string) : any;
 declare function clickHiddenRefresh(arg : string) : any;
 
 
@@ -113,9 +114,10 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
               { separator:true },
               { label:'Stop', icon:'pi pi-fw', disabled: this.isRunning, command: () => this.doStop() },
               { label:'Shutdown', icon:'pi pi-fw', command: () => this.doShutdown() },
-              { separator:true },
-              { label:'Test output', icon:'pi pi-fw', command: () => this.testOutput() },
-              { label:'Test diag', icon:'pi pi-fw', command: () => this.testDiag() }, 
+              { label:'Reset', icon:'pi pi-fw', command: () => this.doReset() },
+  //            { separator:true },
+  //            { label:'Test output', icon:'pi pi-fw', command: () => this.testOutput() },
+  //            { label:'Test diag', icon:'pi pi-fw', command: () => this.testDiag() }, 
            ]
         },
         {
@@ -149,9 +151,15 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
               { label:'Stop', icon:'pi pi-fw', command : () => this.doStop() },
           ]  
         },
-        { label: 'Preferences', icon:'pi pi-fw pi-file', command: () => this.showPrefsDialog() }
-        //{ separator:true },
-        //{ label: 'Server: ', icon:'pi pi-fw pi-file' }
+        { label: 'Preferences', icon:'pi pi-fw pi-file',  
+          items:[
+              { label:'Re-enter count...', icon:'pi pi-fw', command: () => this.showReEnterDialog() },
+              { label:'Max models...', icon:'pi pi-fw', command: () => this.showMaxModelsDialog() },
+              { label:'Solver...', icon:'pi pi-fw', command: () => this.showSolverDialog() },
+              { separator:true },
+              { label:'All Preferences', icon:'pi pi-fw', command: () => this.showPrefsDialog() },
+          ]
+        }
 
         ];
         this.itemsRun = [
@@ -368,7 +376,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     dlgVisible : boolean = false;
     isRunning : boolean = false;
     isDebug : boolean = false;
-    cmdCtx : string[] = []; // = ['ldEnv', 'ldBeh', 'ldAct', 'ldTgt', 'stop'];
+    //cmdCtx : string[] = []; // = ['ldEnv', 'ldBeh', 'ldAct', 'ldTgt', 'stop'];
 
 
     private sleep(ms:number) : void {
@@ -377,6 +385,66 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             delay(ms) // Delay each emission by 1 second
           ).subscribe(value => {}
         );
+    }
+
+    dlgReEnter : boolean = false;
+    dlgReEnterCountVal : number = 1;
+    dlgReEnterCountFlush : boolean = false;
+
+    showReEnterDialog() { 
+      this.dlgReEnterCountVal = this.prefsComponent!.reenterCount;
+      this.dlgReEnterCountFlush = this.prefsComponent!.flushReenterCount;
+      this.dlgReEnter = true; 
+    }
+
+    dlgReEnterCancel() {
+      this.dlgReEnter = false; 
+    }
+    
+    dlgReEnterConfirm() {
+      const inp : HTMLInputElement = document.getElementById('reenter_count1')! as HTMLInputElement;
+      this.prefsComponent!.reenterCount = Number(inp.value);
+      //diag("Re-enter count set: " + this.prefsComponent!.reenterCount + "=" + inp.value + "=" + inp.valueAsNumber);
+      const inpFlush : HTMLInputElement = document.getElementById('reenter_count_flush1')! as HTMLInputElement;
+      this.prefsComponent!.flushReenterCount = inpFlush.checked;
+      //diag("Re-enter flush set: " + this.prefsComponent!.flushReenterCount);
+      this.dlgReEnter = false; 
+    }
+    
+    dlgMaxModels: boolean = false;
+    dlgMaxModelsVal : number = 1;
+    dlgMaxModelsFlush : boolean = false;
+
+    showMaxModelsDialog() {
+      this.dlgMaxModelsVal = this.prefsComponent!.maxModels;
+      this.dlgMaxModelsFlush = this.prefsComponent!.flushMaxModels;
+      this.dlgMaxModels = true; 
+    }
+
+    dlgMaxModelsCancel() {
+      this.dlgMaxModels = false; 
+    }
+
+    dlgMaxModelsConfirm() {
+      const inp : HTMLInputElement = document.getElementById('max_models1')! as HTMLInputElement;
+      this.prefsComponent!.maxModels = inp.valueAsNumber;
+      const inpFlush : HTMLInputElement = document.getElementById('max_models_flush1')! as HTMLInputElement;
+      this.prefsComponent!.flushMaxModels = inpFlush.checked;
+      this.dlgMaxModels = false; 
+    }
+
+    dlgSolver : boolean = false;
+
+    showSolverDialog() {
+      this.dlgSolver = true; 
+    }
+
+    dlgSolverCancel() {
+      this.dlgSolver = false; 
+    }
+
+    dlgSolverConfirm() {
+      this.dlgSolver = false; 
     }
 
     showPrefsDialog() {
@@ -388,6 +456,8 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         this.svcCtlPrefs.setShowDialog(this.dlgVisible);
     }
 
+    showMsgBox : boolean = false;
+
     msgBox(hdr: string, msg: string) : void {
       console.log("MsgBox: " + hdr + ' : ' + msg);
 
@@ -395,12 +465,14 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       if( div1 ) div1.innerText = hdr;
       const div2 = document.getElementById("msg_msg");
       if( div2 ) div2.innerText = msg;
-      const box = document.getElementById("MsgBox");
-      if(box) box.style.visibility="visible";
-      else console.log("Failure with MsgBox");
+      //const box = document.getElementById("MsgBox");
+      //if(box) box.style.visibility="visible";
+      //else console.log("Failure with MsgBox");
 
-      if( div2 ) div2.innerText = msg;
+      //if( div2 ) div2.innerText = msg;
       //this.svcMsg.add({severity:sev, summary:hdr, detail:msg});
+
+      this.showMsgBox = true;
     }
     
     Diag(msg : string) : void {
@@ -452,6 +524,13 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.behLoaded = false;
       this.actLoaded = false;
       this.tgtLoaded = false;
+    }
+
+    doReset() : void {
+      if( this.SyncWS().send("reset") )
+        this.msgBox('Information', 'Command sent');
+      else 
+        this.msgBox('Error', 'Could not send command');
     }
 
     testOutput() : void {
@@ -643,6 +722,10 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
 
       this.Diag("Start beh=" + this.startBeh);
 
+      // ----------------For show!
+      this.prefsComponent!.reenterCount = 60;
+      // ------------------------------------
+
       var msg : string = "traversalbeh ";
       if( this.startBeh !== "") {
         var parm : TraversalbehCfg = { 
@@ -761,7 +844,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
 
     onReceiveMsg(msg : string) : boolean {
       msg.replace(/[\r\n]+/g, ' ');
-      this.Diag("Recv: " + msg);
+      //this.Diag("Recv: " + msg);
       
       var sp1 : number = msg.indexOf(' ', 0);
       //console.log("SP1: " + String(sp1));
@@ -800,6 +883,12 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             out = msg.substring(sp2+1);
             break;
           case 'values':
+            
+            //out = msg;
+            //output("");
+            //output(out);
+            //output("");  
+
             this.graphSet.addDataRow(msg.substring(sp2+1)); 
             if(this.graphSet.graphs.size > 0)
             {
@@ -824,7 +913,6 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
     // Graphs
 
     dlgAddGraph : boolean = false;
-    dlgGraphSize : boolean = false;
     private graphName : string = "";
     graphSet : GraphSet = new GraphSet();
     
@@ -852,7 +940,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
 
       var cont : HTMLDivElement = document.getElementById("graph")! as HTMLDivElement;
 
-      cont.style.left = String(wsWidth()-420) + 'px';
+      cont.style.left = String(wsWidth()-(this.graphSet.graphSize.x+20)) + 'px';
       cont.style.visibility='visible';
       cont.style.zIndex='9999';
 
@@ -862,6 +950,10 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
         var zp : Point = this.graphSet.repaintGraphs(svg);
       }
     }
+ 
+    dlgGraphSize : boolean = false;
+    dlgGraphSizeX : number = 400;
+    dlgGraphSizeY : number = 400;
 
     sizeGraph() : void {
       this.dlgGraphSize = true;

@@ -2,6 +2,7 @@ import { Point } from './point';
 export class GraphItem {
     public id:string = '';
     public pts:Array<Point> = [];
+    public prevPts:Array<Point> = [];
     public color:string = '#000';
     public parmX : string = "";
     public parmY : string = "";
@@ -47,6 +48,23 @@ export class GraphItem {
             this.addPoint( new Point(this.newPt.x, this.newPt.y) );
             this.newPt = null;
         }
+    }
+
+    public setPrevData() : void {
+        this.pts.forEach( ( item ) => {
+            this.prevPts.push( item );
+        });
+    }
+
+    public checkPrevData() : void {
+        if( this.prevPts.length > this.pts.length ) {
+            this.pts = [];
+            this.prevPts.forEach( (item) => {
+                this.pts.push( item );
+            });
+        }
+        else
+            this.prevPts = [];  
     }
     /*
     public setScale(width:number, height:number) : void {
