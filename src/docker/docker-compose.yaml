@@ -13,12 +13,12 @@ services:
         - ${PROPERTIES}:/properties
         - ${LOGDIR}:/logdir
         - ${TMPDIR}:/tmpdir
-  core:
-    image: docker/symai-core.0.0.1
-    container_name: symai-core.0.0.1
+  core_go:
+    image: docker/symai-core_go.0.0.1
+    container_name: symai-core_go.0.0.1
     build:
-      context: ../python/server
-      dockerfile:  ../../docker/SymAICore
+      context: ../../
+      dockerfile:  ./src/docker/SymAICore_go
     ports:
       - 12345:12345
     working_dir: /app

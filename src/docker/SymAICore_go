@@ -1,20 +1,20 @@
 # --- Build Stage ---
 FROM golang:1.23-alpine AS builder
-# Installing CMAKE
+# Installing cmake, make, jdk
 RUN apk update
-RUN apk add --no-cache cmake make gcc g++ musl-dev
+RUN apk add --no-cache cmake make gcc g++ make musl-dev openjdk17-jre
 # Set the working directory in the container
 WORKDIR /app
 # Copy the current directory contents into the container at /app
-RUN mkdir /app/resources
-COPY ./src/python/server/resources/client/dist/app2/browser /app/resources
-COPY ./src/python/server/resources/favicon.ico /app/resources/favicon.ico
-COPY ./CMakeLists.txt /app/CMakeLists.txt
 RUN mkdir /app/etc
 RUN mkdir /app/etc/cmake
+COPY ./CMakeLists.txt /app/CMakeLists.txt
 COPY ./etc/cmake/FindGo.cmake /app/etc/cmake
+RUN mkdir /app/bin
+COPY ./bin /app/bin
 RUN mkdir /app/src
 RUN mkdir /app/src/go
+COPY ./src/antlr4/BehaviorsGrammar.g4 /app/src/antlr4/BehaviorsGrammar.g4
 COPY ./src/go/server/config/config.go /app/src/go/server/config/config.go
 COPY ./src/go/server/config/symaiformatter.go /app/src/go/server/config/symaiformatter.go
 COPY ./src/go/server/utils /app/src/go/server/utils
@@ -25,7 +25,7 @@ COPY ./src/go/server/frontendcontroller/frontendwebserver.go /app/src/go/server/
 RUN mkdir /app/build
 RUN cd /app/build
 RUN cmake .
-RUN make symai-frontend-golang
+RUN make symai-symaicore-golang
 
 # Stage 2: Create the final minimal image
 FROM alpine:latest AS runner
@@ -35,8 +35,6 @@ VOLUME /logdir
 VOLUME /tmpdir
 #VOLUME /app/resources
 WORKDIR /app
-COPY --from=builder /app/build/release/frontend /app/frontend
-RUN mkdir /app/resources
-COPY --from=builder /app/resources /app/resources
-EXPOSE 8000
-CMD ["/app/frontend"]
+COPY --from=builder /app/build/release/symaicore /app/symaicore
+EXPOSE 12345
+CMD ["/app/symaicore"]

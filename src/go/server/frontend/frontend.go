@@ -6,10 +6,10 @@ import (
 	"os"
 	"time"
 
-	"src/server/config"
-	"src/server/controller"
-
 	"github.com/urfave/cli"
+
+	"src/server/config"
+	"src/server/frontendcontroller"
 )
 
 type (
@@ -112,10 +112,10 @@ func main() {
 		},
 	}
 	app.Commands = []cli.Command{}
-	app.Run(os.Args)
+	_ = app.Run(os.Args)
 }
 
-func run(c *cli.Context) error {
+func run(*cli.Context) error {
 	return exec()
 }
 
@@ -139,11 +139,5 @@ func exec() error {
 	cfg.FrontendSection.SymAICorePort = inputData.symaiCorePort
 	cfg.FrontendSection.Resources = inputData.resourcePath
 
-	_, err = cfg.InitLogger("frontend")
-	if err != nil {
-		_, _ = fmt.Fprint(os.Stderr, err)
-		return err
-	}
-
-	return controller.RunFrontendServer(cfg)
+	return frontendcontroller.RunFrontendServer(cfg)
 }

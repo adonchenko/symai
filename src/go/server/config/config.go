@@ -22,11 +22,16 @@ type (
 		LoggersSection       LoggersSectionConfig    `ini:"loggers"`
 		HandlersSection      LoggersSectionConfig    `ini:"handlers"`
 		FormattersSection    LoggersSectionConfig    `ini:"formatters"`
+		HTTPConfigsSection   HTTPConfigNamesStruct   `ini:"httpconfigs"`
+		WSSConfigsSection    WSSConfigNamesStruct    `ini:"wssconfigs"`
 		LoggersFromComfig    map[string]interface{}
 		HandlersFromConfig   map[string]interface{}
 		FormattersFromConfig map[string]interface{}
 
-		Logger *logrus.Logger
+		WSSConfigsFromConfig  map[string]interface{}
+		HTTPConfigsFromConfig map[string]interface{}
+		Logger                *logrus.Logger
+		StopCh                chan os.Signal
 	}
 
 	LoggerConfig struct {
@@ -35,14 +40,17 @@ type (
 	}
 
 	SymAISectionConfig struct {
-		TempDir        string `ini:"tempdir"`
-		Host           string `ini:"host"`
-		Port           int    `ini:"port"`
-		ExpressionHost string `ini:"expression_host"`
-		ExpressionPort int    `ini:"expression_port"`
-		AI             string `ini:"ai"`
-		ReenterCount   int    `ini:"reenter_count"`
-		Debug          string `ini:"debug"`
+		TempDir              string `ini:"tempdir"`
+		HostConfig           string `ini:"hostconfig"`
+		WSSHostConfig        string `ini:"wss_hostconfig"`
+		Host                 string `ini:"host"`
+		Port                 int    `ini:"port"`
+		ExpressionHost       string `ini:"expression_host"`
+		ExpressionPort       int    `ini:"expression_port"`
+		ExpressionHostConfig string `ini:"expression_hostconfig"`
+		AI                   string `ini:"ai"`
+		ReenterCount         int    `ini:"reenter_count"`
+		Debug                string `ini:"debug"`
 	}
 
 	ExpressionSectionConfig struct {
@@ -50,14 +58,17 @@ type (
 		Port             int    `ini:"port"`
 		ExpressionSolver string `ini:"expression_solver"`
 		SolverMaxModels  int    `ini:"solver_max_models"`
+		HostConfig       string `ini:"hostconfig"`
 	}
 
 	FrontendSectionConfig struct {
-		Host          string `ini:"host"`
-		Port          int    `ini:"port"`
-		SymAICoreHost string `ini:"symaicore_host"`
-		SymAICorePort int    `ini:"symaicore_port"`
-		Resources     string `ini:"resources"`
+		Host                string `ini:"host"`
+		Port                int    `ini:"port"`
+		SymAICoreHost       string `ini:"symaicore_host"`
+		SymAICorePort       int    `ini:"symaicore_port"`
+		SymAICoreHostConfig string `ini:"symaicore_hostconfig"`
+		Resources           string `ini:"resources"`
+		HostConfig          string `ini:"hostconfig"`
 	}
 
 	LoggersSectionConfig struct {
@@ -84,6 +95,31 @@ type (
 		Format string `ini:"format"`
 	}
 
+	HTTPConfigNamesStruct struct {
+		Keys string `ini:"keys"`
+	}
+
+	WSSConfigNamesStruct struct {
+		Keys string `ini:"keys"`
+	}
+
+	WSSSectionConfig struct {
+		MaxConnections    int    `ini:"max_connections"`
+		ReadBufferSize    int    `ini:"read_buffer_size"`
+		WriteBufferSize   int    `ini:"write_buffer_size"`
+		HandshakeTimeout  int    `ini:"handshake_timeout"`
+		EntryPoint        string `ini:"entry_point"`
+		EnableCompression bool   `ini:"enable_compression"`
+	}
+
+	HTTPConfigStruct struct {
+		Host         string `ini:"host"`
+		Port         int    `ini:"port"`
+		ReadTimeout  int    `ini:"read_timeout"`
+		WriteTimeout int    `ini:"write_timeout"`
+		IdleTimeout  int    `ini:"idle_timeout"`
+	}
+
 	// WriterHook is a hook that writes logs of specified levels to an io.Writer with a custom formatter
 	WriterHook struct {
 		Writer    io.Writer
@@ -95,6 +131,14 @@ type (
 var (
 	Config SymAIConfig
 )
+
+func (c *SymAIConfig) GetLogger() *logrus.Logger {
+	return c.Logger
+}
+
+func GetConfig() *SymAIConfig {
+	return &Config
+}
 
 // Levels returns the levels for which the hook is fired.
 func (hook *WriterHook) Levels() []logrus.Level {
@@ -147,6 +191,8 @@ func Load(path string) (*SymAIConfig, error) {
 			Config.FormattersFromConfig = make(map[string]interface{})
 			Config.LoggersFromComfig = make(map[string]interface{})
 			Config.HandlersFromConfig = make(map[string]interface{})
+			Config.HTTPConfigsFromConfig = make(map[string]interface{})
+			Config.WSSConfigsFromConfig = make(map[string]interface{})
 			if err == nil {
 				sects := inidata.Sections()
 				for _, s := range sects {
@@ -178,23 +224,245 @@ func Load(path string) (*SymAIConfig, error) {
 								return nil, err
 							}
 							Config.HandlersFromConfig[nm] = lc
+						case "httpserver":
+							nm = nm[len(sp[0])+1:]
+							lc := HTTPConfigStruct{}
+							err := inidata.Section(s.Name()).MapTo(&lc)
+							if err != nil {
+								return nil, err
+							}
+							Config.HTTPConfigsFromConfig[nm] = lc
+						case "wss":
+							nm = nm[len(sp[0])+1:]
+							lc := WSSSectionConfig{}
+							err := inidata.Section(s.Name()).MapTo(&lc)
+							if err != nil {
+								return nil, err
+							}
+							Config.WSSConfigsFromConfig[nm] = lc
 						default:
 						}
 					}
 				}
+
+				// Check if loggers, hanlers and formatters lists are corresponds to the corresponding config section keys
+				// loggers
+				sp := strings.Split(Config.LoggersSection.Keys, ",")
+				for _, s := range sp {
+					s = strings.TrimSpace(s)
+					b := false
+					for lc, _ := range Config.LoggersFromComfig {
+						if lc == s {
+							b = true
+							break
+						}
+					}
+					if !b {
+						return nil, fmt.Errorf("logger '%s' is declared in loggers section but not defined", s)
+					}
+				}
+				if len(sp) < len(Config.LoggersFromComfig) {
+					return nil, fmt.Errorf("number of declared loggers less than number of defined loggers")
+				}
+				// handlers
+				sp = strings.Split(Config.HandlersSection.Keys, ",")
+				for _, s := range sp {
+					s = strings.TrimSpace(s)
+					b := false
+					for lc, _ := range Config.HandlersFromConfig {
+						if lc == s {
+							b = true
+							break
+						}
+					}
+					if !b {
+						return nil, fmt.Errorf("handler '%s' is declared in handlers section but not defined", s)
+					}
+				}
+				if len(sp) < len(Config.HandlersFromConfig) {
+					return nil, fmt.Errorf("number of declared handlers less than number of defined handlers")
+				}
+				// formatters
+				sp = strings.Split(Config.FormattersSection.Keys, ",")
+				for _, s := range sp {
+					s = strings.TrimSpace(s)
+					b := false
+					for lc, _ := range Config.FormattersFromConfig {
+						if lc == s {
+							b = true
+							break
+						}
+					}
+					if !b {
+						return nil, fmt.Errorf("formatter '%s' is declared in formatters section but not defined", s)
+					}
+				}
+				if len(sp) < len(Config.FormattersFromConfig) {
+
+					return nil, fmt.Errorf("number of declared formatters less than number of defined formatters")
+				}
+			}
+			err = Config.adjustHTTPSettings()
+			if err == nil {
+				err = Config.adjustWSSSettings()
 			}
 		}
+
 	} else {
 		return nil, errors.New("unknown configuration file extension")
 	}
 	return &Config, err
 }
 
+func (cfg *SymAIConfig) adjustHTTPSettings() error {
+	var err error = nil
+	// We have 3 "magic" configs. They are expresson, symaicore and frontend.
+	// In order to be compatible with python version, the Host and Port fields of Expression, SymaiCore and Frontend
+	// sections accordingthly should be equal to corrsponding Host and Port fields from corresponding sections
+	if cfg.SymAISection.HostConfig == "" {
+		cfg.SymAISection.HostConfig = "symaicore"
+	}
+	s := strings.TrimSpace(cfg.SymAISection.HostConfig)
+	c, e := Config.GetHTTPServerConfig(s)
+	if e != nil {
+		c = HTTPConfigStruct{
+			Host: cfg.SymAISection.Host,
+			Port: cfg.SymAISection.Port,
+		}
+		cfg.HTTPConfigsFromConfig[s] = c
+	} else {
+		if c.Host != cfg.SymAISection.Host || c.Port != cfg.SymAISection.Port {
+			c.Host = cfg.SymAISection.Host
+			c.Port = cfg.SymAISection.Port
+			cfg.HTTPConfigsFromConfig[s] = c
+		}
+	}
+
+	if cfg.SymAISection.ExpressionHostConfig == "" {
+		cfg.SymAISection.ExpressionHostConfig = "expression"
+	}
+	s = strings.TrimSpace(cfg.SymAISection.ExpressionHostConfig)
+	c, e = cfg.GetHTTPServerConfig(s)
+	if e != nil {
+		c = HTTPConfigStruct{
+			Host: cfg.SymAISection.ExpressionHost,
+			Port: cfg.SymAISection.ExpressionPort,
+		}
+		cfg.HTTPConfigsFromConfig[s] = c
+	} else {
+		if c.Host != cfg.SymAISection.ExpressionHost || c.Port != cfg.SymAISection.ExpressionPort {
+			c.Host = cfg.SymAISection.ExpressionHost
+			c.Port = cfg.SymAISection.ExpressionPort
+			cfg.HTTPConfigsFromConfig[s] = c
+		}
+	}
+
+	if cfg.ExpressionSection.HostConfig == "" {
+		cfg.ExpressionSection.HostConfig = "expression"
+	}
+	s = strings.TrimSpace(cfg.ExpressionSection.HostConfig)
+	c, e = cfg.GetHTTPServerConfig(s)
+	if e != nil {
+		c = HTTPConfigStruct{
+			Host: cfg.ExpressionSection.Host,
+			Port: cfg.ExpressionSection.Port,
+		}
+		cfg.HTTPConfigsFromConfig[s] = c
+	} else {
+		if c.Host != cfg.ExpressionSection.Host || c.Port != cfg.ExpressionSection.Port {
+			c.Host = cfg.ExpressionSection.Host
+			c.Port = cfg.ExpressionSection.Port
+			cfg.HTTPConfigsFromConfig[s] = c
+		}
+	}
+
+	if cfg.FrontendSection.HostConfig == "" {
+		cfg.FrontendSection.HostConfig = "frontend"
+	}
+	s = strings.TrimSpace(cfg.FrontendSection.HostConfig)
+	c, e = cfg.GetHTTPServerConfig(s)
+	if e != nil {
+		c = HTTPConfigStruct{
+			Host: cfg.FrontendSection.Host,
+			Port: cfg.FrontendSection.Port,
+		}
+		cfg.HTTPConfigsFromConfig[s] = c
+	} else {
+		if c.Host != cfg.FrontendSection.Host || c.Port != cfg.FrontendSection.Port {
+			c.Host = cfg.FrontendSection.Host
+			c.Port = cfg.FrontendSection.Port
+			cfg.HTTPConfigsFromConfig[s] = c
+		}
+	}
+	if cfg.FrontendSection.SymAICoreHostConfig == "" {
+		cfg.FrontendSection.SymAICoreHostConfig = "symaicore"
+	}
+	s = strings.TrimSpace(cfg.FrontendSection.SymAICoreHostConfig)
+	c, e = cfg.GetHTTPServerConfig(s)
+	if e != nil {
+		c = HTTPConfigStruct{
+			Host: cfg.FrontendSection.SymAICoreHost,
+			Port: cfg.FrontendSection.SymAICorePort,
+		}
+		cfg.HTTPConfigsFromConfig[s] = c
+	} else {
+		if c.Host != cfg.FrontendSection.SymAICoreHost || c.Port != cfg.FrontendSection.SymAICorePort {
+			c.Host = cfg.FrontendSection.SymAICoreHost
+			c.Port = cfg.FrontendSection.SymAICorePort
+			cfg.HTTPConfigsFromConfig[s] = c
+
+		}
+	}
+	s = ""
+	for k, _ := range cfg.HTTPConfigsFromConfig {
+		if s != "" {
+			s = s + ","
+		}
+		s = s + k
+	}
+	cfg.HTTPConfigsSection.Keys = s
+
+	return err
+}
+
+func (cfg *SymAIConfig) adjustWSSSettings() error {
+	var err error = nil
+	// We have 3 "magic" configs. They are expresson, symaicore and frontend.
+	// In order to be compatible with python version, the Host and Port fields of Expression, SymaiCore and Frontend
+	// sections accordingthly should be equal to corrsponding Host and Port fields from corresponding sections
+	if cfg.SymAISection.WSSHostConfig == "" {
+		cfg.SymAISection.WSSHostConfig = "symaicore"
+		c := WSSSectionConfig{
+			MaxConnections:    10,
+			ReadBufferSize:    2048,
+			WriteBufferSize:   2048,
+			HandshakeTimeout:  60,
+			EntryPoint:        "/",
+			EnableCompression: true,
+		}
+		if cfg.WSSConfigsFromConfig == nil {
+			cfg.WSSConfigsFromConfig = make(map[string]interface{})
+		}
+		cfg.WSSConfigsFromConfig["symaicore"] = c
+	}
+	s := ""
+	for k, _ := range cfg.WSSConfigsFromConfig {
+		if s != "" {
+			s = s + ","
+		}
+		s = s + k
+	}
+	cfg.WSSConfigsSection.Keys = s
+
+	return err
+}
+
 func (cfg *SymAIConfig) InitDefaults() {
 	var (
-		lgr   LoggerConfigStruct    = LoggerConfigStruct{}
-		fmtr  FormatterConfigStruct = FormatterConfigStruct{}
-		hlndr HandlerConfigStruct   = HandlerConfigStruct{}
+		lgr     LoggerConfigStruct    = LoggerConfigStruct{}
+		fmtr    FormatterConfigStruct = FormatterConfigStruct{}
+		hlndr   HandlerConfigStruct   = HandlerConfigStruct{}
+		httpcfg HTTPConfigStruct      = HTTPConfigStruct{}
 	)
 	// SymAI
 	cfg.SymAISection.TempDir = "/tmpdir/temp"
@@ -205,17 +473,23 @@ func (cfg *SymAIConfig) InitDefaults() {
 	cfg.SymAISection.AI = "False"
 	cfg.SymAISection.ReenterCount = 1
 	cfg.SymAISection.Debug = "True"
+	cfg.SymAISection.HostConfig = "symaicore"
+	cfg.SymAISection.ExpressionHostConfig = "expression"
 	// Expression
 	cfg.ExpressionSection.Host = "localhost"
 	cfg.ExpressionSection.Port = 8080
 	cfg.ExpressionSection.ExpressionSolver = "Z3"
 	cfg.ExpressionSection.SolverMaxModels = 10
+	cfg.ExpressionSection.HostConfig = "expression"
 	// Frontend
 	cfg.FrontendSection.Host = "localhost"
 	cfg.FrontendSection.Port = 8000
 	cfg.FrontendSection.SymAICoreHost = "localhost"
 	cfg.FrontendSection.SymAICorePort = 12345
 	cfg.FrontendSection.Resources = "/app/resources"
+	cfg.FrontendSection.HostConfig = "frontend"
+	cfg.FrontendSection.SymAICoreHostConfig = "symaicore"
+
 	// Loggers
 	cfg.LoggersSection.Keys = "root, expression, symaicore, frontend"
 	// Handlers
@@ -274,11 +548,31 @@ func (cfg *SymAIConfig) InitDefaults() {
 	cfg.FormattersFromConfig = make(map[string]interface{})
 	fmtr.Format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 	cfg.FormattersFromConfig["simpleFormatter"] = fmtr
+
+	// HTPP Configs
+	cfg.HTTPConfigsFromConfig = make(map[string]interface{})
+	httpcfg.Host = "localhost"
+	httpcfg.Port = 12345
+	httpcfg.WriteTimeout = 5
+	httpcfg.ReadTimeout = 5
+	httpcfg.IdleTimeout = 36000
+	cfg.HTTPConfigsFromConfig["symaicore"] = httpcfg
+	httpcfg.Port = 8000
+	cfg.HTTPConfigsFromConfig["frontend"] = httpcfg
+	httpcfg.Port = 8080
+	cfg.HTTPConfigsFromConfig["expression"] = httpcfg
+
+	cfg.adjustHTTPSettings()
+	cfg.adjustWSSSettings()
 }
 
 func Save(c *SymAIConfig, path string) error {
 	ext := filepath.Ext(path)
 	if strings.ToLower(ext) == ".ini" {
+		err := c.adjustHTTPSettings()
+		if err != nil {
+			return err
+		}
 		cfg := ini.Empty()
 		sec, err := cfg.NewSection("SymAI")
 		if err != nil {
@@ -292,6 +586,8 @@ func Save(c *SymAIConfig, path string) error {
 		sec.Key("port").SetValue(strconv.Itoa(c.SymAISection.Port))
 		sec.Key("expressioin_port").SetValue(strconv.Itoa(c.SymAISection.ExpressionPort))
 		sec.Key("reenter_count").SetValue(strconv.Itoa(c.SymAISection.ReenterCount))
+		sec.Key("hostconfig").SetValue(c.SymAISection.HostConfig)
+		sec.Key("expression_hostconfig").SetValue(c.SymAISection.ExpressionHostConfig)
 
 		sec, err = cfg.NewSection("Expression")
 		if err != nil {
@@ -301,6 +597,7 @@ func Save(c *SymAIConfig, path string) error {
 		sec.Key("expression_solver").SetValue(c.ExpressionSection.ExpressionSolver)
 		sec.Key("solver_max_models").SetValue(strconv.Itoa(c.ExpressionSection.SolverMaxModels))
 		sec.Key("port").SetValue(strconv.Itoa(c.ExpressionSection.Port))
+		sec.Key("hostconfig").SetValue(c.ExpressionSection.HostConfig)
 
 		sec, err = cfg.NewSection("Frontend")
 		if err != nil {
@@ -311,6 +608,109 @@ func Save(c *SymAIConfig, path string) error {
 		sec.Key("resources").SetValue(c.FrontendSection.Resources)
 		sec.Key("port").SetValue(strconv.Itoa(c.FrontendSection.Port))
 		sec.Key("symaicore_port").SetValue(strconv.Itoa(c.FrontendSection.SymAICorePort))
+		sec.Key("hostconfig").SetValue(c.FrontendSection.HostConfig)
+		sec.Key("symaicore_hostconfig").SetValue(c.FrontendSection.SymAICoreHostConfig)
+
+		c.LoggersSection.Keys = ""
+		b := false
+		for k, v := range c.LoggersFromComfig {
+			if b {
+				c.LoggersSection.Keys = c.LoggersSection.Keys + ","
+			}
+			b = true
+
+			c.LoggersSection.Keys = c.LoggersSection.Keys + k
+			sec, err := cfg.NewSection("logger_" + k)
+			if err != nil {
+				return err
+			}
+
+			t := v.(LoggerConfigStruct)
+			sec.Key("level").SetValue(t.Level)
+			sec.Key("handlers").SetValue(t.Handlers)
+			sec.Key("qualname").SetValue(t.Qualname)
+			sec.Key("propagate").SetValue(strconv.Itoa(t.Propagate))
+		}
+
+		b = false
+		c.FormattersSection.Keys = ""
+		for k, v := range c.FormattersFromConfig {
+			if b {
+				c.FormattersSection.Keys = c.FormattersSection.Keys + ","
+			}
+			b = true
+
+			c.FormattersSection.Keys = c.FormattersSection.Keys + k
+			sec, err := cfg.NewSection("formatter_" + k)
+			if err != nil {
+				return err
+			}
+			t := v.(FormatterConfigStruct)
+			sec.Key("format").SetValue(t.Format)
+		}
+
+		b = false
+		c.HandlersSection.Keys = ""
+		for k, v := range c.HandlersFromConfig {
+			if b {
+				c.HandlersSection.Keys = c.HandlersSection.Keys + ","
+			}
+			b = true
+			c.HandlersSection.Keys = c.HandlersSection.Keys + k
+			sec, err := cfg.NewSection("handler_" + k)
+			if err != nil {
+				return err
+			}
+			t := v.(HandlerConfigStruct)
+			sec.Key("level").SetValue(t.Level)
+			sec.Key("args").SetValue(t.Args)
+			sec.Key("class").SetValue(t.Class)
+			sec.Key("formatter").SetValue(t.Formatter)
+			sec.Key("backupcount").SetValue(strconv.Itoa(t.BackupCount))
+			sec.Key("interval").SetValue(t.Interval)
+		}
+
+		b = false
+		c.HTTPConfigsSection.Keys = ""
+		for k, v := range c.HTTPConfigsFromConfig {
+			if b {
+				c.HTTPConfigsSection.Keys = c.HTTPConfigsSection.Keys + ","
+			}
+			b = true
+
+			c.HTTPConfigsSection.Keys = c.HTTPConfigsSection.Keys + k
+			sec, err := cfg.NewSection("httpserver_" + k)
+			if err != nil {
+				return err
+			}
+			t := v.(HTTPConfigStruct)
+			sec.Key("host").SetValue(t.Host)
+			sec.Key("port").SetValue(strconv.Itoa(t.Port))
+			sec.Key("read_timeout").SetValue(strconv.Itoa(t.ReadTimeout))
+			sec.Key("write_timeout").SetValue(strconv.Itoa(t.WriteTimeout))
+			sec.Key("idle_timeout").SetValue(strconv.Itoa(t.IdleTimeout))
+		}
+
+		b = false
+		c.WSSConfigsSection.Keys = ""
+		for k, v := range c.WSSConfigsFromConfig {
+			if b {
+				c.WSSConfigsSection.Keys = c.WSSConfigsSection.Keys + ","
+			}
+			b = true
+
+			c.WSSConfigsSection.Keys = c.WSSConfigsSection.Keys + k
+			sec, err := cfg.NewSection("wss_" + k)
+			if err != nil {
+				return err
+			}
+			t := v.(WSSSectionConfig)
+			sec.Key("max_connections").SetValue(strconv.Itoa(t.MaxConnections))
+			sec.Key("read_buffer_size").SetValue(strconv.Itoa(t.ReadBufferSize))
+			sec.Key("write_buffer_size").SetValue(strconv.Itoa(t.WriteBufferSize))
+			sec.Key("handshake_timeout").SetValue(strconv.Itoa(t.HandshakeTimeout))
+			sec.Key("enable_compression").SetValue(strconv.FormatBool(t.EnableCompression))
+		}
 
 		sec, err = cfg.NewSection("loggers")
 		if err != nil {
@@ -330,39 +730,17 @@ func Save(c *SymAIConfig, path string) error {
 		}
 		sec.Key("keys").SetValue(c.FormattersSection.Keys)
 
-		for k, v := range c.LoggersFromComfig {
-			sec, err := cfg.NewSection("logger_" + k)
-			if err != nil {
-				return err
-			}
+		sec, err = cfg.NewSection("httpconfigs")
+		if err != nil {
+			return err
+		}
+		sec.Key("keys").SetValue(c.HTTPConfigsSection.Keys)
 
-			t := v.(LoggerConfigStruct)
-			sec.Key("level").SetValue(t.Level)
-			sec.Key("handlers").SetValue(t.Handlers)
-			sec.Key("qualname").SetValue(t.Qualname)
-			sec.Key("propagate").SetValue(strconv.Itoa(t.Propagate))
+		sec, err = cfg.NewSection("wssconfigs")
+		if err != nil {
+			return err
 		}
-		for k, v := range c.FormattersFromConfig {
-			sec, err := cfg.NewSection("formatter_" + k)
-			if err != nil {
-				return err
-			}
-			t := v.(FormatterConfigStruct)
-			sec.Key("format").SetValue(t.Format)
-		}
-		for k, v := range c.HandlersFromConfig {
-			sec, err := cfg.NewSection("handler_" + k)
-			if err != nil {
-				return err
-			}
-			t := v.(HandlerConfigStruct)
-			sec.Key("level").SetValue(t.Level)
-			sec.Key("args").SetValue(t.Args)
-			sec.Key("class").SetValue(t.Class)
-			sec.Key("formatter").SetValue(t.Formatter)
-			sec.Key("backupcount").SetValue(strconv.Itoa(t.BackupCount))
-			sec.Key("interval").SetValue(t.Interval)
-		}
+		sec.Key("keys").SetValue(c.WSSConfigsSection.Keys)
 
 		return cfg.SaveTo(path)
 	}
@@ -419,6 +797,36 @@ func (cfg *SymAIConfig) getFormatterConfig(formattername string) (FormatterConfi
 		}
 	}
 	err = fmt.Errorf("unknown formatter name '%s'", formattername)
+	return r, err
+}
+
+func (cfg *SymAIConfig) GetHTTPServerConfig(httpcfgname string) (HTTPConfigStruct, error) {
+	var (
+		err error = nil
+		r         = HTTPConfigStruct{}
+	)
+	for nm, v := range cfg.HTTPConfigsFromConfig {
+		if strings.TrimSpace(nm) == strings.TrimSpace(httpcfgname) {
+			r = v.(HTTPConfigStruct)
+			return r, nil
+		}
+	}
+	err = fmt.Errorf("unknown HTTP config name '%s'", httpcfgname)
+	return r, err
+}
+
+func (cfg *SymAIConfig) GetWSSServerConfig(wsscfgname string) (WSSSectionConfig, error) {
+	var (
+		err error = nil
+		r         = WSSSectionConfig{}
+	)
+	for nm, v := range cfg.WSSConfigsFromConfig {
+		if strings.TrimSpace(nm) == strings.TrimSpace(wsscfgname) {
+			r = v.(WSSSectionConfig)
+			return r, nil
+		}
+	}
+	err = fmt.Errorf("unknown WSS config name '%s'", wsscfgname)
 	return r, err
 }
 
@@ -589,6 +997,60 @@ func getAllowedLogLevels(loglevel string) ([]logrus.Level, error) {
 	}
 
 	return allowedLevels, err
+}
+
+func (cfg *SymAIConfig) GetExpressionHostConfig() (HTTPConfigStruct, error) {
+	s := strings.TrimSpace(cfg.ExpressionSection.HostConfig)
+	if s == "" {
+		s = "expression"
+	}
+	hcf, err := cfg.GetHTTPServerConfig(s)
+	return hcf, err
+}
+
+func (cfg *SymAIConfig) GetSymAICoreHostConfig() (HTTPConfigStruct, error) {
+	s := strings.TrimSpace(cfg.SymAISection.HostConfig)
+	if s == "" {
+		s = "symaicore"
+	}
+	hcf, err := cfg.GetHTTPServerConfig(s)
+	return hcf, err
+}
+
+func (cfg *SymAIConfig) GetSymAICoreExpressionConfig() (HTTPConfigStruct, error) {
+	s := strings.TrimSpace(cfg.SymAISection.ExpressionHostConfig)
+	if s == "" {
+		s = "expression"
+	}
+	hcf, err := cfg.GetHTTPServerConfig(s)
+	return hcf, err
+}
+
+func (cfg *SymAIConfig) GetSymAICoreWSSConfig() (WSSSectionConfig, error) {
+	s := strings.TrimSpace(cfg.SymAISection.WSSHostConfig)
+	if s == "" {
+		s = "symaicore"
+	}
+	hcf, err := cfg.GetWSSServerConfig(s)
+	return hcf, err
+}
+
+func (cfg *SymAIConfig) GetFrontendHostConfig() (HTTPConfigStruct, error) {
+	s := strings.TrimSpace(cfg.FrontendSection.HostConfig)
+	if s == "" {
+		s = "frontend"
+	}
+	hcf, err := cfg.GetHTTPServerConfig(s)
+	return hcf, err
+}
+
+func (cfg *SymAIConfig) GetFrontendSymAICoreConfig() (HTTPConfigStruct, error) {
+	s := strings.TrimSpace(cfg.FrontendSection.SymAICoreHostConfig)
+	if s == "" {
+		s = "symaicore"
+	}
+	hcf, err := cfg.GetHTTPServerConfig(s)
+	return hcf, err
 }
 
 func Validate(config *SymAIConfig) error {
