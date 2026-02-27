@@ -1,0 +1,8 @@
+a1: 1 -> V0 = 10; t = 0; V = V0 + g*(sin(alpha) - mu*cos(alpha))*t,
+a3: (Lx <= L) && (V > 0) -> x = V0*t + g *( sin(alpha) - mu*cos(alpha) ) * (POW(t,2)/2);  V = V0 + g*(sin(alpha) - mu*cos(alpha))*t; t = t + 0.1,
+a31: 1 -> Lx = x,
+a4: (Lx > L) && (V > 0) -> 1,
+a5: (Lx <= L) && ( V <= 0 ) -> V0 = 0; tt = 0,
+a6: (Lx > 0) -> x = - g*(sin(alpha) + mu*cos(alpha)) * (POW(tt,2)/2); V = V0 - g*(sin(alpha) - mu*cos(alpha))*tt; tt = tt + 0.1; t = t + 0.1,
+a61: 1 -> Lx = Lx-x,
+nota6: (Lx <= 0) -> 1,
