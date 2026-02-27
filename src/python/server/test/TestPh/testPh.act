@@ -1,0 +1,8 @@
+a1: 1 -> V0 = 10; t = 1,
+a2: (x <= L) && (x/t >= 0) -> x = V0*t + g *( sin(alpha) - mu*cos(alpha) ) * (POW(t,2)/2);  t = t + 1,
+a3: x > L -> 1,
+nota3: x <= L -> tt = 1,
+a4:  x > 0  -> y = g*(sin(alpha) + mu*cos(alpha)) * (POW(tt,2)/2),
+a41: 1 -> x = x + y; t = t + 1; tt = tt + 1,
+a5:  x <= 0 -> 1,
+a6: (x > L) || (x/t < 0) -> 1,
