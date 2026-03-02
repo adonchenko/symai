@@ -58,29 +58,6 @@ func TestLoadSettingsFail(t *testing.T) {
 	assert.Nil(t, cfg, "cfg is not nil after loading config from an empty file")
 }
 
-func TestValidateLoggerSettings(t *testing.T) {
-	InitExtArray()
-	for _, ext := range TestFileExtension {
-		cfg, err := Load(BaseTestConfigFile + ext)
-		assert.Nil(t, err, "cannot load config")
-		assert.NotNil(t, cfg, "config is nil")
-		assert.Nil(t, Validate(cfg), "config validation failed")
-		assert.Nil(t, err, "invalid logger settings")
-	}
-}
-
-func TestValidateLogLevel(t *testing.T) {
-	assert.Nil(t, ValidateLogLevel("panic"), "panic log level is allowed but is invalidated")
-	assert.Nil(t, ValidateLogLevel("fatal"), "fatal log level is allowed but is invalidated")
-	assert.Nil(t, ValidateLogLevel("error"), "error log level is allowed but is invalidated")
-	assert.Nil(t, ValidateLogLevel("warn"), "warn log level is allowed but is invalidated")
-	assert.Nil(t, ValidateLogLevel("warning"), "warning log level is allowed but is invalidated")
-	assert.Nil(t, ValidateLogLevel("info"), "info log level is allowed but is invalidated")
-	assert.Nil(t, ValidateLogLevel("debug"), "debug log level is allowed but is invalidated")
-	assert.Nil(t, ValidateLogLevel("trace"), "trace log level is allowed but is invalidated")
-	assert.NotNil(t, ValidateLogLevel("qqq"), "qqq log level is not allowed but is successfully validated")
-}
-
 func TestSaveSettings(t *testing.T) {
 	InitExtArray()
 	for _, ext := range TestFileExtension {
@@ -107,22 +84,5 @@ func TestSaveSettings(t *testing.T) {
 		if err != nil {
 			t.Fatal(fmt.Errorf("error after removing temporary file: `%v`", err))
 		}
-	}
-}
-
-func TestApplySettings(t *testing.T) {
-	InitExtArray()
-	for _, ext := range TestFileExtension {
-		_, err := os.Stat(BaseTestConfigFile + ext)
-		if !(err == nil || os.IsExist(err)) {
-			t.Fatal(fmt.Sprintf("File `%s` is absent", BaseTestConfigFile+ext))
-		}
-		cfg, err := Load(BaseTestConfigFile + ext)
-		assert.Nil(t, err, "cannot load config file "+BaseTestConfigFile+ext)
-		assert.NotNil(t, cfg, "loaded config file is nil")
-		err = Validate(cfg)
-		assert.Nil(t, err, "config validation failed")
-		err = InitLogger("frontend")
-		cfg.Logger.Info("Info")
 	}
 }

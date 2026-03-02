@@ -15,12 +15,24 @@ COPY ./bin /app/bin
 RUN mkdir /app/src
 RUN mkdir /app/src/go
 COPY ./src/antlr4/BehaviorsGrammar.g4 /app/src/antlr4/BehaviorsGrammar.g4
+
 COPY ./src/go/server/config/config.go /app/src/go/server/config/config.go
 COPY ./src/go/server/config/symaiformatter.go /app/src/go/server/config/symaiformatter.go
-COPY ./src/go/server/utils /app/src/go/server/utils
-COPY ./src/go/server/frontend /app/src/go/server/frontend
-COPY ./src/go/server/frontendcontroller/frontendservercontroller.go /app/src/go/server/frontendcontroller/frontendservercontroller.go
-COPY ./src/go/server/frontendcontroller/frontendwebserver.go /app/src/go/server/frontendcontroller/frontendwebserver.go
+
+COPY ./src/go/server/utils/utils.go /app/src/go/server/utils/utils.go
+
+COPY ./src/go/server/symaicore/symaicore.go /app/src/go/server/symaicore/symaicore.go
+
+COPY ./src/go/server/symaicorecontroller/symaicorehub.go /app/src/go/server/symaicorecontroller/symaicorehub.go
+COPY ./src/go/server/symaicorecontroller/symaicoreservercontroller.go /app/src/go/server/symaicorecontroller/symaicoreservercontroller.go
+COPY ./src/go/server/symaicorecontroller/symaisymaicoreserver.go /app/src/go/server/symaicorecontroller/symaisymaicoreserver.go
+
+COPY ./src/go/server/parser/error_processing.go /app/src/go/server/parser/error_processing.go
+COPY ./src/go/server/parser/error_listener.go /app/src/go/server/parser/error_listener.go
+COPY ./src/go/server/parser/expression_visitor.go /app/src/go/server/parser/expression_visitor.go
+COPY ./src/go/server/parser/actions_visitor.go /app/src/go/server/parser/actions_visitor.go
+
+
 # Build an executable
 RUN mkdir /app/build
 RUN cd /app/build

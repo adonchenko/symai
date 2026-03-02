@@ -2,19 +2,6 @@ grammar BehaviorsGrammar;
 // SymAI behaviors grammar parser
 // java -jar ./bin/antlr-4.13.1-complete.jar antlr4/BehaviorsGrammar.g4 -Dlanguage=Python3 -encoding UTF8 -package BehaviorsGrammar -o BehaviorsGrammar
 
-@parser::header {
-}
-
-@parser::structmembers {
-}
-
-@parser::members {
-}
-
-options{
-	language = Python3;
-}
-
 primaryExpression
     : Identifier
     | Constant

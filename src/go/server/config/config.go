@@ -110,6 +110,10 @@ type (
 		HandshakeTimeout  int    `ini:"handshake_timeout"`
 		EntryPoint        string `ini:"entry_point"`
 		EnableCompression bool   `ini:"enable_compression"`
+		MaxMessageSize	  int64  `ini:"max_message_size"`
+		PongWait          int    `ini:"pong_wait"`
+		PingPeriod        int    `ini:"ping_period"`
+		WriteWait         int    `ini:"write_wait"`
 	}
 
 	HTTPConfigStruct struct {
@@ -439,6 +443,10 @@ func (cfg *SymAIConfig) adjustWSSSettings() error {
 			HandshakeTimeout:  60,
 			EntryPoint:        "/",
 			EnableCompression: true,
+			WriteWait:         10,
+			PingPeriod:        60,
+			PongWait:          54,
+			MaxMessageSize:    512 * 1024,
 		}
 		if cfg.WSSConfigsFromConfig == nil {
 			cfg.WSSConfigsFromConfig = make(map[string]interface{})
@@ -710,6 +718,11 @@ func Save(c *SymAIConfig, path string) error {
 			sec.Key("write_buffer_size").SetValue(strconv.Itoa(t.WriteBufferSize))
 			sec.Key("handshake_timeout").SetValue(strconv.Itoa(t.HandshakeTimeout))
 			sec.Key("enable_compression").SetValue(strconv.FormatBool(t.EnableCompression))
+			sec.Key("write_wait").SetValue(strconv.Itoa(t.WriteWait))
+			sec.Key("ping_period").SetValue(strconv.Itoa(t.PingPeriod))
+			sec.Key("pong_wait").SetValue(strconv.Itoa(t.PongWait))
+			sec.Key("max_message_size").SetValue(strconv.FormatInt(t.MaxMessageSize, 10))
+			sec.Key("entry_point").SetValue(t.EntryPoint)			
 		}
 
 		sec, err = cfg.NewSection("loggers")
@@ -1051,20 +1064,6 @@ func (cfg *SymAIConfig) GetFrontendSymAICoreConfig() (HTTPConfigStruct, error) {
 	}
 	hcf, err := cfg.GetHTTPServerConfig(s)
 	return hcf, err
-}
-
-func Validate(config *SymAIConfig) error {
-	var err error
-
-	return err
-}
-
-func ValidateLoggerSettings(cfg *LoggerConfig) error {
-	var err error = nil
-
-	err = ValidateLogLevel(cfg.LogLevel)
-
-	return err
 }
 
 func GetLogLevel(loglevel string) (logrus.Level, error) {

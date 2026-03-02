@@ -91,7 +91,7 @@ ADD_CUSTOM_COMMAND(TARGET symai-expression-docker-build
     COMMAND sudo LOGDIR=${BASE_PATH}/logdir PROPERTIES=${BASE_PATH}/properties TMPDIR=${BASE_PATH}/temp RESOURCES=${BASE_PATH}/resources docker compose build expression
 )
 
-ADD_CUSTOM_TARGET(symai-core-docker-build DEPENDS antlr4-generate-behaviors make-work-dirs)
+ADD_CUSTOM_TARGET(symai-core-docker-build DEPENDS make-work-dirs)
 ADD_CUSTOM_COMMAND(TARGET symai-core-docker-build
 		   WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/docker"
     COMMAND sudo LOGDIR=${BASE_PATH}/logdir PROPERTIES=${BASE_PATH}/properties TMPDIR=${BASE_PATH}/temp RESOURCES=${BASE_PATH}/resources docker compose build core_go
@@ -126,7 +126,7 @@ ADD_CUSTOM_COMMAND(TARGET symai-expression-docker-run
 ADD_CUSTOM_TARGET(symai-core-docker-run DEPENDS symai-core-docker-build)
 ADD_CUSTOM_COMMAND(TARGET symai-core-docker-run
 		   WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/src/docker"
-    COMMAND sudo LOGDIR=${BASE_PATH}/logdir PROPERTIES=${BASE_PATH}/properties TMPDIR=${BASE_PATH}/temp RESOURCES=${BASE_PATH}/resources docker compose up core
+    COMMAND sudo LOGDIR=${BASE_PATH}/logdir PROPERTIES=${BASE_PATH}/properties TMPDIR=${BASE_PATH}/temp RESOURCES=${BASE_PATH}/resources docker compose up core_go
 )
 
 ADD_CUSTOM_TARGET(symai-frontend-docker-run DEPENDS symai-frontend-docker-build)
