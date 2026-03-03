@@ -92,7 +92,6 @@ func (v *ExpressionVisitor) VisitPostfixExpression(ctx *BehaviorsGrammar.Postfix
 		i := 0
 		if reflect.TypeOf(ctx.GetChild(1)) == reflect.TypeOf((*antlr.TerminalNodeImpl)(nil)) {
 			if ctx.GetChild(1).(*antlr.TerminalNodeImpl).GetText() == "(" {
-				// TODO: NEEDS TO BE CHECKED WHEN all VisitExpression COMPONENTS WILL BE IMPLEMENTED. For now, we just check that the first child is a function name and the second child is "(".
 				st := ""
 				n := ctx.GetChild(2)
 				if reflect.TypeOf(n) != reflect.TypeOf((*antlr.TerminalNodeImpl)(nil)) {
