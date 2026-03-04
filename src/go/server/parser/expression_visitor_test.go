@@ -33,6 +33,21 @@ func initExpressionTestInputData() []ExpressionVisitorTestData {
 	testData[0].vars_list = append(testData[0].vars_list, "a")
 	testData[0].vars_list = append(testData[0].vars_list, "b")
 
+	testData = append(testData,
+		ExpressionVisitorTestData{
+			source:     "a < b && (c<=d)",
+			result:     "a<b&&(c<=d)",
+			has_trig:   false,
+			has_nl:     false,
+			n_vars:     4,
+			subst_map: make(map[string]string, 0),
+			vars_list:  make([]string, 0),
+		})
+	testData[1].vars_list = append(testData[0].vars_list, "a")
+	testData[1].vars_list = append(testData[0].vars_list, "b")
+	testData[1].vars_list = append(testData[0].vars_list, "c")
+	testData[1].vars_list = append(testData[0].vars_list, "d")
+
 	return testData
 }
 

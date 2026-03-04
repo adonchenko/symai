@@ -31,7 +31,7 @@ COPY ./src/go/server/parser/error_processing.go /app/src/go/server/parser/error_
 COPY ./src/go/server/parser/error_listener.go /app/src/go/server/parser/error_listener.go
 COPY ./src/go/server/parser/expression_visitor.go /app/src/go/server/parser/expression_visitor.go
 COPY ./src/go/server/parser/actions_visitor.go /app/src/go/server/parser/actions_visitor.go
-
+COPY ./src/go/server/parser/behaviors_visitor.go /app/src/go/server/parser/behaviors_visitor.go
 
 # Build an executable
 RUN mkdir /app/build

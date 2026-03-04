@@ -134,7 +134,7 @@ func (v *ExpressionVisitor) VisitPostfixExpression(ctx *BehaviorsGrammar.Postfix
 	if var_add && len(s) > 0 {
 		_, err := strconv.Atoi(s[0:1])
 		if err != nil {
-			if !utils.Contains(v.varList, s) {
+			if !utils.Contains(v.varList, s) && s[0] != '(' {
 				v.varList = append(v.varList, s)
 			}
 		}
