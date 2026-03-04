@@ -20,11 +20,6 @@ type ExpressionVisitor struct {
 	hasNonLinear     bool
 	varList          []string
 	substitutionMap map[string]string
-
-	// Behaviors related staff
-	behaviors map[string]BehaviorBody
-    // errors
-	errorList []string
 }
 
 func NewExpressionVisitor() *ExpressionVisitor {

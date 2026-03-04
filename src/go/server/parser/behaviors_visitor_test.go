@@ -1,10 +1,7 @@
 package parser
 
 import (
-	//	"src/server/BehaviorsGrammar"
 	"testing"
-
-	//	"github.com/antlr4-go/antlr/v4"
 
 	"github.com/stretchr/testify/assert"
 )

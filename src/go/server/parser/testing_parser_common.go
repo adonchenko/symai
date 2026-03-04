@@ -1,4 +1,5 @@
 package parser
+
 import (
 	"src/server/BehaviorsGrammar"
 
@@ -12,14 +13,14 @@ type (
 	}
 
 	NameTerminalsTestPair struct {
-		name string
+		name      string
 		terminals []string
 	}
 )
 
 func NewNameTerminalsTestPair() *NameTerminalsTestPair {
-	return &NameTerminalsTestPair {
-		name: "",
+	return &NameTerminalsTestPair{
+		name:      "",
 		terminals: make([]string, 0),
 	}
 }
