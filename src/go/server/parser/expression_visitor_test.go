@@ -8,13 +8,13 @@ import (
 
 type (
 	ExpressionVisitorTestData struct {
-		source     string
-		result     string
-		has_trig   bool
-		has_nl     bool
-		n_vars     int
-		subst_map  map[string]string
-		vars_list  []string
+		source    string
+		result    string
+		has_trig  bool
+		has_nl    bool
+		n_vars    int
+		subst_map map[string]string
+		vars_list []string
 	}
 )
 
@@ -22,31 +22,31 @@ func initExpressionTestInputData() []ExpressionVisitorTestData {
 	testData := make([]ExpressionVisitorTestData, 0)
 	testData = append(testData,
 		ExpressionVisitorTestData{
-			source:     "a < b",
-			result:     "a<b",
-			has_trig:   false,
-			has_nl:     false,
-			n_vars:     2,
+			source:    "a < b",
+			result:    "a<b",
+			has_trig:  false,
+			has_nl:    false,
+			n_vars:    2,
 			subst_map: make(map[string]string, 0),
-			vars_list:  make([]string, 0),
+			vars_list: make([]string, 0),
 		})
 	testData[0].vars_list = append(testData[0].vars_list, "a")
 	testData[0].vars_list = append(testData[0].vars_list, "b")
 
 	testData = append(testData,
 		ExpressionVisitorTestData{
-			source:     "a < b && (c<=d)",
-			result:     "a<b&&(c<=d)",
-			has_trig:   false,
-			has_nl:     false,
-			n_vars:     4,
+			source:    "a < b(0) && (c<=d)",
+			result:    "a<b(0)&&(c<=d)",
+			has_trig:  false,
+			has_nl:    false,
+			n_vars:    4,
 			subst_map: make(map[string]string, 0),
-			vars_list:  make([]string, 0),
+			vars_list: make([]string, 0),
 		})
-	testData[1].vars_list = append(testData[0].vars_list, "a")
-	testData[1].vars_list = append(testData[0].vars_list, "b")
-	testData[1].vars_list = append(testData[0].vars_list, "c")
-	testData[1].vars_list = append(testData[0].vars_list, "d")
+	testData[1].vars_list = append(testData[1].vars_list, "a")
+	testData[1].vars_list = append(testData[1].vars_list, "b(0)")
+	testData[1].vars_list = append(testData[1].vars_list, "c")
+	testData[1].vars_list = append(testData[1].vars_list, "d")
 
 	return testData
 }
@@ -70,7 +70,7 @@ func TestExpressionVisitor(t *testing.T) {
 
 		assert.Equal(t, d.n_vars, len(visitor.GetVarList()), "Incorrect number of variables")
 		assert.Equal(t, d.result, result.(string))
-		vars := visitor.GetVarList()		
+		vars := visitor.GetVarList()
 		for _, v := range d.vars_list {
 			b := false
 			for _, vl := range vars {
@@ -80,7 +80,7 @@ func TestExpressionVisitor(t *testing.T) {
 				}
 			}
 			if !b {
-				assert.Fail(t, "Variable ''" + v +"' in absent in the result")
+				assert.Fail(t, "Variable '"+v+"' in absent in the result")
 			}
 
 		}
