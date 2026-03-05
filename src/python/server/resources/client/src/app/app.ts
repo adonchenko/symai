@@ -29,6 +29,7 @@ import { RequestQue } from './request-que';
 import { Point } from './point';
 import { GraphSet } from './graph-set';
 import { GraphItem } from './graph-item';
+import { TraceData } from './trace-data';
 
 
 // ============================================ JS exports
@@ -41,6 +42,8 @@ declare function wsHeight(): any;
 declare function refreshItem(id: string): any;
 declare function diag(msg: string): any;
 declare function output(msg: string): any;
+declare function outTrace(msg: string): any;
+declare function outEnv(msg: string): any;
 declare function getItemText(id : string) : any;
 declare function setItemText(id : string, value: string) : any;
 declare function clickHiddenRefresh(arg : string) : any;
@@ -723,7 +726,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       this.Diag("Start beh=" + this.startBeh);
 
       // ----------------For show!
-      this.prefsComponent!.reenterCount = 60;
+      //this.prefsComponent!.reenterCount = 60;
       // ------------------------------------
 
       var msg : string = "traversalbeh ";
@@ -842,6 +845,9 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       }
     }
 
+
+    private TRC : TraceData = new TraceData;
+
     onReceiveMsg(msg : string) : boolean {
       msg.replace(/[\r\n]+/g, ' ');
       //this.Diag("Recv: " + msg);
@@ -856,7 +862,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       if( sp1 > 0 )
         rsp = msg.substring(0,sp1);
 
-      console.log("RSP: '" + rsp + "'");
+      //console.log("RSP: '" + rsp + "'");
       if( rsp === 'nok' ) {
         this.Diag(msg);
         return false;
@@ -878,10 +884,20 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             return true;
           case 'end' : // ok end
             return false;
+
           case 'trace': 
+            this.TRC.setTrace(msg.substring(sp2+1));
+            outTrace(this.TRC.getTraceStr(null));
+            return true;
+            //out = "TRACE:" + msg.substring(sp2+1);
+            //break;
+
           case 'environment':
-            out = msg.substring(sp2+1);
-            break;
+            outEnv(msg.substring(sp2+1));
+            return true;
+            //out = "ENVIRONMENT:" + msg.substring(sp2+1);
+            //break;
+
           case 'values':
             
             //out = msg;
