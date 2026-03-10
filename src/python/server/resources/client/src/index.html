@@ -15,6 +15,14 @@ function getItemText(id) {
     return "";
 }  
 
+function setItemText(id, value) {
+    const inp = document.getElementById(id);
+    if( inp )
+      inp.value = value;
+    //else 
+    //  diag("Not found: " + id);
+}
+
 function adjustSizes() {
     console.log("AdjustSizes");
     if( window.myApp ) {
@@ -61,9 +69,9 @@ function recalcPaneSizes(top,bottom) {
       //console.log ("Tabs height: " + theTabs.style.height);
     }
 
-    diag( "Window height: " + String(h));
-    diag("Top: " + String(ht) + ", Bottom: " + String(hb));
-    diag("Tabs height: " + theTabs.style.height);
+    //diag( "Window height: " + String(h));
+    //diag("Top: " + String(ht) + ", Bottom: " + String(hb));
+    //diag("Tabs height: " + theTabs.style.height);
     adjustSizes();
 }
 
@@ -89,7 +97,7 @@ function setTextareaSizes( taId ) {
       ht -= 256;
       inp.style.height = String(ht) + 'px';
 
-      diag(" ---------- textarea calculated height " + ht);
+      //diag(" ---------- textarea calculated height " + ht);
     }
     else
       console.log("Element not found: " + taId);
@@ -205,7 +213,24 @@ function diag(msg) {
       element.scrollTop = element.scrollHeight;
       element.lastElementChild.scrollIntoView(false);
     }
-  }
+}
+
+function diag_err(msg) {
+    var element = document.getElementById("diag");
+    let div = document.createElement("div"); 
+    div.textContent = msg;
+    div.style.fontWeight = 'bold';
+    div.style.color = 'red';
+    if(element) {
+      element.appendChild(div);
+
+      let br = document.createElement("br");  
+      element.append(br)
+
+      element.scrollTop = element.scrollHeight;
+      element.lastElementChild.scrollIntoView(false);
+    }
+}
 
 function output(msg) {
     var element = document.getElementById("runOutput");
@@ -219,6 +244,29 @@ function output(msg) {
       element.scrollTop = element.scrollHeight;
       element.lastElementChild.scrollIntoView(false);
     }
+}
+
+function outTrace(msg) {
+    let element = document.getElementById("trcOutput");
+    if(element) {
+      //console.log("trcOutput <--- : " + msg);  
+      element.innerText = msg;
+      //console.log("trcOutput --->: " + element.innerText);  
+    }
+    else
+      console.log("trcOutput: NOT FOUND");  
+
+}
+
+function outEnv(msg) {
+    let element = document.getElementById("envOutput");
+    if(element) {
+        //console.log("envOutput: <----" + msg);  
+        element.innerText = msg;
+        //console.log("envOutput: ---->" + element.innerText);  
+    }
+    else
+      console.log("envOutput: NOT FOUND");  
 }
 
 function do_refresh() {

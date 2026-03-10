@@ -41,6 +41,7 @@ declare function wsWidth(): any;
 declare function wsHeight(): any;
 declare function refreshItem(id: string): any;
 declare function diag(msg: string): any;
+declare function diag_err(msg: string): any;
 declare function output(msg: string): any;
 declare function outTrace(msg: string): any;
 declare function outEnv(msg: string): any;
@@ -133,6 +134,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
               { separator:true },
               //{ label:'Load All', icon:'pi pi-fw', command: () => this.doLoad() },
               { label:'Add Graph...', icon:'pi pi-fw', command: () => this.addGraph() },
+              { label:'Graph Size...', icon:'pi pi-fw', command: () => this.sizeGraph() },
             ]
         },
         { label:'Run', icon:'pi pi-fw pi-file',
@@ -483,6 +485,11 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
       diag(msg);
     }
 
+    DiagErr(msg : string) : void {
+      console.log(msg);
+      diag_err(msg);
+    }
+
     // ============================================ communication: 
 
     doReconnect() : void {
@@ -597,11 +604,11 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
           this.Diag( dataname + "  loaded");
         }
         else {
-          this.Diag("Error loading " + dataname);
+          this.DiagErr("Error loading " + dataname);
           return;
         }
       } catch (error) {
-          this.Diag('Error during synchronous message exchange:' + error);
+          this.DiagErr('Error during synchronous message exchange:' + error);
       }
 
     }
@@ -839,7 +846,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
             }
             */ 
         } catch (error) {
-            this.Diag('Error during synchronous message exchange:' + error);
+            this.DiagErr('Error during synchronous message exchange:' + error);
             //next = false;
         }
       }
@@ -864,7 +871,7 @@ export class App implements OnInit, OnDestroy, AfterViewInit {
 
       //console.log("RSP: '" + rsp + "'");
       if( rsp === 'nok' ) {
-        this.Diag(msg);
+        this.DiagErr(msg);
         return false;
       }
        
