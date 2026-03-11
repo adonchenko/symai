@@ -1,6 +1,5 @@
 from antlr4.CommonTokenStream import CommonTokenStream
 from antlr4.InputStream import InputStream
-#from coreexprgrammarlistener import *
 from symbolicexpressiongrammarerrorlistener import *
 from BehaviorsGrammar.BehaviorsGrammarLexer import BehaviorsGrammarLexer
 from BehaviorsGrammar.BehaviorsGrammarParser import BehaviorsGrammarParser

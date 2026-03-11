@@ -71,7 +71,6 @@ class EQExtractorVisitor( BehGrammarVisitor ):
                         q = l
                         l = r
                         r = q
-                        # TODO: Going to remove equality expression !!!
                 if not is_na and i > 2:
                     res = res + "&&"
                 if not is_na:

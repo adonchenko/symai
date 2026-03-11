@@ -8,7 +8,9 @@ import json
 import uuid
 from itertools import tee
 import os
+from mathutils import MathUtils
 
+from eqextractvisitor import EQExtractorVisitor
 from symbolicexpressiongrammarvisitor import *
 from actvisitor import *
 from behvisitor import *
@@ -564,6 +566,71 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             env = ""
         self.get_logger().debug(f"check_reachability started env is {env} reach_property is {reach_property}")
         expr, ic, r = self.prepare_condition(env)
+        self.get_logger().debug("Here expr is " + expr)
+        tr = TreeUtils.prepare_parser_beh(expr).assignmentExpression()
+        v = EQExtractorVisitor()
+        tail = v.visit(tr)
+        cvals = v.getCVals()
+        vals = v.getVals()
+        if len(vals) > 0:
+            gvars = MathUtils.fill_gvars_func()
+            cv = dict()
+            for idx in cvals:
+                _, cv[idx] = TreeUtils.get_float(cvals[idx])
+            b = True
+            while b:
+                b = False
+                td = ""
+                for i in vals:
+                    try:
+                        s = eval(vals[i], gvars, cv)
+                        td = i
+                        cv[i] = s
+                        b = True
+                    except:
+                        pass
+                    if b:
+                        break
+                vals.pop(td)
+            #res, r_env
+            r_env = ""
+            for i in cv:
+                if len(r_env) > 0:
+                    r_env = r_env + "&&"
+                r_env = r_env + str(i) + "==" + str(cv[i])
+            for i in vals:
+                if len(r_env) > 0:
+                    r_env = r_env + "&&"
+                r_env = r_env + str(i) + "==" + str(vals[i])
+            if len(tail) > 0:
+                if len(r_env) > 0:
+                    r_env = r_env + "&&"
+                r_env =r_env + str(tail)
+            # Here we should reinterpret the reach_property and return true or false or contivue of executing
+            if len(vals) <= 0:
+                # Here we should reinterpret the reach_property and return true or false
+                res = True
+                s, ic, r = self.prepare_condition(reach_property)
+                s = s.replace("&&"," and ").replace("||"," or ")
+                b = False
+                try:
+                    res = eval(s, gvars, cv)
+                    b = True
+                except:
+                    pass
+                if b:
+                    return res, r_env
+            expr = r_env
+        # SyntaxError: Raised if the provided string is not a valid Python expression (e.g., mismatched parentheses, or trying to use a statement like if or variable assignment =).
+        # NameError: Raised if the expression refers to a variable, function, or class name that is not defined in the available scope.
+        # TypeError: Raised when an operation is performed on a value of an inappropriate type (e.g., trying to divide a list by an integer).
+        # ValueError: Raised when a function within the evaluated expression receives an invalid value, even if the argument type is correct (e.g., a math function receiving an input outside its domain).
+        # ZeroDivisionError: Raised if the expression attempts division by zero.
+        # KeyError or IndexError: Can be raised if the expression attempts to access a non-existent key in a dictionary or an invalid index in a sequence.
+        #
+        if v.isTrigonometric() or v.isNonLinear():
+            # trying to process it as an exact expression. Otherwise return an error
+            raise Exception("Non-linear functions are not allowed for symbolic calculation of the environment expression '" + env + "'")
         if reach_property is not None and len(reach_property) > 0:
             s, ic, r = self.prepare_condition(reach_property)
             expr = expr + " && " + s
