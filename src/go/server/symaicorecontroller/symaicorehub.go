@@ -12,6 +12,8 @@ import (
 type (
 	// Client represents a single WebSocket connection
 	Client struct {
+		ctx map[string]interface{} // Context fields:
+		// "symaiconfig" a SymAISection value @config for details
 		conn *websocket.Conn
 		UUID uuid.UUID
 		send chan []byte
@@ -53,6 +55,8 @@ func (h *Hub) run() {
 				delete(h.clients, client)
 				close(client.send)
 				config.GetConfig().Logger.Info(fmt.Sprintf("Client disconnected. Total clients: %d", len(h.clients)))
+				client.conn.Close()
+				client.cleanupTempData()
 			}
 		}
 	}

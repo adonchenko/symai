@@ -34,5 +34,8 @@ with connect('ws://' + args.ip + ':' + str(args.port)) as ws:
     _thread.start_new_thread(receive_messages,(ws,))
     while True:
         toSend = input()
-        ws.send(toSend)
+        try:
+            ws.send(toSend)
+        except:
+            break    
 

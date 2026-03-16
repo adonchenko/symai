@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
-	"src/server/utils"
+	"path/filepath"	
 	"strconv"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/ini.v1"
+
+	"src/server/utils"
 )
 
 type (

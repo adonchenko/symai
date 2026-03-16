@@ -19,6 +19,8 @@ var (
 	stopChan chan os.Signal
 
 	upgrader = websocket.Upgrader{}
+
+	coreCommands *map[string]SymAICoreCommand = nil
 )
 
 func initController() error {
@@ -39,6 +41,9 @@ func initController() error {
 			return true // Allow all origins for simplicity, adjust as needed for security
 		},
 	}
+
+	coreCommands = initCoreCommands(cfg)
+
 	return nil
 }
 
@@ -63,7 +68,7 @@ func RunCoreServer(cfg *config.SymAIConfig) error {
 			cfg.Logger.Error("Failed to get SymAI Core Web Socket Server config: " + err.Error())
 			return err
 		}
-		// Create and start the hub
+
 		hub = newHub()
 		go hub.run()
 
@@ -85,8 +90,8 @@ func RunCoreServer(cfg *config.SymAIConfig) error {
 		}()
 
 		// Wait for interrupt signal
-		stopChan := make(chan os.Signal, 1)
-		signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)
+		stopChan = make(chan os.Signal, 1)
+		signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGQUIT)
 		<-stopChan
 
 		cfg.Logger.Info("Shutting down SymAI Core server...")
@@ -97,10 +102,14 @@ func RunCoreServer(cfg *config.SymAIConfig) error {
 
 		// Close all WebSocket connections gracefully
 		for client := range hub.clients {
+			hub.unregister <- client
 			// Send close message to each client
-			client.conn.WriteMessage(websocket.CloseMessage,
-				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "SymAI Core Server shutting down"))
-			client.conn.Close()
+//			if len(client.send) <= 0 {
+//			client.send <- []byte(strconv.Itoa(websocket.CloseMessage))
+//			client.send <- websocket.FormatCloseMessage(websocket.CloseNormalClosure, "SymAI Core Server shutting down")
+//			client.conn.WriteMessage(websocket.CloseMessage,
+//				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "SymAI Core Server shutting down"))
+//			client.conn.Close()
 		}
 
 		// Shutdown HTTP server

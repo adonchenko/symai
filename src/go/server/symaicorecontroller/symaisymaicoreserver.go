@@ -1,8 +1,12 @@
 package symaicorecontroller
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	// "os"
+	// "path/filepath"
+
 	"strings"
 	"time"
 
@@ -46,9 +50,9 @@ func (c *Client) readPump() {
 			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
 				cfg.Logger.Info(fmt.Sprintf("Client %s closed connection normally", c.UUID))
 			} else if websocket.IsUnexpectedCloseError(err) {
-				cfg.Logger.Error(fmt.Sprintf("Client %s unexpected close: %v", c.UUID, err))
+				//cfg.Logger.Info(fmt.Sprintf("Client %s unexpected close: %v", c.UUID, err))
 			} else {
-				cfg.Logger.Error(fmt.Sprintf("Client %s read error: %v", c.UUID, err))
+				//cfg.Logger.Info(fmt.Sprintf("Client %s read error: %v", c.UUID, err))
 			}
 			return
 		}
@@ -59,6 +63,12 @@ func (c *Client) readPump() {
 		rsp, err := c.ProcessMessage(message)
 		if err != nil {
 			cfg.Logger.Error(fmt.Sprintf("Error processing message from %s: %v", c.UUID, err))
+		}
+		
+		if err == nil {
+			rsp = []byte("ok")
+		} else {
+			rsp = []byte("nok " + err.Error() + " " + string(rsp))
 		}
 		c.send <- rsp
 	}
@@ -130,15 +140,24 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := &Client{
+		ctx : make(map[string]interface{}),
 		conn: conn,
 		send: make(chan []byte, 512*1024), // Buffer size for outgoing messages
 		UUID: uuid.New(),
 	}
+	client.ctx["symaiconfig"] = config.GetConfig().SymAISection
+
 	hub.register <- client
 
 	// Start goroutines for reading and writing
 	go client.writePump()
 	go client.readPump()
+}
+
+func (c *Client) cleanupTempData() {
+	// Client temporary data cleanup
+	// TODO:!!!
+
 }
 
 func (c *Client) ProcessMessage(msg []byte) ([]byte, error) {
@@ -149,14 +168,26 @@ func (c *Client) ProcessMessage(msg []byte) ([]byte, error) {
 	s := strings.TrimSpace(string(msg))
 	cmd := strings.Split(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(s, "\t", " "), "\n", " "), "\r", " "), " ")
 
-	message := "Command is '" + strings.ToLower(cmd[0]) + "'\n" + s
 	tail := ""
+	rsp := []byte("")
 	if len(cmd[0]) == 0 {
-		message = "Empty command received\n" + s
+		rsp = []byte("Empty command received")
 	} else {
 		tail = strings.TrimSpace(s[strings.Index(s, cmd[0])+len(cmd[0]):])
 	}
-	rsp := []byte(message + "\nTail: '" + tail + "'")
 
+	s = cmd[0]	
+	if coreCommands != nil {
+		f, ok := (*coreCommands)[cmd[0]]
+		if !ok {
+			rsp = []byte("")
+			err = errors.New("unknown command '" + cmd[0] + "'")
+		} else
+		{
+			err = f.exec(c, tail)
+		}
+    } else {
+		err = errors.New("unknown command '" + cmd[0] + "'")
+	}
 	return rsp, err
 }
