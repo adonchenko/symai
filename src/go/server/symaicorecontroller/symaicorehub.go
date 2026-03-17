@@ -54,9 +54,13 @@ func (h *Hub) run() {
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
 				close(client.send)
-				config.GetConfig().Logger.Info(fmt.Sprintf("Client disconnected. Total clients: %d", len(h.clients)))
-				client.conn.Close()
+				log := config.GetConfig().GetLogger()
+				if cnf != nil {
+					log = cnf.GetLogger()
+				}
 				client.cleanupTempData()
+				log.Info(fmt.Sprintf("Client disconnected. Total clients: %d", len(h.clients)))
+				client.conn.Close()
 			}
 		}
 	}

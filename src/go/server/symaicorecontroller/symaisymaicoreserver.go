@@ -155,9 +155,14 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Client) cleanupTempData() {
-	// Client temporary data cleanup
-	// TODO:!!!
-
+	err := c.removeAllTempData()
+	if err != nil {
+		log := config.GetConfig().GetLogger()
+		if cnf != nil {
+			log = cnf.GetLogger()
+		} 
+		log.Error("Removing temp data for client " + c.UUID.String() + " failed " + err.Error())
+	}
 }
 
 func (c *Client) ProcessMessage(msg []byte) ([]byte, error) {
