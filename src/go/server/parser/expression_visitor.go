@@ -14,6 +14,7 @@ import (
 // A complete Visitor for a parse tree produced by ExpressionParser.
 type ExpressionVisitor struct {
 	BehaviorsGrammar.BaseBehaviorsGrammarVisitor
+	ErrorProcessing
 
 	// Expression staff
 	hasTrigonometric bool
@@ -28,6 +29,9 @@ func NewExpressionVisitor() *ExpressionVisitor {
 		hasNonLinear:     false,
 		varList:          []string{},
 		substitutionMap:  map[string]string{},
+		ErrorProcessing: ErrorProcessing {
+			errorList: make([]string, 0),
+		},
 	}
 }
 

@@ -89,8 +89,8 @@ func TestBehaviorsVisitor(t *testing.T) {
 
 		result := tree.Accept(visitor)
 
-		assert.Equal(t, listener.hasError(), false, "There should be no errors in listener")
-		assert.Equal(t, visitor.hasError(), false, "There should be no errors in visitor")
+		assert.Equal(t, listener.HasError(), false, "There should be no errors in listener")
+		assert.Equal(t, visitor.HasError(), false, "There should be no errors in visitor")
 
 		behs := visitor.GetBehaviors()
 		assert.Equal(t, d.n_terms, len(behs), "Incorrect terminals sequences number")

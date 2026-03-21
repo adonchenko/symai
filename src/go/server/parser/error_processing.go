@@ -20,7 +20,7 @@ func NewErrorProcessing() *ErrorProcessing {
 	}
 }
 
-func (v *ErrorProcessing) hasError() bool {
+func (v *ErrorProcessing) HasError() bool {
 	return len(v.errorList) > 0
 }
 

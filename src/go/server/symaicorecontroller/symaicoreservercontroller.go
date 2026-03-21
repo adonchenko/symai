@@ -104,8 +104,12 @@ func RunCoreServer(cfg *config.SymAIConfig) error {
 		for client := range hub.clients {
 			hub.unregister <- client
 			// Send close message to each client
-
-			//			client.conn.Close()
+//			if len(client.send) <= 0 {
+//			client.send <- []byte(strconv.Itoa(websocket.CloseMessage))
+//			client.send <- websocket.FormatCloseMessage(websocket.CloseNormalClosure, "SymAI Core Server shutting down")
+//			client.conn.WriteMessage(websocket.CloseMessage,
+//				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "SymAI Core Server shutting down"))
+//			client.conn.Close()
 		}
 
 		// Shutdown HTTP server

@@ -19,8 +19,6 @@ type (
 
 		// Behaviors related staff
 		Terminals map[string]BehaviorBody
-		ErrorProcessing
-
 		cur_terms []string
 	}
 )
@@ -38,11 +36,11 @@ func NewBehaviorsVisitor() *BehaviorsVisitor {
 			hasNonLinear:     false,
 			varList:          make([]string, 0),
 			substitutionMap:  make(map[string]string, 0),
+			ErrorProcessing: ErrorProcessing{
+				errorList: make([]string, 0),
+		    },
 		},
 		Terminals: make(map[string]BehaviorBody, 0),
-		ErrorProcessing: ErrorProcessing{
-			errorList: make([]string, 0),
-		},
 	}
 }
 

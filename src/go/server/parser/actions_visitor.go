@@ -20,8 +20,7 @@ type (
 	}
 
 	ActionsVisitor struct {
-		ExpressionVisitor
-		ErrorProcessing
+		ExpressionVisitor		
 
 		// Actions related staff
 		actions          map[string]ActionBody
@@ -34,7 +33,7 @@ func NewActionBody() ActionBody {
 	return ActionBody{
 		Logical:   "",
 		Condition: "",
-		Actions:   make([]string, 0),
+		Actions:   make([]string, 0),		
 	}
 }
 
@@ -49,12 +48,12 @@ func NewActionsVisitor() *ActionsVisitor {
 			hasNonLinear:     false,
 			varList:          make([]string, 0),
 			substitutionMap:  make(map[string]string, 0),
+			ErrorProcessing: ErrorProcessing{
+						errorList: make([]string, 0),
+			},
 		},
 		actions:    make(map[string]ActionBody, 0),
 		hasLogical: false,
-		ErrorProcessing: ErrorProcessing{
-			errorList: make([]string, 0),
-		},
 	}
 }
 
@@ -111,7 +110,7 @@ func (v *ActionsVisitor) VisitActions(ctx *BehaviorsGrammar.ActionsContext) inte
 	
 		t := ctx.GetChild(i).(antlr.ParseTree).Accept(v)
 		if t == nil {
-			if !v.hasError() {
+			if !v.HasError() {
 				v.addError("Actions description error detected. Action name expected")
 			}
 			break
@@ -122,7 +121,7 @@ func (v *ActionsVisitor) VisitActions(ctx *BehaviorsGrammar.ActionsContext) inte
 		// ":" skipped. Here should be a logicalAnd expression. Note: it can be presented as 1 or as 0 or as true or as false constants
 		t = ctx.GetChild(i).(antlr.ParseTree).Accept(v)
 		if t == nil {
-			if !v.hasError() {
+			if !v.HasError() {
 				v.addError("Actions description error detected. Action '" + nm + "' missing condition")
 			}
 			break

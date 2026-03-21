@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	// "os"
-	// "path/filepath"
 
 	"strings"
 	"time"
@@ -64,9 +62,9 @@ func (c *Client) readPump() {
 		if err != nil {
 			cfg.Logger.Error(fmt.Sprintf("Error processing message from %s: %v", c.UUID, err))
 		}
-		
+
 		if err == nil {
-			rsp = []byte("ok")
+			rsp = []byte("ok " + string(rsp))
 		} else {
 			rsp = []byte("nok " + err.Error() + " " + string(rsp))
 		}
@@ -140,7 +138,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := &Client{
-		ctx : make(map[string]interface{}),
+		ctx:  make(map[string]interface{}),
 		conn: conn,
 		send: make(chan []byte, 512*1024), // Buffer size for outgoing messages
 		UUID: uuid.New(),
@@ -160,7 +158,7 @@ func (c *Client) cleanupTempData() {
 		log := config.GetConfig().GetLogger()
 		if cnf != nil {
 			log = cnf.GetLogger()
-		} 
+		}
 		log.Error("Removing temp data for client " + c.UUID.String() + " failed " + err.Error())
 	}
 }
@@ -168,6 +166,7 @@ func (c *Client) cleanupTempData() {
 func (c *Client) ProcessMessage(msg []byte) ([]byte, error) {
 	var (
 		err error = nil
+		rs  string
 	)
 
 	s := strings.TrimSpace(string(msg))
@@ -181,17 +180,17 @@ func (c *Client) ProcessMessage(msg []byte) ([]byte, error) {
 		tail = strings.TrimSpace(s[strings.Index(s, cmd[0])+len(cmd[0]):])
 	}
 
-	s = cmd[0]	
+	s = cmd[0]
 	if coreCommands != nil {
 		f, ok := (*coreCommands)[cmd[0]]
 		if !ok {
 			rsp = []byte("")
 			err = errors.New("unknown command '" + cmd[0] + "'")
-		} else
-		{
-			err = f.exec(c, tail)
+		} else {
+			rs, err = f.exec(c, tail)
+			rsp = []byte(rs)
 		}
-    } else {
+	} else {
 		err = errors.New("unknown command '" + cmd[0] + "'")
 	}
 	return rsp, err

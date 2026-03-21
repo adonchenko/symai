@@ -66,7 +66,7 @@ func TestExpressionVisitor(t *testing.T) {
 
 		result := tree.Accept(visitor)
 
-		assert.Equal(t, listener.hasError(), false, "There should be no errors in listener")
+		assert.Equal(t, listener.HasError(), false, "There should be no errors in listener")
 
 		assert.Equal(t, d.n_vars, len(visitor.GetVarList()), "Incorrect number of variables")
 		assert.Equal(t, d.result, result.(string))

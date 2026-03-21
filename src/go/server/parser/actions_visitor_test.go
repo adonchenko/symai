@@ -87,8 +87,8 @@ func TestActionsVisitor(t *testing.T) {
 
 		result := tree.Accept(visitor)
 
-		assert.Equal(t, listener.hasError(), false, "There should be no errors in listener")
-		assert.Equal(t, visitor.hasError(), false, "There should be no errors in visitor")
+		assert.Equal(t, listener.HasError(), false, "There should be no errors in listener")
+		assert.Equal(t, visitor.HasError(), false, "There should be no errors in visitor")
 
 		assert.Equal(t, d.n_actions, len(visitor.GetActions()), "Incorrect actions number")
 		assert.Equal(t, d.result, result.(string))

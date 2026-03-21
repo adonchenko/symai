@@ -14,6 +14,7 @@ type (
 	Client struct {
 		ctx map[string]interface{} // Context fields:
 		// "symaiconfig" a SymAISection value @config for details
+		// "environment" a FileBaseData value
 		conn *websocket.Conn
 		UUID uuid.UUID
 		send chan []byte
@@ -47,7 +48,11 @@ func (h *Hub) run() {
 		case client := <-h.register:
 			// Add new client to the map
 			h.clients[client] = true
-			config.GetConfig().Logger.Info(fmt.Sprintf("Client connected. Total clients: %d", len(h.clients)))
+			log := config.GetConfig().GetLogger()
+			if cnf != nil {
+				log = cnf.GetLogger()
+			}
+			log.Info(fmt.Sprintf("Client connected. Total clients: %d", len(h.clients)))
 
 		case client := <-h.unregister:
 			// Remove client if it exists
