@@ -30,6 +30,7 @@ type (
 
 	SymAICoreCommand struct {
 		exec SymAICoreCommandProcessing
+		help string
 	}
 )
 
@@ -38,7 +39,7 @@ var (
 	cnf             *config.SymAIConfig         = nil
 )
 
-func (c *Client) getExpressionURL() (string, int, error) {
+func (c *Client) getExpressionModuleURL() (string, int, error) {
 	sc, ok := c.ctx["symaiconfig"].(config.SymAISectionConfig)
 	if ok {
 		return sc.ExpressionHost, sc.ExpressionPort, nil
@@ -138,6 +139,7 @@ func doEnvironment(c *Client, params string) (string, error) {
 		err error = nil
 		fd        = FileData{}
 	)
+	cnf.GetLogger().Info("client " + c.UUID.String() + " environment " + params + " command received")
 	if len(params) <= 0 {
 		fs := JsonFile{
 			Filename: c.getEnvCtx().Filename,
@@ -216,11 +218,142 @@ func doStop(c *Client, params string) (string, error) {
 	return "", nil
 }
 
+func (c *Client) newPropCtx() {
+	c.ctx["property"] = PropertyProcessingContext{
+		FileBaseData: FileBaseData{
+			Filename: "property.prop",
+			Content:  "",
+			Filepath: filepath.Join(c.getBaseTempDir(), "property.prop"),
+		},
+	}
+}
+
+func (c *Client) getPropCtx() PropertyProcessingContext {
+	r, ok := c.ctx["property"]
+	if !ok {
+		c.newPropCtx()
+		r, _ = c.ctx["property"]
+	}
+	e := r.(PropertyProcessingContext)
+
+	return e
+}
+
+func (c *Client) setPropCtx(ec PropertyProcessingContext) {
+	c.ctx["property"] = ec
+}
+
+func (c *Client) getPropFilename() string {
+	return c.getPropCtx().Filename
+}
+
+func (c *Client) setPropFilename(fn string) {
+	e := c.getPropCtx()
+	e.Filename = fn
+	c.setPropCtx(e)
+}
+
+func (c *Client) getPropFilepath() string {
+	return c.getPropCtx().Filepath
+}
+
+func (c *Client) setPropFilepath(fn string) {
+	e := c.getPropCtx()
+	e.Filepath = fn
+	c.setPropCtx(e)
+}
+
+func (c *Client) getPropContent() string {
+	return c.getPropCtx().Content
+}
+
+func (c *Client) setPropContent(fn string) {
+	e := c.getPropCtx()
+	e.Content = fn
+	c.setPropCtx(e)
+}
+
+func (c *Client) savePropContent() error {
+	err := WriteToFile(c.getPropFilepath(), c.getPropContent())
+
+	if err != nil {
+		err = errors.New("client " + c.UUID.String() + " error saving property to the file '" + c.getPropFilepath() + "' " + err.Error())
+	}
+
+	return err
+}
+
+func doProperty(c *Client, params string) (string, error) {
+
+	var (
+		res       = ""
+		err error = nil
+		fd        = FileData{}
+	)
+	cnf.GetLogger().Info("client " + c.UUID.String() + " property " + params + " command received")
+
+	if len(params) <= 0 {
+		fs := JsonFile{
+			Filename: c.getPropCtx().Filename,
+			Content:  c.getPropCtx().Content,
+		}
+
+		r := make([]byte, 0)
+		r, err = json.Marshal(fs)
+		res = string(r)
+	} else {
+		fd, err = processFile(params)
+		if err == nil {
+			p, l := InitParser(fd.Content)
+			tree := p.Expression()
+			if len(l.GetErrorList()) > 0 {
+				errMsg := ""
+				for _, e := range l.GetErrorList() {
+					if len(errMsg) > 0 {
+						errMsg = errMsg + "\n"
+					}
+					errMsg = errMsg + e
+				}
+				err = errors.New(errMsg)
+			} else {
+				visitor := parser.NewExpressionVisitor()
+
+				r := tree.Accept(visitor)
+				if r == nil || len(visitor.GetErrorList()) > 0 {
+					errMsg := ""
+					for _, e := range visitor.GetErrorList() {
+						if len(errMsg) > 0 {
+							errMsg = errMsg + "\n"
+						}
+						errMsg = errMsg + e
+					}
+					if len(errMsg) <= 0 {
+						errMsg = "property parsing error"
+					}
+					err = errors.New(errMsg)
+				} else {
+					fn := strings.TrimSpace(fd.Filename)
+					if len(fn) <= 0 {
+						c.setPropFilename("property.prop")
+					}
+					c.setPropFilename(fn)
+					res = r.(string)
+					c.setPropContent(res)
+					//err = c.savePropContent() // Will be uncommented, if we'll need to keep property permanently
+				}
+			}
+		}
+	}
+
+	return res, err
+}
+
 func initCoreCommands(c *config.SymAIConfig) *map[string]SymAICoreCommand {
 	cnf = c
 	allCoreCommands = make(map[string]SymAICoreCommand, 0)
 	allCoreCommands["shutdown"] = SymAICoreCommand{
 		exec: doShutdown,
+		help: "Syntax: shutdown\nStops all services of SymAI system, closes all opened sessions. All temporary data will be destroyed.",
 	}
 	allCoreCommands["stop"] = SymAICoreCommand{
 		exec: doStop,
@@ -228,5 +361,25 @@ func initCoreCommands(c *config.SymAIConfig) *map[string]SymAICoreCommand {
 	allCoreCommands["environment"] = SymAICoreCommand{
 		exec: doEnvironment,
 	}
+	allCoreCommands["property"] = SymAICoreCommand{
+		exec: doProperty,
+	}
+	allCoreCommands["help"] = SymAICoreCommand{
+		exec: doHelp,
+	}
 	return &allCoreCommands
+}
+
+func doHelp(c *Client, params string) (string, error) {
+	var (
+		err error  = nil
+		res string = ""
+	)
+	cnf.GetLogger().Info("client " + c.UUID.String() + " help " + params + " command received")
+	for k, v := range allCoreCommands {
+		res = res + "\n" + k + " command\n"
+
+		res = res + v.help
+	}
+	return res, err
 }
