@@ -34,6 +34,11 @@ class SymAIBehaviorsTestCase(unittest.TestCase):
     def test_do_parse_beh(self):
         test_data = [
             [
+                "B = a1.a2.a3,",
+                ["B"],
+                "B=a1.a2.a3,"
+            ],
+            [
                 "ENGINE_WORKCYCLE(0)= checkCrankshaftRotationAngle . getCrankshaftRotationSin .(STROKE1 + isStroke2 + isStroke3 + isStroke4) .changeCrankshaftRotationAngle1 . ENGINE_WORKCYCLE + notCheckCrankshaftRotationAngle,",
                 ["ENGINE_WORKCYCLE(0)"],
                 "ENGINE_WORKCYCLE(0)=checkCrankshaftRotationAngle.getCrankshaftRotationSin.(STROKE1+isStroke2+isStroke3+isStroke4).changeCrankshaftRotationAngle1.ENGINE_WORKCYCLE+notCheckCrankshaftRotationAngle,"
