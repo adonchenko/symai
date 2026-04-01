@@ -560,7 +560,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
     def check_reachability(self, env:str, reach_property:str):
 
-        if reach_property is None:
+        if reach_property is None or len(reach_property) < 0:
             reach_property = "True"
         if env is None:
             env = ""
@@ -591,7 +591,10 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                         pass
                     if b:
                         break
-                vals.pop(td)
+                try:
+                    vals.pop(td)
+                except:
+                    pass
             #res, r_env
             r_env = ""
             for i in cv:
@@ -633,7 +636,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             raise Exception("Non-linear functions are not allowed for symbolic calculation of the environment expression '" + env + "'")
         if reach_property is not None and len(reach_property) > 0:
             s, ic, r = self.prepare_condition(reach_property)
-            expr = expr + " && " + s
+            if len(s) > 0:
+                expr = expr + " && " + s
 
         headers = {'Content-type': 'application/json'}
         try:
@@ -1032,8 +1036,8 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                     st = en
                     en = self.do_remove_vars(st, rmv)
 
-        if len(pref):
-            pref = pref + " && "
+#        if len(pref) > 0:
+#            pref = pref + " && "
 
         if is_add:
             sen_rpl = self.prep_replacement(vl)
@@ -1047,7 +1051,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             if len(en) > 0:
                 en = en + " && "
             en = en + it + " == " + str(cv[it])
-        if len(pref):
+        if len(pref) > 0:
             if len(en) > 0:
                 en = en + " && "
 
