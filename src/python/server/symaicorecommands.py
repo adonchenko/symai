@@ -1214,7 +1214,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                     ctx["environment_trace"] = ctx["environment_trace"] + "\n" + str(self.dump_trace(env_trace))
 
                 with open(fn, "a+") as f:
-                    f.write(str(self.dump_trace(trace)) + "\n" + str(self.dump_trace(env_trace)))
+                    f.write(str(self.dump_trace(trace)) + "\n" + str(self.dump_trace(env_trace)) +"\n")
 
             self.get_logger().info(f"trace saved to {fn}")
         except Exception as e:
