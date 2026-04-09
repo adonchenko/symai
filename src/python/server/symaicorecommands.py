@@ -8,7 +8,6 @@ import json
 import uuid
 from itertools import tee
 import os
-from mathutils import MathUtils
 
 from eqextractvisitor import EQExtractorVisitor
 from symbolicexpressiongrammarvisitor import *
@@ -24,6 +23,54 @@ class SymAIDebugCommands(Enum):
     NEXT = "next"
     STOP = "stop"
     RUN = "run"
+
+class SymAICoreTrace:
+    def __init__(self):
+        self.trace = []
+
+    def get_trace(self):
+        return self.trace
+
+    def set_trace(self, tr):
+        self.trace = tr
+
+    def is_empty(self):
+        return len(self.trace) == 0
+
+    def is_prolong_trace(self, tr):
+        if self.is_empty() and len(tr) > 0:
+            return True
+
+        if len(tr) < len(self.trace):
+            return False
+
+        b = False
+        i = 0
+        l = len(self.trace)
+        if l > 0 and self.trace[-1] == "REACHED" and tr[-1] == "REACHED":
+            l = l -1
+        while i < l and not b :
+            b = (self.trace[i] != tr[i])
+            i = i + 1
+
+        return not b
+
+    def dump_to_string(self, env_trace)->str:
+        res = ""
+        if len(self.trace) != len(env_trace.trace):
+            raise Exception("Trace length is not equal to the environments trace length")
+        tr = list()
+
+        i = 0
+        act = list(self.trace)
+        env = list(env_trace.trace)
+        l = len(act)
+        while i < l:
+            tr.append({"action":act[i], "environment":env[i]})
+            i = i + 1
+        res = json.dumps(tr, indent=4)
+
+        return res
 
 class SymAICoreParam:
 
@@ -566,7 +613,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             env = ""
         self.get_logger().debug(f"check_reachability started env is {env} reach_property is {reach_property}")
         expr, ic, r = self.prepare_condition(env)
-        self.get_logger().debug("Here expr is " + expr)
+        # self.get_logger().debug("Here expr is " + expr)
         tr = TreeUtils.prepare_parser_beh(expr).assignmentExpression()
         v = EQExtractorVisitor()
         tail = v.visit(tr)
@@ -740,27 +787,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             i = True
 
         return env_exp
-
-    def negate_relational_expr(self, expr: str)->str :
-        tr = TreeUtils.prepare_parser_beh(expr).assignmentExpression()
-        tokens = TreeEdit.find_all_by_tokens(tr, ["<", ">", "=", "!=", "==", ">=", "<="])
-        for it in tokens:
-            s = it.getText()
-            match s:
-                case "<": s = ">"
-                case "<=": s = ">="
-                case ">": s = "<"
-                case ">=": s = "<="
-                case default: s = s
-            it.symbol.text = s
-
-        v = SymbolicExpressionGrammarVisitor()
-        s = v.visit(tr)
-        tr = TreeUtils.prepare_parser_beh(s).assignmentExpression()
-        v = SymbolicExpressionGrammarVisitor()
-        res = v.visit(tr).replace("&", "&&").replace("|", "||")
-
-        return res
 
     '''
     Removes all variables included into vals vars list from expr expression
@@ -1188,45 +1214,96 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 return behaviors[bh]
         return None
 
+    def init_trace(self, ctx):
+        ctx = self.remove_trace(ctx)
+        ctx["cur_trace"] = SymAICoreTrace()
+        ctx["env_cur_trace"] = SymAICoreTrace()
+        ctx["cur_trace_continued"] = False
+        fn = ctx["trace_file"]
+        with open(fn, "w") as f:
+            f.write("{\n")
+        return ctx
+
+    def remove_trace(self, ctx):
+        if "trace" not in ctx or ctx["trace"] is None or "trace_file" not in ctx:
+            if "trace_file" in ctx:
+                fn = ctx["trace_file"]
+            else:
+                fn = os.path.join(self.get_temp_dir(),
+                                  ctx["cuuid"],
+                                  symaiconfig.SymAIConfig.BASE_TRACE.value,
+                                  symaiconfig.SymAIConfig.BASE_TRACE_FILE.value)
+            ctx["trace_file"] = fn
+        else:
+            fn = ctx["trace_file"]
+        try:
+            os.remove(fn)
+        except FileNotFoundError:
+            self.get_logger().error(f"Cannot remove trace file {fn}")
+
+        ctx["cur_trace_continued"] = False
+
+        return ctx
+
+    def finish_trace(self, ctx):
+        fn = ctx["trace_file"]
+        st = "}\n"
+        if ctx["cur_trace_continued"] and not ctx["env_cur_trace"].is_empty():
+            s = ctx["cur_trace"]
+            st = s.dump_to_string(ctx["env_cur_trace"]) + st
+        with open(fn, "a+") as f:
+            f.write(st)
+        return ctx
+
     def append_trace(self, ctx, trace, env_trace):
         fn = ""
-        try:
-            if "trace" not in ctx or ctx["trace"] is None or "trace_file" not in ctx:
-                if "trace_file" in ctx:
+        actions = ctx["act_visitor"].getResults()
+        #
+        t = list(trace)
+        e = list(env_trace)
+        # 1. Extract actions only
+        trc = []
+        env_trc = []
+
+        i = 0
+        while i < len(t):
+            s = t[i]
+            if self.is_action(actions, s):
+                trc.append(s)
+                env_trc.append(e[i])
+            i = i + 1
+        #
+        if ctx["cur_trace"].is_prolong_trace(trc):
+            s = ctx["cur_trace"]
+            s.set_trace(trc)
+            ctx["cur_trace"] = s
+            s = ctx["env_cur_trace"]
+            s.set_trace(env_trc)
+            ctx["env_cur_trace"] = s
+        else:
+            if len(trc) > 0:
+                s = ctx["cur_trace"]
+                if not s.is_empty():
+                    # s and ctx["env-cur_trace"] content should be saved into the file here
+                    st = ""
+                    if ctx["cur_trace_continued"]:
+                        st = st + ",\n"
+                    st = st + s.dump_to_string(ctx["env_cur_trace"])
                     fn = ctx["trace_file"]
-                else:
-                    fn = os.path.join( self.get_temp_dir(),
-                                       ctx["cuuid"],
-                                       symaiconfig.SymAIConfig.BASE_TRACE.value,
-                                       symaiconfig.SymAIConfig.BASE_TRACE_FILE.value)
-                ctx["trace_file"] = fn
-                if type(ctx["trace"]) == "<class 'str'>":
-                    ctx["trace"] = str(self.dump_trace(trace))
-                if type(ctx["environment_trace"]) == "<class 'str'>":
-                    ctx["environment_trace"] = str(self.dump_trace(env_trace))
-                with open(fn, "w") as f:
-                    f.write(str(self.dump_trace(trace)) + "\n" + str(self.dump_trace(env_trace)) + "\n")
-            else:
-                fn = ctx["trace_file"]
-                if type(ctx["trace"]) == "<class 'str'>":
-                    ctx["trace"] = ctx["trace"] + "\n" + str(self.dump_trace(trace))
-                if type(ctx["environment_trace"]) == "<class 'str'>":
-                    ctx["environment_trace"] = ctx["environment_trace"] + "\n" + str(self.dump_trace(env_trace))
+                    with open(fn, "a+") as f:
+                        f.write(st + "\n")
+                    ctx["cur_trace_continued"] = True
 
-                with open(fn, "a+") as f:
-                    f.write(str(self.dump_trace(trace)) + "\n" + str(self.dump_trace(env_trace)) +"\n")
-
-            self.get_logger().info(f"trace saved to {fn}")
-        except Exception as e:
-            self.get_logger().error(f"saving trace processing failed {str(e)}")
-            try:
-                if os.path.exists(fn):
-                    os.remove(fn)
-                ctx["trace"] = None
-                ctx["trace_file"] = None
-            except:
-                pass
-            raise e
+                s.set_trace(trc)
+                ctx["cur_trace"] = s
+                s = ctx["env_cur_trace"]
+                s.set_trace(env_trc)
+                ctx["env_cur_trace"] = s
+        if type(ctx["trace"]) == "<class 'str'>":
+            ctx["trace"] = ctx["trace"] + "\n" + str(self.dump_trace(trace))
+            if type(ctx["environment_trace"]) == "<class 'str'>":
+                ctx["environment_trace"] = ctx["environment_trace"] + "\n" + str(self.dump_trace(env_trace))
+        self.get_logger().info(f"trace added to {fn}")
         return ctx
 
     def dump_trace(self, trace) -> str:
@@ -1693,6 +1770,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
     def do_traversalbeh(self, cuuid, data_received):
         yield "ok start traversal behaviors"
         self.get_logger().info(f"traversal behaviors started {data_received}")
+        ctx = dict()
         try:
             ctx = self.do_load_traversal_data(cuuid, data_received)
             yield "ok input data retrieved"
@@ -1703,7 +1781,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
             # Parsing incoming data
             ctx, cur_beh, slvr = self.parse_traversalbeh_data(cuuid, data_received, ctx)
-
+            ctx = self.init_trace(ctx)
             yield "ok trace start"
             env_trace = deque([])
             trace = deque([])
@@ -1724,11 +1802,13 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 yield s
 
             # Finalizing
+            ctx = self.finish_trace(ctx)
             yield "ok trace end"
             yield "ok end traversal behaviors"
             self.get_logger().info("traversal behaviors finished")
         except Exception as e:
             self.get_logger().error(f"traversal behaviors failed with {e}")
+            ctx = self.remove_trace(ctx)
             yield f"nok Traversal behaviors failed {e}"
 
     def process_one_behavior(self, beh, ctx, it_tail):
