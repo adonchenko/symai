@@ -973,6 +973,9 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             right = str(eval(right, gvars))
         except Exception:
             pass
+        if len(vals) > 0:
+            sen_rpl = self.prep_replacement(vals)
+            right = self.do_replace(right, sen_rpl)
         if en is None or len(en) < 1:
             # Going with concrete values, e is a resulting env
             b = True
