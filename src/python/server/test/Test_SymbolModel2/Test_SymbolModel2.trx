@@ -6,39 +6,39 @@
     },
     {
         "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b&&k==1.0"
+        "environment": "b>=1 && b<=3 && a==1+b && c==a+b&&k==1.0"
     },
     {
         "action": "a4",
-        "environment": "b>=1 && b<=3"
+        "environment": "b>=1 && b<=3 && a==1+b && c==a+b&&k==2.0"
     },
     {
         "action": "a1",
-        "environment": "b>=1 && b<=3 && c==a+b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==2.0"
     },
     {
         "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b"
+        "environment": "b>=1 && b<=3 && a==1+b && c==1+2*b&&k==2.0"
     },
     {
         "action": "a4",
-        "environment": "b>=1 && b<=3 && a==1+b"
+        "environment": "b>=1 && b<=3 && a==1+b && c==1+2*b&&k==3.0"
     },
     {
         "action": "a1",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==3.0"
     },
     {
         "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b"
+        "environment": "b>=1 && b<=3 && a==1+b && c==1+2*b&&k==3.0"
     },
     {
         "action": "a4",
-        "environment": "b>=1 && b<=3 && a==1+b"
+        "environment": "b>=1 && b<=3 && a==1+b && c==1+2*b&&k==4.0"
     },
     {
         "action": "a6",
-        "environment": "b>=1 && b<=3 && a==1+b"
+        "environment": "b>=1 && b<=3 && a==1+b && c==1+2*b&&k==4.0"
     }
 ]
 ,
@@ -49,35 +49,35 @@
     },
     {
         "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b&&k==1.0"
+        "environment": "b>=1 && b<=3 && a==1+b && c==a+b&&k==1.0"
     },
     {
         "action": "a4",
-        "environment": "b>=1 && b<=3"
+        "environment": "b>=1 && b<=3 && a==1+b && c==a+b&&k==2.0"
     },
     {
         "action": "a1",
-        "environment": "b>=1 && b<=3 && c==a+b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==2.0"
     },
     {
         "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b"
+        "environment": "b>=1 && b<=3 && a==1+b && c==1+2*b&&k==2.0"
     },
     {
         "action": "a4",
-        "environment": "b>=1 && b<=3 && a==1+b"
+        "environment": "b>=1 && b<=3 && a==1+b && c==1+2*b&&k==3.0"
     },
     {
         "action": "a1",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==3.0"
     },
     {
         "action": "a5",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==3.0"
     },
     {
         "action": "a6",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==3.0"
     }
 ]
 ,
@@ -88,132 +88,23 @@
     },
     {
         "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b&&k==1.0"
+        "environment": "b>=1 && b<=3 && a==1+b && c==a+b&&k==1.0"
     },
     {
         "action": "a4",
-        "environment": "b>=1 && b<=3"
+        "environment": "b>=1 && b<=3 && a==1+b && c==a+b&&k==2.0"
     },
     {
         "action": "a1",
-        "environment": "b>=1 && b<=3 && c==a+b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==2.0"
     },
     {
         "action": "a5",
-        "environment": "b>=1 && b<=3 && c==a+b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==2.0"
     },
     {
         "action": "a6",
-        "environment": "b>=1 && b<=3 && c==a+b"
-    }
-]
-,
-[
-    {
-        "action": "a1",
-        "environment": "b>=1 && b<=3 && c==a+b&&k==1.0"
-    },
-    {
-        "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b&&k==1.0"
-    },
-    {
-        "action": "a4",
-        "environment": "b>=1 && b<=3"
-    },
-    {
-        "action": "a2",
-        "environment": "b>=1 && b<=3 && c==b+-1*a"
-    },
-    {
-        "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b"
-    },
-    {
-        "action": "a4",
-        "environment": "b>=1 && b<=3 && a==1+b"
-    },
-    {
-        "action": "a1",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
-    },
-    {
-        "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b"
-    },
-    {
-        "action": "a4",
-        "environment": "b>=1 && b<=3 && a==1+b"
-    },
-    {
-        "action": "a6",
-        "environment": "b>=1 && b<=3 && a==1+b"
-    }
-]
-,
-[
-    {
-        "action": "a1",
-        "environment": "b>=1 && b<=3 && c==a+b&&k==1.0"
-    },
-    {
-        "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b&&k==1.0"
-    },
-    {
-        "action": "a4",
-        "environment": "b>=1 && b<=3"
-    },
-    {
-        "action": "a2",
-        "environment": "b>=1 && b<=3 && c==b+-1*a"
-    },
-    {
-        "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b"
-    },
-    {
-        "action": "a4",
-        "environment": "b>=1 && b<=3 && a==1+b"
-    },
-    {
-        "action": "a1",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
-    },
-    {
-        "action": "a5",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
-    },
-    {
-        "action": "a6",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
-    }
-]
-,
-[
-    {
-        "action": "a1",
-        "environment": "b>=1 && b<=3 && c==a+b&&k==1.0"
-    },
-    {
-        "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b&&k==1.0"
-    },
-    {
-        "action": "a4",
-        "environment": "b>=1 && b<=3"
-    },
-    {
-        "action": "a2",
-        "environment": "b>=1 && b<=3 && c==b+-1*a"
-    },
-    {
-        "action": "a5",
-        "environment": "b>=1 && b<=3 && c==b+-1*a"
-    },
-    {
-        "action": "a6",
-        "environment": "b>=1 && b<=3 && c==b+-1*a"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==2.0"
     }
 ]
 ,
@@ -239,39 +130,39 @@
     },
     {
         "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b&&k==1.0"
+        "environment": "b>=1 && b<=3 && a==1+b && c==b+-1*a&&k==1.0"
     },
     {
         "action": "a4",
-        "environment": "b>=1 && b<=3"
+        "environment": "b>=1 && b<=3 && a==1+b && c==b+-1*a&&k==2.0"
     },
     {
         "action": "a1",
-        "environment": "b>=1 && b<=3 && c==a+b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==2.0"
     },
     {
         "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b"
+        "environment": "b>=1 && b<=3 && a==1+b && c==1+2*b&&k==2.0"
     },
     {
         "action": "a4",
-        "environment": "b>=1 && b<=3 && a==1+b"
+        "environment": "b>=1 && b<=3 && a==1+b && c==1+2*b&&k==3.0"
     },
     {
         "action": "a1",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==3.0"
     },
     {
         "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b"
+        "environment": "b>=1 && b<=3 && a==1+b && c==1+2*b&&k==3.0"
     },
     {
         "action": "a4",
-        "environment": "b>=1 && b<=3 && a==1+b"
+        "environment": "b>=1 && b<=3 && a==1+b && c==1+2*b&&k==4.0"
     },
     {
         "action": "a6",
-        "environment": "b>=1 && b<=3 && a==1+b"
+        "environment": "b>=1 && b<=3 && a==1+b && c==1+2*b&&k==4.0"
     }
 ]
 ,
@@ -282,35 +173,35 @@
     },
     {
         "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b&&k==1.0"
+        "environment": "b>=1 && b<=3 && a==1+b && c==b+-1*a&&k==1.0"
     },
     {
         "action": "a4",
-        "environment": "b>=1 && b<=3"
+        "environment": "b>=1 && b<=3 && a==1+b && c==b+-1*a&&k==2.0"
     },
     {
         "action": "a1",
-        "environment": "b>=1 && b<=3 && c==a+b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==2.0"
     },
     {
         "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b"
+        "environment": "b>=1 && b<=3 && a==1+b && c==1+2*b&&k==2.0"
     },
     {
         "action": "a4",
-        "environment": "b>=1 && b<=3 && a==1+b"
+        "environment": "b>=1 && b<=3 && a==1+b && c==1+2*b&&k==3.0"
     },
     {
         "action": "a1",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==3.0"
     },
     {
         "action": "a5",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==3.0"
     },
     {
         "action": "a6",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==3.0"
     }
 ]
 ,
@@ -321,132 +212,23 @@
     },
     {
         "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b&&k==1.0"
+        "environment": "b>=1 && b<=3 && a==1+b && c==b+-1*a&&k==1.0"
     },
     {
         "action": "a4",
-        "environment": "b>=1 && b<=3"
+        "environment": "b>=1 && b<=3 && a==1+b && c==b+-1*a&&k==2.0"
     },
     {
         "action": "a1",
-        "environment": "b>=1 && b<=3 && c==a+b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==2.0"
     },
     {
         "action": "a5",
-        "environment": "b>=1 && b<=3 && c==a+b"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==2.0"
     },
     {
         "action": "a6",
-        "environment": "b>=1 && b<=3 && c==a+b"
-    }
-]
-,
-[
-    {
-        "action": "a2",
-        "environment": "b>=1 && b<=3 && c==b+-1*a&&k==1.0"
-    },
-    {
-        "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b&&k==1.0"
-    },
-    {
-        "action": "a4",
-        "environment": "b>=1 && b<=3"
-    },
-    {
-        "action": "a2",
-        "environment": "b>=1 && b<=3 && c==b+-1*a"
-    },
-    {
-        "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b"
-    },
-    {
-        "action": "a4",
-        "environment": "b>=1 && b<=3 && a==1+b"
-    },
-    {
-        "action": "a1",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
-    },
-    {
-        "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b"
-    },
-    {
-        "action": "a4",
-        "environment": "b>=1 && b<=3 && a==1+b"
-    },
-    {
-        "action": "a6",
-        "environment": "b>=1 && b<=3 && a==1+b"
-    }
-]
-,
-[
-    {
-        "action": "a2",
-        "environment": "b>=1 && b<=3 && c==b+-1*a&&k==1.0"
-    },
-    {
-        "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b&&k==1.0"
-    },
-    {
-        "action": "a4",
-        "environment": "b>=1 && b<=3"
-    },
-    {
-        "action": "a2",
-        "environment": "b>=1 && b<=3 && c==b+-1*a"
-    },
-    {
-        "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b"
-    },
-    {
-        "action": "a4",
-        "environment": "b>=1 && b<=3 && a==1+b"
-    },
-    {
-        "action": "a1",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
-    },
-    {
-        "action": "a5",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
-    },
-    {
-        "action": "a6",
-        "environment": "b>=1 && b<=3 && c==1+2*b"
-    }
-]
-,
-[
-    {
-        "action": "a2",
-        "environment": "b>=1 && b<=3 && c==b+-1*a&&k==1.0"
-    },
-    {
-        "action": "a3",
-        "environment": "b>=1 && b<=3 && a==1+b&&k==1.0"
-    },
-    {
-        "action": "a4",
-        "environment": "b>=1 && b<=3"
-    },
-    {
-        "action": "a2",
-        "environment": "b>=1 && b<=3 && c==b+-1*a"
-    },
-    {
-        "action": "a5",
-        "environment": "b>=1 && b<=3 && c==b+-1*a"
-    },
-    {
-        "action": "a6",
-        "environment": "b>=1 && b<=3 && c==b+-1*a"
+        "environment": "b>=1 && b<=3 && c==1+2*b && a==1+b&&k==2.0"
     }
 ]
 [

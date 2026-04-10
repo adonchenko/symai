@@ -966,6 +966,13 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             right = s[1]
         is_add = False
         cvals, vals, en = TreeUtils.get_vars_using_assignment(env)
+        sen_rpl = self.prep_replacement(cvals)
+        right = self.do_replace(right, sen_rpl)
+        gvars = MathUtils.fill_gvars_func()
+        try:
+            right = str(eval(right, gvars))
+        except Exception:
+            pass
         if en is None or len(en) < 1:
             # Going with concrete values, e is a resulting env
             b = True
@@ -1070,7 +1077,14 @@ class SymAICoreCommands(symaicommands.SymAICommands):
             sen = self.do_replace(right, sen_rpl)
             sen_rpl = self.prep_replacement(cv)
             right = self.do_replace(sen, sen_rpl)
-            pref = pref + left + " == " + right
+            pref = left + " == " + right
+
+        for it in vals.keys():
+            st = str(it) + "==" + str(vals[it])
+
+            if len(pref) > 0:
+                pref = pref + " && "
+            pref = pref + st
 
         #
         for it in cv.keys():
