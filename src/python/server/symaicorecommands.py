@@ -1939,9 +1939,28 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                                 continue
                             case ".":
                                 continue
+                            case "Delta":
+                                if ctx.get("dela_flag") is not None and ctx.get("delta_flag"):
+                                    # Processing Delta
+                                    i, i1 = tee(i)
+                                    tt = next(i1)
+                                    while tt != "+":
+                                        if tt == "(":
+                                            cb = 1
+                                            while cb > 0:
+                                                next(i)
+                                                tt = next(i1)
+                                                if tt == ")":
+                                                    cb = cb - 1
+                                                if tt == "(":
+                                                    cb = cb + 1
+                                        next(i)
+                                        tt = next(i1)
+                                    continue
                             case default:
                                 if self.is_action(actions, term):
                                     ctx, is_sat = self.step_modelling(ctx, term)
+                                    ctx["delta_flag"] = not is_sat
                                     if is_sat:
                                         tr = ctx["trace"].copy()
                                         env_tr = ctx["environment_trace"].copy()

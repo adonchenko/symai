@@ -87,6 +87,8 @@ class ActGrammarVisitor( ExprGrammarVisitor ):
             s = r[i][0]
             j = 0
             while not b and j < i - 1:
+                if r[j][0] == "Delta":
+                    msg = f"Syntax error. Action name is a reserved word Delta"
                 b = (s == r[j][0])
                 j = j + 1
             if b:
