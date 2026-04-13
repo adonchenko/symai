@@ -671,6 +671,22 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 if b:
                     return res, r_env
             expr = r_env
+        gvars = MathUtils.fill_gvars_func()
+        cv = dict()
+        for i in cvals:
+            try:
+                cv[i] = float(cvals[i])
+            except:
+                pass
+
+        try:
+            res = eval(reach_property, gvars, cv)
+            if not res:
+                return res, env
+            else:
+                reach_property = ""
+        except:
+            pass
         # SyntaxError: Raised if the provided string is not a valid Python expression (e.g., mismatched parentheses, or trying to use a statement like if or variable assignment =).
         # NameError: Raised if the expression refers to a variable, function, or class name that is not defined in the available scope.
         # TypeError: Raised when an operation is performed on a value of an inappropriate type (e.g., trying to divide a list by an integer).
@@ -679,7 +695,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         # KeyError or IndexError: Can be raised if the expression attempts to access a non-existent key in a dictionary or an invalid index in a sequence.
         #
         if v.isTrigonometric() or v.isNonLinear():
-            # trying to process it as an exact expression. Otherwise return an error
+            # trying to process it as an exact expression. Otherwise, return an error
             raise Exception("Non-linear functions are not allowed for symbolic calculation of the environment expression '" + env + "'")
         if reach_property is not None and len(reach_property) > 0:
             s, ic, r = self.prepare_condition(reach_property)
@@ -1143,7 +1159,9 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 cnd = str(r[1])
                 pe = TreeUtils.prepare_parser_beh(r[2])
                 ev = ActGrammarVisitor()
-                if ev.action_has_logical(pe.assignmentExpressionList()):
+                if r[2] == "1":
+                    pass
+                elif ev.action_has_logical(pe.assignmentExpressionList()):
                     st = r[2].split(";")
                     lg = st[-1]
                     if len(lg) == 1 and lg == "1":
