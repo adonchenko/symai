@@ -20,7 +20,7 @@ type (
 	}
 
 	ActionsVisitor struct {
-		ExpressionVisitor		
+		EQExtractorVisitor		
 
 		// Actions related staff
 		actions          map[string]ActionBody
@@ -43,7 +43,7 @@ func (a *ActionBody) hasLogical() bool {
 
 func NewActionsVisitor() *ActionsVisitor {
 	return &ActionsVisitor{
-		ExpressionVisitor: *NewExpressionVisitor(),
+		EQExtractorVisitor: *NewEQExtractorVisitor(),
 		actions:    make(map[string]ActionBody, 0),
 		hasLogical: false,
 	}

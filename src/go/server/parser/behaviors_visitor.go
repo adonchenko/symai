@@ -15,7 +15,7 @@ type (
 	}
 
 	BehaviorsVisitor struct {
-		ExpressionVisitor
+		EQExtractorVisitor
 
 		// Behaviors related staff
 		Terminals map[string]BehaviorBody
@@ -31,7 +31,7 @@ func NewBehaviorBody() *BehaviorBody {
 
 func NewBehaviorsVisitor() *BehaviorsVisitor {
 	return &BehaviorsVisitor{
-		ExpressionVisitor: *NewExpressionVisitor(),
+		EQExtractorVisitor: *NewEQExtractorVisitor(),
 		Terminals: make(map[string]BehaviorBody, 0),
 	}
 }
