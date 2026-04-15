@@ -12,7 +12,7 @@ import (
 )
 
 // A complete Visitor for a parse tree produced by ExpressionParser.
-type ExpressionVisitor struct {
+type EQExtractorVisitor struct {
 	BehaviorsGrammar.BaseBehaviorsGrammarVisitor
 	ErrorProcessing
 
@@ -20,45 +20,94 @@ type ExpressionVisitor struct {
 	hasTrigonometric bool
 	hasNonLinear     bool
 	varList          []string
-	substitutionMap map[string]string
+	substitutionMap  map[string]string
+	ExtractEQ        bool
+	cvals            map[string]float64
+	vals             map[string]string
 }
 
-func NewExpressionVisitor() *ExpressionVisitor {
-	return &ExpressionVisitor{
+func NewEQExtractorVisitor(args ...interface{}) *EQExtractorVisitor {
+	return &EQExtractorVisitor{
 		hasTrigonometric: false,
 		hasNonLinear:     false,
 		varList:          []string{},
 		substitutionMap:  map[string]string{},
-		ErrorProcessing: *NewErrorProcessing(),
+		ErrorProcessing:  *NewErrorProcessing(),
+		ExtractEQ: func() bool {
+			res := false
+			if len(args) > 0 {
+				if val, ok := args[0].(bool); ok {
+					res = val
+				}
+			}
+			return res
+		}(),
+		cvals: make(map[string]float64),
+		vals:  make(map[string]string),
 	}
 }
 
-func (v *ExpressionVisitor) GetSubstitutionMap() map[string]string {
+func (v *EQExtractorVisitor) GetCvals() map[string]float64 {
+	return v.cvals
+}
+
+func (v *EQExtractorVisitor) SetCvals(m map[string]float64) {
+	v.cvals = m
+}
+
+func (v *EQExtractorVisitor) GetVals() map[string]string {
+	return v.vals
+}
+
+func (v *EQExtractorVisitor) SetVals(m map[string]string) {
+	v.vals = m
+}
+
+func (v *EQExtractorVisitor) GetSubstitutionMap() map[string]string {
 	return v.substitutionMap
 }
 
-func (v *ExpressionVisitor) SetSubstitutionMap(m map[string]string) {
+func (v *EQExtractorVisitor) SetSubstitutionMap(m map[string]string) {
 	v.substitutionMap = m
 }
 
-func (v *ExpressionVisitor) HasTrigonometric() bool {
+func (v *EQExtractorVisitor) HasTrigonometric() bool {
 	return v.hasTrigonometric
 }
 
-func (v *ExpressionVisitor) HasNonLinear() bool {
+func (v *EQExtractorVisitor) HasNonLinear() bool {
 	return v.hasNonLinear
 }
 
-func (v *ExpressionVisitor) GetVarList() []string {
+func (v *EQExtractorVisitor) GetVarList() []string {
 	return v.varList
 }
 
-func (v *ExpressionVisitor) SetVarList(varList []string) {
+func (v *EQExtractorVisitor) SetVarList(varList []string) {
 	v.varList = varList
 }
 
+func (v *EQExtractorVisitor) IsInVarList(s string) bool {
+	b := false
+	for _, r := range v.varList {
+		if r == s {
+			b = true
+			break
+		}
+	}
+	return b
+}
+
+func (v *EQExtractorVisitor) IsExtractEQ() bool {
+	return v.ExtractEQ
+}
+
+func (v *EQExtractorVisitor) SetExtractEQ(extract bool) {
+	v.ExtractEQ = extract
+}
+
 // Visit a parse tree produced by ExpressionParser#primaryExpression.
-func (v *ExpressionVisitor) VisitPrimaryExpression(ctx *BehaviorsGrammar.PrimaryExpressionContext) interface{} {
+func (v *EQExtractorVisitor) VisitPrimaryExpression(ctx *BehaviorsGrammar.PrimaryExpressionContext) interface{} {
 
 	res := ""
 	if ctx.LeftParen() != nil && ctx.RightParen() != nil {
@@ -79,7 +128,7 @@ func (v *ExpressionVisitor) VisitPrimaryExpression(ctx *BehaviorsGrammar.Primary
 }
 
 // Visit a parse tree produced by ExpressionParser#postfixExpression.
-func (v *ExpressionVisitor) VisitPostfixExpression(ctx *BehaviorsGrammar.PostfixExpressionContext) interface{} {
+func (v *EQExtractorVisitor) VisitPostfixExpression(ctx *BehaviorsGrammar.PostfixExpressionContext) interface{} {
 	trig_funct := []string{"sin", "cos", "tan", "cotan", "asin", "acos", "atan", "acotan"}
 	nl_funct := []string{"log", "lg", "sqrt", "exp", "pow"}
 
@@ -151,7 +200,7 @@ func (v *ExpressionVisitor) VisitPostfixExpression(ctx *BehaviorsGrammar.Postfix
 }
 
 // Visit a parse tree produced by ExpressionParser#argumentExpressionList.
-func (v *ExpressionVisitor) VisitArgumentExpressionList(ctx *BehaviorsGrammar.ArgumentExpressionListContext) interface{} {
+func (v *EQExtractorVisitor) VisitArgumentExpressionList(ctx *BehaviorsGrammar.ArgumentExpressionListContext) interface{} {
 	res := ""
 	if ctx.AllAssignmentExpression() != nil {
 		for _, expr := range ctx.AllAssignmentExpression() {
@@ -174,7 +223,7 @@ func (v *ExpressionVisitor) VisitArgumentExpressionList(ctx *BehaviorsGrammar.Ar
 }
 
 // Visit a parse tree produced by ExpressionParser#unaryExpression.
-func (v *ExpressionVisitor) VisitUnaryExpression(ctx *BehaviorsGrammar.UnaryExpressionContext) interface{} {
+func (v *EQExtractorVisitor) VisitUnaryExpression(ctx *BehaviorsGrammar.UnaryExpressionContext) interface{} {
 	res := ""
 	u := ""
 
@@ -184,19 +233,19 @@ func (v *ExpressionVisitor) VisitUnaryExpression(ctx *BehaviorsGrammar.UnaryExpr
 			u = ctx.UnaryOperator().Accept(v).(string)
 		}
 		res = u + res
-	} 
+	}
 
 	return res
 }
 
 // Visit a parse tree produced by ExpressionParser#unaryOperator.
-func (v *ExpressionVisitor) VisitUnaryOperator(ctx *BehaviorsGrammar.UnaryOperatorContext) interface{} {
+func (v *EQExtractorVisitor) VisitUnaryOperator(ctx *BehaviorsGrammar.UnaryOperatorContext) interface{} {
 	res := ctx.GetText()
 	return res
 }
 
 // Visit a parse tree produced by ExpressionParser#multiplicativeExpression.
-func (v *ExpressionVisitor) VisitMultiplicativeExpression(ctx *BehaviorsGrammar.MultiplicativeExpressionContext) interface{} {
+func (v *EQExtractorVisitor) VisitMultiplicativeExpression(ctx *BehaviorsGrammar.MultiplicativeExpressionContext) interface{} {
 	res := ""
 
 	for i := 0; i < ctx.GetChildCount(); i++ {
@@ -218,7 +267,7 @@ func (v *ExpressionVisitor) VisitMultiplicativeExpression(ctx *BehaviorsGrammar.
 }
 
 // Visit a parse tree produced by ExpressionParser#additiveExpression.
-func (v *ExpressionVisitor) VisitAdditiveExpression(ctx *BehaviorsGrammar.AdditiveExpressionContext) interface{} {
+func (v *EQExtractorVisitor) VisitAdditiveExpression(ctx *BehaviorsGrammar.AdditiveExpressionContext) interface{} {
 	res := ""
 
 	for i := 0; i < ctx.GetChildCount(); i++ {
@@ -237,7 +286,7 @@ func (v *ExpressionVisitor) VisitAdditiveExpression(ctx *BehaviorsGrammar.Additi
 }
 
 // Visit a parse tree produced by ExpressionParser#relationalExpression.
-func (v *ExpressionVisitor) VisitRelationalExpression(ctx *BehaviorsGrammar.RelationalExpressionContext) interface{} {
+func (v *EQExtractorVisitor) VisitRelationalExpression(ctx *BehaviorsGrammar.RelationalExpressionContext) interface{} {
 	res := ""
 
 	for i := 0; i < ctx.GetChildCount(); i++ {
@@ -256,18 +305,158 @@ func (v *ExpressionVisitor) VisitRelationalExpression(ctx *BehaviorsGrammar.Rela
 }
 
 // Visit a parse tree produced by ExpressionParser#equalityExpression.
-func (v *ExpressionVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.EqualityExpressionContext) interface{} {
+func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.EqualityExpressionContext) interface{} {
 	res := ""
+	first := ""
+	second := ""
+	op := ""
 
 	for i := 0; i < ctx.GetChildCount(); i++ {
 		if reflect.TypeOf(ctx.GetChild(i)) == reflect.TypeOf((*antlr.TerminalNodeImpl)(nil)) {
-			op := ctx.GetChild(i).(*antlr.TerminalNodeImpl).GetText()
-			res = res + op
+			if len(op) > 0 {
+				if len(first) > 0 {
+					if len(second) > 0 {
+						// Adding the result. Here we also should place checkking for
+						// equality op to == and ExtractEQ flag to select concrete values
+						is_add := true
+
+						if v.ExtractEQ && op == "==" {
+							if utils.IsConstant(first) || utils.IsConstant(second) {
+								is_add = false
+								if v.IsInVarList(second) {
+									// second -> cvals, first is constant
+									f, err := strconv.ParseFloat(first, 64)
+									if err == nil {
+										v.cvals[second] = f
+									} else {
+										v.cvals[second] = f
+									}
+								} else {
+									if v.IsInVarList(first) {
+										// first -> cvals, second is constant
+										f, err := strconv.ParseFloat(second, 64)
+										if err == nil {
+											v.cvals[first] = f
+										} else {
+											v.cvals[first] = f
+										}
+									} else {
+										// both are constants, so we can calculate the result and place it in res
+										f1, err1 := strconv.ParseFloat(first, 64)
+										f2, err2 := strconv.ParseFloat(second, 64)
+										if len(res) > 0 {
+											res = res + "&&"
+										}
+										if err1 == nil && err2 == nil {
+											res = res + strconv.FormatBool(f1 == f2)
+										} else {
+											res = res + strconv.FormatBool(first == second)
+										}
+									}
+								}
+							} else {
+								if v.IsInVarList(second) {
+									is_add = false
+									v.vals[second] = first
+									// second -> vals, first is expression
+								} else {
+									if v.IsInVarList(first) {
+										is_add = false
+										v.vals[first] = second
+										// first -> vals, second is expression
+									}
+								}
+							}
+						}
+
+						if is_add {
+							if len(res) > 0 {
+								res = res + "&&"
+							}
+
+							res = res + second + op + first
+						}
+					}
+				}
+			}
+			op = ctx.GetChild(i).(*antlr.TerminalNodeImpl).GetText()
 		} else {
 			t := ctx.GetChild(i).(antlr.ParseTree).Accept(v)
 			if t != nil {
-				res = res + t.(string)
+				if len(first) == 0 {
+					first = t.(string)
+				} else {
+					second = first
+					first = t.(string)
+				}
 			}
+		}
+	}
+
+	if len(first) > 0 {
+		if len(second) > 0 {
+			// Adding the result. Here we also should place checkking for
+			// equality op to == and ExtractEQ flag to select concrete values
+
+			is_add := true
+
+			if v.ExtractEQ && op == "==" {
+				if utils.IsConstant(first) || utils.IsConstant(second) {
+					is_add = false
+					if v.IsInVarList(second) {
+						// second -> cvals, first is constant
+						f, err := strconv.ParseFloat(first, 64)
+						if err == nil {
+							v.cvals[second] = f
+						} else {
+							v.cvals[second] = f
+						}
+					} else {
+						if v.IsInVarList(first) {
+							// first -> cvals, second is constant
+							f, err := strconv.ParseFloat(second, 64)
+							if err == nil {
+								v.cvals[first] = f
+							} else {
+								v.cvals[first] = f
+							}
+						} else {
+							// both are constants, so we can calculate the result and place it in res
+							f1, err1 := strconv.ParseFloat(first, 64)
+							f2, err2 := strconv.ParseFloat(second, 64)
+							if len(res) > 0 {
+								res = res + "&&"
+							}
+							if err1 == nil && err2 == nil {
+								res = res + strconv.FormatBool(f1 == f2)
+							} else {
+								res = res + strconv.FormatBool(first == second)
+							}
+						}
+					}
+				} else {
+					if v.IsInVarList(second) {
+						is_add = false
+						// second -> vals, first is expression
+						v.vals[second] = first
+					} else {
+						if v.IsInVarList(first) {
+							is_add = false
+							// first -> vals, second is expression
+						}
+					}
+				}
+			}
+
+			if is_add {
+				if len(res) > 0 {
+					res = res + "&&"
+				}
+				res = res + second + op + first
+			}
+
+		} else {
+			res = first
 		}
 	}
 
@@ -275,7 +464,7 @@ func (v *ExpressionVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.Equali
 }
 
 // Visit a parse tree produced by ExpressionParser#logicalAndExpression.
-func (v *ExpressionVisitor) VisitLogicalAndExpression(ctx *BehaviorsGrammar.LogicalAndExpressionContext) interface{} {
+func (v *EQExtractorVisitor) VisitLogicalAndExpression(ctx *BehaviorsGrammar.LogicalAndExpressionContext) interface{} {
 	res := ""
 
 	for i := 0; i < ctx.GetChildCount(); i++ {
@@ -294,7 +483,7 @@ func (v *ExpressionVisitor) VisitLogicalAndExpression(ctx *BehaviorsGrammar.Logi
 }
 
 // Visit a parse tree produced by ExpressionParser#logicalOrExpression.
-func (v *ExpressionVisitor) VisitLogicalOrExpression(ctx *BehaviorsGrammar.LogicalOrExpressionContext) interface{} {
+func (v *EQExtractorVisitor) VisitLogicalOrExpression(ctx *BehaviorsGrammar.LogicalOrExpressionContext) interface{} {
 	res := ""
 
 	for i := 0; i < ctx.GetChildCount(); i++ {
@@ -313,7 +502,7 @@ func (v *ExpressionVisitor) VisitLogicalOrExpression(ctx *BehaviorsGrammar.Logic
 }
 
 // Visit a parse tree produced by ExpressionParser#assignmentExpression.
-func (v *ExpressionVisitor) VisitAssignmentExpression(ctx *BehaviorsGrammar.AssignmentExpressionContext) interface{} {
+func (v *EQExtractorVisitor) VisitAssignmentExpression(ctx *BehaviorsGrammar.AssignmentExpressionContext) interface{} {
 	res := ""
 
 	for i := 0; i < ctx.GetChildCount(); i++ {
@@ -332,12 +521,12 @@ func (v *ExpressionVisitor) VisitAssignmentExpression(ctx *BehaviorsGrammar.Assi
 }
 
 // Visit a parse tree produced by ExpressionParser#assignmentOperator.
-func (v *ExpressionVisitor) VisitAssignmentOperator(ctx *BehaviorsGrammar.AssignmentOperatorContext) interface{} {
+func (v *EQExtractorVisitor) VisitAssignmentOperator(ctx *BehaviorsGrammar.AssignmentOperatorContext) interface{} {
 	return ctx.GetText()
 }
 
 // Visit a parse tree produced by ExpressionParser#expression.
-func (v *ExpressionVisitor) VisitExpression(ctx *BehaviorsGrammar.ExpressionContext) interface{} {
+func (v *EQExtractorVisitor) VisitExpression(ctx *BehaviorsGrammar.ExpressionContext) interface{} {
 	res := ""
 
 	for i := 0; i < ctx.GetChildCount(); i++ {

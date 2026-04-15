@@ -29,8 +29,9 @@ type (
 	SymAICoreCommandProcessing func(c *Client, params string) (string, error)
 
 	SymAICoreCommand struct {
-		exec SymAICoreCommandProcessing
-		help string
+		exec  SymAICoreCommandProcessing
+		help  string
+		descr string
 	}
 )
 
@@ -365,7 +366,9 @@ func initCoreCommands(c *config.SymAIConfig) *map[string]SymAICoreCommand {
 		exec: doProperty,
 	}
 	allCoreCommands["help"] = SymAICoreCommand{
-		exec: doHelp,
+		exec:  doHelp,
+		help:  "help [command]",
+		descr: "help on all commands or on using parameters of particular command",
 	}
 	return &allCoreCommands
 }
@@ -376,10 +379,19 @@ func doHelp(c *Client, params string) (string, error) {
 		res string = ""
 	)
 	cnf.GetLogger().Info("client " + c.UUID.String() + " help " + params + " command received")
-	for k, v := range allCoreCommands {
-		res = res + "\n" + k + " command\n"
+	if len(strings.TrimSpace(params)) > 0 {
+		cmd, ok := allCoreCommands[strings.TrimSpace(params)]
+		if !ok {
+			err = errors.New("help: unknown command '" + strings.TrimSpace(params) + "'")
+		} else {
+            res = "command " + strings.TrimSpace(params) + "\n" + cmd.descr
+		}
+	} else {
+		for k, v := range allCoreCommands {
+			res = res + "\n" + k + " command\n"
 
-		res = res + v.help
+			res = res + v.help
+		}
 	}
 	return res, err
 }

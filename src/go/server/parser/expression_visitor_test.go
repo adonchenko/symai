@@ -61,7 +61,7 @@ func TestExpressionVisitor(t *testing.T) {
 		tree := p.Expression()
 
 		// Create and run the visitor
-		visitor := NewExpressionVisitor()
+		visitor := NewEQExtractorVisitor(false)
 		visitor.SetSubstitutionMap(d.subst_map)
 
 		result := tree.Accept(visitor)

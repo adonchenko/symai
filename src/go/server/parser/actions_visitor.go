@@ -43,15 +43,7 @@ func (a *ActionBody) hasLogical() bool {
 
 func NewActionsVisitor() *ActionsVisitor {
 	return &ActionsVisitor{
-		ExpressionVisitor: ExpressionVisitor{
-			hasTrigonometric: false,
-			hasNonLinear:     false,
-			varList:          make([]string, 0),
-			substitutionMap:  make(map[string]string, 0),
-			ErrorProcessing: ErrorProcessing{
-						errorList: make([]string, 0),
-			},
-		},
+		ExpressionVisitor: *NewExpressionVisitor(),
 		actions:    make(map[string]ActionBody, 0),
 		hasLogical: false,
 	}

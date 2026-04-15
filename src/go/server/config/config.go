@@ -46,11 +46,11 @@ type (
 		WSSHostConfig        string `ini:"wss_hostconfig"`
 		Host                 string `ini:"host"`
 		Port                 int    `ini:"port"`
-		ExpressionHost       string `ini:"expression_host"`
-		ExpressionPort       int    `ini:"expression_port"`
+		ExpressionHost       string `ini:"host_expression"`
+		ExpressionPort       int    `ini:"host_expression"`
 		ExpressionHostConfig string `ini:"expression_hostconfig"`
 		AI                   string `ini:"ai"`
-		ReenterCount         int    `ini:"reenter_count"`
+		ReenterCount         int    `ini:"reenter_counter"`
 		Debug                string `ini:"debug"`
 	}
 
@@ -589,12 +589,12 @@ func Save(c *SymAIConfig, path string) error {
 		}
 		sec.Key("debug").SetValue(c.SymAISection.Debug)
 		sec.Key("host").SetValue(c.SymAISection.Host)
-		sec.Key("expression_host").SetValue(c.SymAISection.ExpressionHost)
+		sec.Key("host_expression").SetValue(c.SymAISection.ExpressionHost)
 		sec.Key("tempdir").SetValue(c.SymAISection.TempDir)
 		sec.Key("ai").SetValue(c.SymAISection.AI)
 		sec.Key("port").SetValue(strconv.Itoa(c.SymAISection.Port))
-		sec.Key("expressioin_port").SetValue(strconv.Itoa(c.SymAISection.ExpressionPort))
-		sec.Key("reenter_count").SetValue(strconv.Itoa(c.SymAISection.ReenterCount))
+		sec.Key("port_expression").SetValue(strconv.Itoa(c.SymAISection.ExpressionPort))
+		sec.Key("reenter_counter").SetValue(strconv.Itoa(c.SymAISection.ReenterCount))
 		sec.Key("hostconfig").SetValue(c.SymAISection.HostConfig)
 		sec.Key("expression_hostconfig").SetValue(c.SymAISection.ExpressionHostConfig)
 

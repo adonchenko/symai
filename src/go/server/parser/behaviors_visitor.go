@@ -31,15 +31,7 @@ func NewBehaviorBody() *BehaviorBody {
 
 func NewBehaviorsVisitor() *BehaviorsVisitor {
 	return &BehaviorsVisitor{
-		ExpressionVisitor: ExpressionVisitor{
-			hasTrigonometric: false,
-			hasNonLinear:     false,
-			varList:          make([]string, 0),
-			substitutionMap:  make(map[string]string, 0),
-			ErrorProcessing: ErrorProcessing{
-				errorList: make([]string, 0),
-		    },
-		},
+		ExpressionVisitor: *NewExpressionVisitor(),
 		Terminals: make(map[string]BehaviorBody, 0),
 	}
 }
