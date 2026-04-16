@@ -671,29 +671,26 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 if b:
                     return res, r_env
             expr = r_env
+        rp = True
         gvars = MathUtils.fill_gvars_func()
         cv = dict()
         for i in cvals:
             try:
                 cv[i] = float(cvals[i])
             except:
+                rp = False
                 pass
 
-        try:
-            res = eval(reach_property, gvars, cv)
-            if not res:
-                return res, env
-            else:
-                reach_property = ""
-        except:
-            pass
-        # SyntaxError: Raised if the provided string is not a valid Python expression (e.g., mismatched parentheses, or trying to use a statement like if or variable assignment =).
-        # NameError: Raised if the expression refers to a variable, function, or class name that is not defined in the available scope.
-        # TypeError: Raised when an operation is performed on a value of an inappropriate type (e.g., trying to divide a list by an integer).
-        # ValueError: Raised when a function within the evaluated expression receives an invalid value, even if the argument type is correct (e.g., a math function receiving an input outside its domain).
-        # ZeroDivisionError: Raised if the expression attempts division by zero.
-        # KeyError or IndexError: Can be raised if the expression attempts to access a non-existent key in a dictionary or an invalid index in a sequence.
-        #
+        if rp:
+            try:
+                res = eval(reach_property, gvars, cv)
+                if not res:
+                    return res, env
+                else:
+                    reach_property = ""
+            except:
+                pass
+     
         if v.isTrigonometric() or v.isNonLinear():
             # trying to process it as an exact expression. Otherwise, return an error
             raise Exception("Non-linear functions are not allowed for symbolic calculation of the environment expression '" + env + "'")
