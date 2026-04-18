@@ -24,6 +24,7 @@ type EQExtractorVisitor struct {
 	ExtractEQ        bool
 	cvals            map[string]float64
 	vals             map[string]string
+	vnames			 []string	// list of variables to remove from the result when they are placed in vvnames list
 }
 
 func NewEQExtractorVisitor(args ...interface{}) *EQExtractorVisitor {
@@ -36,12 +37,25 @@ func NewEQExtractorVisitor(args ...interface{}) *EQExtractorVisitor {
 		ExtractEQ: func() bool {
 			res := false
 			if len(args) > 0 {
-				if val, ok := args[0].(bool); ok {
-					res = val
+				for i := 0; i < len(args); i++ {
+					if reflect.TypeOf(args[i]) == reflect.TypeOf(true) {
+						res = res || args[i].(bool)
+					}						
 				}
-			}
+			}		
 			return res
 		}(),
+		vnames: func() []string {
+			res := make([]string,0)
+			if len(args) > 0 {
+				for i := 0; i < len(args); i++ {
+					if reflect.TypeOf(args[i]) == reflect.TypeOf(res) {
+						res = args[i].([]string)
+					}						
+				}
+			}		
+			return res
+		}(),		
 		cvals: make(map[string]float64),
 		vals:  make(map[string]string),
 	}
@@ -321,7 +335,17 @@ func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.Equal
 						is_add := true
 
 						if v.ExtractEQ && op == "==" {
-							if utils.IsConstant(first) || utils.IsConstant(second) {
+							b := false
+							if utils.IsConstant(first) && utils.IsConstant(second) {								
+								b = true
+							} else { 
+								if v.IsInVarList(second) && utils.IsConstant(first) {
+									b=true
+								} else if v.IsInVarList(first) && utils.IsConstant(second) {
+									b=true
+								}								
+							}
+							if b {
 								is_add = false
 								if v.IsInVarList(second) {
 									// second -> cvals, first is constant
@@ -329,7 +353,7 @@ func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.Equal
 									if err == nil {
 										v.cvals[second] = f
 									} else {
-										v.cvals[second] = f
+										v.vals[second] = first
 									}
 								} else {
 									if v.IsInVarList(first) {
@@ -338,7 +362,7 @@ func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.Equal
 										if err == nil {
 											v.cvals[first] = f
 										} else {
-											v.cvals[first] = f
+											v.vals[first] = second
 										}
 									} else {
 										// both are constants, so we can calculate the result and place it in res
@@ -382,7 +406,7 @@ func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.Equal
 			op = ctx.GetChild(i).(*antlr.TerminalNodeImpl).GetText()
 		} else {
 			t := ctx.GetChild(i).(antlr.ParseTree).Accept(v)
-			if t != nil {
+			if t != nil && len(t.(string)) > 0 {
 				if len(first) == 0 {
 					first = t.(string)
 				} else {
@@ -409,7 +433,7 @@ func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.Equal
 						if err == nil {
 							v.cvals[second] = f
 						} else {
-							v.cvals[second] = f
+							v.vals[second] = first
 						}
 					} else {
 						if v.IsInVarList(first) {
@@ -418,7 +442,7 @@ func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.Equal
 							if err == nil {
 								v.cvals[first] = f
 							} else {
-								v.cvals[first] = f
+								v.vals[first] = second
 							}
 						} else {
 							// both are constants, so we can calculate the result and place it in res
@@ -443,6 +467,7 @@ func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.Equal
 						if v.IsInVarList(first) {
 							is_add = false
 							// first -> vals, second is expression
+							v.vals[first] = second
 						}
 					}
 				}
@@ -468,12 +493,12 @@ func (v *EQExtractorVisitor) VisitLogicalAndExpression(ctx *BehaviorsGrammar.Log
 	res := ""
 
 	for i := 0; i < ctx.GetChildCount(); i++ {
-		if reflect.TypeOf(ctx.GetChild(i)) == reflect.TypeOf((*antlr.TerminalNodeImpl)(nil)) {
-			op := ctx.GetChild(i).(*antlr.TerminalNodeImpl).GetText()
-			res = res + op
-		} else {
+		if reflect.TypeOf(ctx.GetChild(i)) != reflect.TypeOf((*antlr.TerminalNodeImpl)(nil)) {
 			t := ctx.GetChild(i).(antlr.ParseTree).Accept(v)
-			if t != nil {
+			if t != nil && len(t.(string)) > 0 {
+				if len(res) > 0 {
+					res = res + "&&"
+				}
 				res = res + t.(string)
 			}
 		}
@@ -487,12 +512,12 @@ func (v *EQExtractorVisitor) VisitLogicalOrExpression(ctx *BehaviorsGrammar.Logi
 	res := ""
 
 	for i := 0; i < ctx.GetChildCount(); i++ {
-		if reflect.TypeOf(ctx.GetChild(i)) == reflect.TypeOf((*antlr.TerminalNodeImpl)(nil)) {
-			op := ctx.GetChild(i).(*antlr.TerminalNodeImpl).GetText()
-			res = res + op
-		} else {
+		if reflect.TypeOf(ctx.GetChild(i)) != reflect.TypeOf((*antlr.TerminalNodeImpl)(nil)) {
 			t := ctx.GetChild(i).(antlr.ParseTree).Accept(v)
-			if t != nil {
+			if t != nil && len(t.(string)) > 0 {
+				if len(res) > 0 {
+					res = res + "||"
+				}
 				res = res + t.(string)
 			}
 		}
