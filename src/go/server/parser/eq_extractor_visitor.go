@@ -318,6 +318,80 @@ func (v *EQExtractorVisitor) VisitRelationalExpression(ctx *BehaviorsGrammar.Rel
 	return res
 }
 
+func (v *EQExtractorVisitor) qExtract(first string, second string, op string, res string) string {
+	// Adding the result. Here we also should place checkking for
+	// equality op to == and ExtractEQ flag to select concrete values
+	is_add := true
+
+	if v.ExtractEQ && op == "==" {
+		b := false
+		if utils.IsConstant(first) && utils.IsConstant(second) {								
+			b = true
+		} else { 
+			if v.IsInVarList(second) && utils.IsConstant(first) {
+				b=true
+			} else if v.IsInVarList(first) && utils.IsConstant(second) {
+				b=true
+			}								
+		}
+		if b {
+			is_add = false
+			if v.IsInVarList(second) {
+				// second -> cvals, first is constant
+				f, err := strconv.ParseFloat(first, 64)
+				if err == nil {
+					v.cvals[second] = f
+				} else {
+					v.vals[second] = first
+				}
+			} else {
+				if v.IsInVarList(first) {
+					// first -> cvals, second is constant
+					f, err := strconv.ParseFloat(second, 64)
+					if err == nil {
+						v.cvals[first] = f
+					} else {
+						v.vals[first] = second
+					}
+				} else {
+					// both are constants, so we can calculate the result and place it in res
+					f1, err1 := strconv.ParseFloat(first, 64)
+					f2, err2 := strconv.ParseFloat(second, 64)
+					if len(res) > 0 {
+						res = res + "&&"
+					}
+					if err1 == nil && err2 == nil {
+						res = res + strconv.FormatBool(f1 == f2)
+					} else {
+						res = res + strconv.FormatBool(first == second)
+					}
+				}
+			}
+		} else {
+			if v.IsInVarList(second) {
+				is_add = false
+				v.vals[second] = first
+				// second -> vals, first is expression
+			} else {
+				if v.IsInVarList(first) {
+					is_add = false
+					v.vals[first] = second
+					// first -> vals, second is expression
+				}
+			}
+		}
+	}
+
+	if is_add {
+		if len(res) > 0 {
+			res = res + "&&"
+		}
+
+		res = res + second + op + first
+	}
+	return res
+}
+
 // Visit a parse tree produced by ExpressionParser#equalityExpression.
 func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.EqualityExpressionContext) interface{} {
 	res := ""
@@ -330,76 +404,7 @@ func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.Equal
 			if len(op) > 0 {
 				if len(first) > 0 {
 					if len(second) > 0 {
-						// Adding the result. Here we also should place checkking for
-						// equality op to == and ExtractEQ flag to select concrete values
-						is_add := true
-
-						if v.ExtractEQ && op == "==" {
-							b := false
-							if utils.IsConstant(first) && utils.IsConstant(second) {								
-								b = true
-							} else { 
-								if v.IsInVarList(second) && utils.IsConstant(first) {
-									b=true
-								} else if v.IsInVarList(first) && utils.IsConstant(second) {
-									b=true
-								}								
-							}
-							if b {
-								is_add = false
-								if v.IsInVarList(second) {
-									// second -> cvals, first is constant
-									f, err := strconv.ParseFloat(first, 64)
-									if err == nil {
-										v.cvals[second] = f
-									} else {
-										v.vals[second] = first
-									}
-								} else {
-									if v.IsInVarList(first) {
-										// first -> cvals, second is constant
-										f, err := strconv.ParseFloat(second, 64)
-										if err == nil {
-											v.cvals[first] = f
-										} else {
-											v.vals[first] = second
-										}
-									} else {
-										// both are constants, so we can calculate the result and place it in res
-										f1, err1 := strconv.ParseFloat(first, 64)
-										f2, err2 := strconv.ParseFloat(second, 64)
-										if len(res) > 0 {
-											res = res + "&&"
-										}
-										if err1 == nil && err2 == nil {
-											res = res + strconv.FormatBool(f1 == f2)
-										} else {
-											res = res + strconv.FormatBool(first == second)
-										}
-									}
-								}
-							} else {
-								if v.IsInVarList(second) {
-									is_add = false
-									v.vals[second] = first
-									// second -> vals, first is expression
-								} else {
-									if v.IsInVarList(first) {
-										is_add = false
-										v.vals[first] = second
-										// first -> vals, second is expression
-									}
-								}
-							}
-						}
-
-						if is_add {
-							if len(res) > 0 {
-								res = res + "&&"
-							}
-
-							res = res + second + op + first
-						}
+						res = v.qExtract(first, second, op, res)
 					}
 				}
 			}
@@ -419,67 +424,7 @@ func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.Equal
 
 	if len(first) > 0 {
 		if len(second) > 0 {
-			// Adding the result. Here we also should place checkking for
-			// equality op to == and ExtractEQ flag to select concrete values
-
-			is_add := true
-
-			if v.ExtractEQ && op == "==" {
-				if utils.IsConstant(first) || utils.IsConstant(second) {
-					is_add = false
-					if v.IsInVarList(second) {
-						// second -> cvals, first is constant
-						f, err := strconv.ParseFloat(first, 64)
-						if err == nil {
-							v.cvals[second] = f
-						} else {
-							v.vals[second] = first
-						}
-					} else {
-						if v.IsInVarList(first) {
-							// first -> cvals, second is constant
-							f, err := strconv.ParseFloat(second, 64)
-							if err == nil {
-								v.cvals[first] = f
-							} else {
-								v.vals[first] = second
-							}
-						} else {
-							// both are constants, so we can calculate the result and place it in res
-							f1, err1 := strconv.ParseFloat(first, 64)
-							f2, err2 := strconv.ParseFloat(second, 64)
-							if len(res) > 0 {
-								res = res + "&&"
-							}
-							if err1 == nil && err2 == nil {
-								res = res + strconv.FormatBool(f1 == f2)
-							} else {
-								res = res + strconv.FormatBool(first == second)
-							}
-						}
-					}
-				} else {
-					if v.IsInVarList(second) {
-						is_add = false
-						// second -> vals, first is expression
-						v.vals[second] = first
-					} else {
-						if v.IsInVarList(first) {
-							is_add = false
-							// first -> vals, second is expression
-							v.vals[first] = second
-						}
-					}
-				}
-			}
-
-			if is_add {
-				if len(res) > 0 {
-					res = res + "&&"
-				}
-				res = res + second + op + first
-			}
-
+			res = v.qExtract(first, second, op, res)
 		} else {
 			res = first
 		}
