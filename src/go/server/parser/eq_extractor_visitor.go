@@ -24,7 +24,7 @@ type EQExtractorVisitor struct {
 	ExtractEQ        bool
 	cvals            map[string]float64
 	vals             map[string]string
-	vnames			 []string	// list of variables to remove from the result when they are placed in vvnames list
+	vnames           []string // list of variables to remove from the result when they are placed in vvnames list
 }
 
 func NewEQExtractorVisitor(args ...interface{}) *EQExtractorVisitor {
@@ -40,22 +40,22 @@ func NewEQExtractorVisitor(args ...interface{}) *EQExtractorVisitor {
 				for i := 0; i < len(args); i++ {
 					if reflect.TypeOf(args[i]) == reflect.TypeOf(true) {
 						res = res || args[i].(bool)
-					}						
+					}
 				}
-			}		
+			}
 			return res
 		}(),
 		vnames: func() []string {
-			res := make([]string,0)
+			res := make([]string, 0)
 			if len(args) > 0 {
 				for i := 0; i < len(args); i++ {
 					if reflect.TypeOf(args[i]) == reflect.TypeOf(res) {
 						res = args[i].([]string)
-					}						
+					}
 				}
-			}		
+			}
 			return res
-		}(),		
+		}(),
 		cvals: make(map[string]float64),
 		vals:  make(map[string]string),
 	}
@@ -318,21 +318,21 @@ func (v *EQExtractorVisitor) VisitRelationalExpression(ctx *BehaviorsGrammar.Rel
 	return res
 }
 
-func (v *EQExtractorVisitor) qExtract(first string, second string, op string, res string) string {
+func (v *EQExtractorVisitor) qExtractEQ(first string, second string, op string, res string) string {
 	// Adding the result. Here we also should place checkking for
 	// equality op to == and ExtractEQ flag to select concrete values
 	is_add := true
 
 	if v.ExtractEQ && op == "==" {
 		b := false
-		if utils.IsConstant(first) && utils.IsConstant(second) {								
+		if utils.IsConstant(first) && utils.IsConstant(second) {
 			b = true
-		} else { 
+		} else {
 			if v.IsInVarList(second) && utils.IsConstant(first) {
-				b=true
+				b = true
 			} else if v.IsInVarList(first) && utils.IsConstant(second) {
-				b=true
-			}								
+				b = true
+			}
 		}
 		if b {
 			is_add = false
@@ -401,12 +401,8 @@ func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.Equal
 
 	for i := 0; i < ctx.GetChildCount(); i++ {
 		if reflect.TypeOf(ctx.GetChild(i)) == reflect.TypeOf((*antlr.TerminalNodeImpl)(nil)) {
-			if len(op) > 0 {
-				if len(first) > 0 {
-					if len(second) > 0 {
-						res = v.qExtract(first, second, op, res)
-					}
-				}
+			if len(op) > 0 && len(first) > 0 && len(second) > 0 {
+				res = v.qExtractEQ(first, second, op, res)
 			}
 			op = ctx.GetChild(i).(*antlr.TerminalNodeImpl).GetText()
 		} else {
@@ -424,7 +420,7 @@ func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.Equal
 
 	if len(first) > 0 {
 		if len(second) > 0 {
-			res = v.qExtract(first, second, op, res)
+			res = v.qExtractEQ(first, second, op, res)
 		} else {
 			res = first
 		}
