@@ -101,8 +101,10 @@ class SymAIExpression:
                 if len(tail) > 0:
                     tail = tail + "&&"
                 tail = tail + str(it) + "==" + str(vals[it])
-            parser = self.preprocess_check(tail)
-
+            if len(tail) <= 0:
+                parser = self.preprocess_check(expr)
+            else:
+                parser = self.preprocess_check(tail)
             subs = source_expr.get("substitution")
             if subs is None:
                 subs = dict()
@@ -122,10 +124,11 @@ class SymAIExpression:
             source_expr = self.process_body_check(source_expr)
             res = self.postprocess_check(source_expr)
             rf = ""
-            for it in cvals.keys():
-                if len(rf) > 0:
-                    rf = rf + "&&"
-                rf = rf + str(it) + "==" + str(cvals[it])
+            if len(tail) >= 0:
+                for it in cvals.keys():
+                    if len(rf) > 0:
+                        rf = rf + "&&"
+                    rf = rf + str(it) + "==" + str(cvals[it])
             res["formula"] = rf
             return res
 

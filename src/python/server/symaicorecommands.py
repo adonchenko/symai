@@ -264,8 +264,9 @@ class SymAICoreCommands(symaicommands.SymAICommands):
         tree = TreeUtils.prepare_parser_beh(expr).assignmentExpression()
         visitor = SymbolicExpressionGrammarVisitor()
         a = visitor.visit(tree)
-        i = a.strip().find("=")
+        i = a.strip().replace(">=", ">").replace("<=", "<").replace("==", "").find("=")
         if i == -1:
+            a = "1"
             if a != "1":
                 raise Exception(f"Incorrect action description {a}")
             else:
@@ -763,9 +764,9 @@ class SymAICoreCommands(symaicommands.SymAICommands):
 
             res = str(r)
         else:
-            res = "((" + cnd + ")" + "!= 0)"
+            res = cnd  + "!= 0"
             if cnd.find("=") >= 0 or cnd.find("!") >= 0 or cnd.find(">") >= 0 or cnd.find("<") >= 0:
-                res = "(" + cnd + ")"
+                res = cnd
         return res, is_const, r
 
     def do_recalc_const(self, expr, subst):
@@ -1131,11 +1132,6 @@ class SymAICoreCommands(symaicommands.SymAICommands):
            has_log = ev.action_has_logical(pe.assignmentExpressionList())
 
            if has_log:
-               s = pe.assignmentExpressionList()[num_expr - 1]
-               if s == "1":
-                   s = "True"
-               if len(expr) > 1 and len(s) > 0:
-                   pf = s + " && "
                num_expr = num_expr - 1
 
            i = 0
@@ -1146,6 +1142,26 @@ class SymAICoreCommands(symaicommands.SymAICommands):
        for it in vals.keys():
            vals[it] = str(vals[it])
        return env, is_const, vals
+
+    def process_logical_postcondition(self, ctx, lg):
+        if len(lg) <= 0:
+            return lg
+
+        env = ctx.get("environment")
+        tree = TreeUtils.prepare_parser_beh(lg).expression()
+        v = ExprGrammarVisitor()
+        v.visit(tree)
+        vals = v.getVarList()
+        if len(vals) > 0:
+            env = self.do_remove_vars(env, vals)
+            if len(env) > 0:
+                env = env + " && "
+            env = env + lg
+        else:
+            env = lg
+        ctx["environment"] = env
+
+        return lg
 
     def step_modelling(self, ctx, act):
         act_visitor = ctx["act_visitor"]
@@ -1161,6 +1177,9 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                 elif ev.action_has_logical(pe.assignmentExpressionList()):
                     st = r[2].split(";")
                     lg = st[-1]
+                    # TODO: Processing logical part here!!!
+                    lg = self.process_logical_postcondition(ctx, lg)
+
                     if len(lg) == 1 and lg == "1":
                         return ctx, True
                     if len(lg) > 0:
@@ -1168,7 +1187,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
                         if ret and tt:
                            cnd = cnd
                         elif len(cnd) > 0:
-                            cnd = "(" + lg + ") && (" + cnd + ")"
+                            cnd = lg + " && " + cnd
                         else:
                             cnd = lg
                 break
@@ -1280,7 +1299,7 @@ class SymAICoreCommands(symaicommands.SymAICommands):
     def finish_trace(self, ctx):
         fn = ctx["trace_file"]
         st = "}\n"
-        if ctx["cur_trace_continued"] and not ctx["env_cur_trace"].is_empty():
+        if not ctx["env_cur_trace"].is_empty():
             s = ctx["cur_trace"]
             st = s.dump_to_string(ctx["env_cur_trace"]) + st
         with open(fn, "a+") as f:
