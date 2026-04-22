@@ -318,7 +318,7 @@ func (v *EQExtractorVisitor) VisitRelationalExpression(ctx *BehaviorsGrammar.Rel
 	return res
 }
 
-func (v *EQExtractorVisitor) qExtractEQ(first string, second string, op string, res string) string {
+func (v *EQExtractorVisitor) QExtractEQ(first string, second string, op string, res string) string {
 	// Adding the result. Here we also should place checkking for
 	// equality op to == and ExtractEQ flag to select concrete values
 	is_add := true
@@ -401,8 +401,8 @@ func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.Equal
 
 	for i := 0; i < ctx.GetChildCount(); i++ {
 		if reflect.TypeOf(ctx.GetChild(i)) == reflect.TypeOf((*antlr.TerminalNodeImpl)(nil)) {
-			if len(op) > 0 && len(first) > 0 && len(second) > 0 {
-				res = v.qExtractEQ(first, second, op, res)
+			if len(op) > 0 && len(first) > 0 && len(second) > 0 {				
+				res = v.QExtractEQ(first, second, op, res)
 			}
 			op = ctx.GetChild(i).(*antlr.TerminalNodeImpl).GetText()
 		} else {
@@ -420,7 +420,7 @@ func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.Equal
 
 	if len(first) > 0 {
 		if len(second) > 0 {
-			res = v.qExtractEQ(first, second, op, res)
+			res = v.QExtractEQ(first, second, op, res)
 		} else {
 			res = first
 		}
@@ -429,19 +429,63 @@ func (v *EQExtractorVisitor) VisitEqualityExpression(ctx *BehaviorsGrammar.Equal
 	return res
 }
 
+func (v *EQExtractorVisitor) IsProcessExtractByVar() bool {
+	is_extract := false
+	if len(v.vnames) > 0 && len(v.GetVarList()) > 0 {
+		for _, nm := range v.vnames {
+			if v.IsInVarList(nm) {
+				is_extract = true
+				break
+			}
+		}
+	}
+	return is_extract
+}
+
+func (v *EQExtractorVisitor) QAppend(res string, app interface{}, op string) string {
+	is_skip := false
+	if app != nil && len(app.(string)) > 0 {
+		if v.IsProcessExtractByVar() {
+			p, _ := initParser(app.(string))
+			visitor := NewEQExtractorVisitor()
+			tr := p.Expression()
+			s := tr.Accept(visitor)
+			
+			if strings.Contains(s.(string), "&&") || strings.Contains(s.(string), "||") {
+				p1, _ := initParser(s.(string))
+				visitor1 := NewEQExtractorVisitor(v.vnames, v.ExtractEQ)
+				tr1 := p1.Expression()
+				s1 := tr1.Accept(visitor1)
+				app = s1 
+				p, _ := initParser(app.(string))
+				visitor = NewEQExtractorVisitor()
+				tr := p.Expression()
+				tr.Accept(visitor)
+			}
+			for _, nm := range v.vnames {
+				if visitor.IsInVarList(nm) {
+					is_skip = true
+					break
+				}
+			}
+		}
+		if !is_skip {
+			if len(res) > 0 {
+				res = res + op
+			}
+			res = res + app.(string)
+		}
+	}
+	return res
+}
+
 // Visit a parse tree produced by ExpressionParser#logicalAndExpression.
 func (v *EQExtractorVisitor) VisitLogicalAndExpression(ctx *BehaviorsGrammar.LogicalAndExpressionContext) interface{} {
 	res := ""
-
 	for i := 0; i < ctx.GetChildCount(); i++ {
 		if reflect.TypeOf(ctx.GetChild(i)) != reflect.TypeOf((*antlr.TerminalNodeImpl)(nil)) {
 			t := ctx.GetChild(i).(antlr.ParseTree).Accept(v)
-			if t != nil && len(t.(string)) > 0 {
-				if len(res) > 0 {
-					res = res + "&&"
-				}
-				res = res + t.(string)
-			}
+			res = v.QAppend(res, t, "&&")			
 		}
 	}
 
@@ -451,15 +495,16 @@ func (v *EQExtractorVisitor) VisitLogicalAndExpression(ctx *BehaviorsGrammar.Log
 // Visit a parse tree produced by ExpressionParser#logicalOrExpression.
 func (v *EQExtractorVisitor) VisitLogicalOrExpression(ctx *BehaviorsGrammar.LogicalOrExpressionContext) interface{} {
 	res := ""
-
 	for i := 0; i < ctx.GetChildCount(); i++ {
 		if reflect.TypeOf(ctx.GetChild(i)) != reflect.TypeOf((*antlr.TerminalNodeImpl)(nil)) {
 			t := ctx.GetChild(i).(antlr.ParseTree).Accept(v)
 			if t != nil && len(t.(string)) > 0 {
-				if len(res) > 0 {
-					res = res + "||"
+				if t != nil && len(t.(string)) > 0 {
+					if len(res) > 0 {
+						res = res + "||"
+					}
+					res = res + t.(string)
 				}
-				res = res + t.(string)
 			}
 		}
 	}

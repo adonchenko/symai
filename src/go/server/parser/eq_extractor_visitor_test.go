@@ -12,7 +12,8 @@ type (
 		result    string
 		extract   bool
 		cvals     map[string]float64
-		vals	 map[string]string
+		vals	  map[string]string
+		vars 	  []string
 	}
 )
 
@@ -25,19 +26,23 @@ func initEQExtractorTestInputData() []EQExtractorVisitorTestData {
 			extract:   true,
 			cvals:     make(map[string]float64),
 			vals:      make(map[string]string),	
+			vars:      []string{},
 		})
 	testData[0].cvals["a"] = 56.0
     testData[0].vals["c"] = "d+3"
-	testData[0].vals["q"] =	 "d+3"
+	testData[0].vals["q"] =	"d+3"
 	testData[0].vals["e"] = "f"
+	
 	testData = append(testData,
 		EQExtractorVisitorTestData{
 			source:    "a==56!=c==d+3==q&&e==f",
-			result:    "a==56&&56!=c&&c==d+3&&d+3==q&&e==f",
+			result:    "a==56&&d+3==q&&e==f",
 			extract:   false,
 			cvals:     make(map[string]float64),
 			vals:      make(map[string]string),	
+			vars:      []string{"c"},
 		})
+		
 	return testData
 }
 
@@ -50,10 +55,7 @@ func TestEQExtractorVisitor(t *testing.T) {
 
 		tree := p.Expression()
 
-		// Create and run the visitor
-		vrs := make([]string, 0)
-		vrs = append(vrs, "a")
-		visitor := NewEQExtractorVisitor(d.extract, vrs)
+		visitor := NewEQExtractorVisitor(d.extract, d.vars)
 
 		result := tree.Accept(visitor)
 		assert.Equal(t, d.result, result.(string), "The result should be the same as expected")
