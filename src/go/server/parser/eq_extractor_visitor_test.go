@@ -42,6 +42,16 @@ func initEQExtractorTestInputData() []EQExtractorVisitorTestData {
 			vals:      make(map[string]string),	
 			vars:      []string{"c"},
 		})
+	
+	testData = append(testData,
+		EQExtractorVisitorTestData{
+			source:    "a==56!=c==d+3==q&&e==f||g>=h<p",
+			result:    "a==56&&d+3==q&&e==f||h<p",
+			extract:   false,
+			cvals:     make(map[string]float64),
+			vals:      make(map[string]string),	
+			vars:      []string{"c", "g"},
+		})	
 		
 	return testData
 }

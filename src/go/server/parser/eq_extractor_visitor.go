@@ -302,16 +302,34 @@ func (v *EQExtractorVisitor) VisitAdditiveExpression(ctx *BehaviorsGrammar.Addit
 // Visit a parse tree produced by ExpressionParser#relationalExpression.
 func (v *EQExtractorVisitor) VisitRelationalExpression(ctx *BehaviorsGrammar.RelationalExpressionContext) interface{} {
 	res := ""
+	first := ""
+	second := ""
+	op := ""
 
 	for i := 0; i < ctx.GetChildCount(); i++ {
 		if reflect.TypeOf(ctx.GetChild(i)) == reflect.TypeOf((*antlr.TerminalNodeImpl)(nil)) {
-			op := ctx.GetChild(i).(*antlr.TerminalNodeImpl).GetText()
-			res = res + op
+			if len(op) > 0 && len(first) > 0 && len(second) > 0 {
+				res = v.QExtractEQ(first, second, op, res)
+			}
+			op = ctx.GetChild(i).(*antlr.TerminalNodeImpl).GetText()
 		} else {
 			t := ctx.GetChild(i).(antlr.ParseTree).Accept(v)
-			if t != nil {
-				res = res + t.(string)
+			if t != nil && len(t.(string)) > 0 {
+				if len(first) == 0 {
+					first = t.(string)
+				} else {
+					second = first
+					first = t.(string)
+				}
 			}
+		}
+	}
+
+	if len(first) > 0 {
+		if len(second) > 0 {
+			res = v.QExtractEQ(first, second, op, res)
+		} else {
+			res = first
 		}
 	}
 
