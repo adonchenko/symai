@@ -1,0 +1,944 @@
+{
+[
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=4 && c<=8 && c==3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==6+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a1",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==3+b&&a==3.0&&k==3.0"
+    }
+]
+,
+[
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a2",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]
+[
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==1.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a3",
+        "environment": "c>=-2 && c<=2 && c==-3+b&&a==3.0&&k==2.0"
+    },
+    {
+        "action": "a4",
+        "environment": "b>=1 && b<=5 && c==b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a21",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    },
+    {
+        "action": "a5",
+        "environment": "b>=1 && b<=5 && c==-3+b&&a==3.0&&k==3.0"
+    }
+]}
