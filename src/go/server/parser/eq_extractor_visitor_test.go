@@ -64,6 +64,7 @@ func TestEQExtractorVisitor(t *testing.T) {
 
 		if d.extract {
 			assert.Equal(t, len(d.cvals), len(visitor.GetCvals()), "The number of extracted concrete values should match")
+			assert.Equal(t, len(d.vals), len(visitor.GetVals()), "The number of extracted symbolic values should match")
 		} else {
 			assert.Equal(t, 0, len(visitor.GetCvals()), "There should be no concrete values extracted")
 			assert.Equal(t, 0, len(visitor.GetVals()), "There should be no values extracted")
