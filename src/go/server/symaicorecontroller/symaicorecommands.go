@@ -26,6 +26,11 @@ type (
 		FileBaseData
 	}
 
+	ActionsProcessingContext struct {
+		FileBaseData
+		actions          map[string]parser.ActionBody
+	}	
+
 	SymAICoreCommandProcessing func(c *Client, params string) (string, error)
 
 	SymAICoreCommand struct {
@@ -165,7 +170,7 @@ func doEnvironment(c *Client, params string) (string, error) {
 				}
 				err = errors.New(errMsg)
 			} else {
-				visitor := parser.NewExpressionVisitor()
+				visitor := parser.NewEQExtractorVisitor()
 
 				r := tree.Accept(visitor)
 				if r == nil || len(visitor.GetErrorList()) > 0 {
@@ -317,7 +322,7 @@ func doProperty(c *Client, params string) (string, error) {
 				}
 				err = errors.New(errMsg)
 			} else {
-				visitor := parser.NewExpressionVisitor()
+				visitor := parser.NewEQExtractorVisitor()
 
 				r := tree.Accept(visitor)
 				if r == nil || len(visitor.GetErrorList()) > 0 {
@@ -349,6 +354,149 @@ func doProperty(c *Client, params string) (string, error) {
 	return res, err
 }
 
+func (c *Client) newActionsCtx() {
+	c.ctx["actions"] = ActionsProcessingContext{
+		FileBaseData: FileBaseData{
+			Filename: "actions.act",
+			Content:  "",
+			Filepath: filepath.Join(c.getBaseTempDir(), "actions.act"),
+		},
+		actions: make(map[string]parser.ActionBody, 0),
+	}
+}
+
+func (c *Client) getActionsCtx() ActionsProcessingContext {
+	r, ok := c.ctx["actions"]
+	if !ok {
+		c.newActionsCtx()
+		r, _ = c.ctx["actions"]
+	}
+	e := r.(ActionsProcessingContext)
+
+	return e
+}
+
+func (c *Client) setActionsCtx(ec ActionsProcessingContext) {
+	c.ctx["actions"] = ec
+}
+
+func (c *Client) getActionsFilename() string {
+	return c.getActionsCtx().Filename
+}
+
+func (c *Client) setActionsFilename(fn string) {
+	e := c.getActionsCtx()
+	e.Filename = fn
+	c.setActionsCtx(e)
+}
+
+func (c *Client) getActionsFilepath() string {
+	return c.getActionsCtx().Filepath
+}
+
+func (c *Client) setActionsFilepath(fn string) {
+	e := c.getActionsCtx()
+	e.Filepath = fn
+	c.setActionsCtx(e)
+}
+
+func (c *Client) getActionsContent() string {
+	return c.getActionsCtx().Content
+}
+
+func (c *Client) setActionsContent(fn string) {
+	e := c.getActionsCtx()
+	e.Content = fn
+	c.setActionsCtx(e)
+}
+
+func (c *Client) saveActionsContent() error {
+	err := WriteToFile(c.getActionsFilepath(), c.getActionsContent())
+
+	if err != nil {
+		err = errors.New("client " + c.UUID.String() + " error saving actions to the file '" + c.getActionsFilepath() + "' " + err.Error())
+	}
+
+	return err
+}
+
+func (c *Client) getActions() map[string]parser.ActionBody {
+	return c.getActionsCtx().actions
+}
+
+func (c *Client) setActions(m map[string]parser.ActionBody) {
+	ac := c.getActionsCtx()
+	ac.actions = m
+	c.setActionsCtx(ac)
+}
+
+func doActions(c *Client, params string) (string, error) {
+
+	var (
+		res       = ""
+		err error = nil
+		fd        = FileData{}
+	)
+	cnf.GetLogger().Info("client " + c.UUID.String() + " actions " + params + " command received")
+
+	if len(params) <= 0 {
+		fs := JsonFile{
+			Filename: c.getActionsCtx().Filename,
+			Content:  c.getActionsCtx().Content,
+		}
+
+		r := make([]byte, 0)
+		r, err = json.Marshal(fs)
+		res = string(r)
+	} else {
+		fd, err = processFile(params)
+		if err == nil {
+			p, l := InitParser(fd.Content)
+			tree := p.Expression()
+			if len(l.GetErrorList()) > 0 {
+				errMsg := ""
+				for _, e := range l.GetErrorList() {
+					if len(errMsg) > 0 {
+						errMsg = errMsg + "\n"
+					}
+					errMsg = errMsg + e
+				}
+				err = errors.New(errMsg)
+			} else {
+				visitor := parser.NewActionsVisitor()
+
+				r := tree.Accept(visitor)
+				if r == nil || len(visitor.GetErrorList()) > 0 {
+					errMsg := ""
+					for _, e := range visitor.GetErrorList() {
+						if len(errMsg) > 0 {
+							errMsg = errMsg + "\n"
+						}
+						errMsg = errMsg + e
+					}
+					if len(errMsg) <= 0 {
+						errMsg = "actions parsing error"
+					}
+					err = errors.New(errMsg)
+				} else {
+					c.setActions(visitor.GetActions())
+					fn := strings.TrimSpace(fd.Filename)
+					if len(fn) <= 0 {
+						c.setActionsFilename("actions.act")
+					}
+					c.setActionsFilename(fn)
+					res = r.(string)
+					c.setActionsContent(res)
+					//err = c.saveActionsContent() // Will be uncommented, if we'll need to keep actions permanently
+				}
+			}
+		}
+	}
+
+	return res, err
+}
+
+
 func initCoreCommands(c *config.SymAIConfig) *map[string]SymAICoreCommand {
 	cnf = c
 	allCoreCommands = make(map[string]SymAICoreCommand, 0)
@@ -361,6 +509,9 @@ func initCoreCommands(c *config.SymAIConfig) *map[string]SymAICoreCommand {
 	}
 	allCoreCommands["environment"] = SymAICoreCommand{
 		exec: doEnvironment,
+	}
+	allCoreCommands["actions"] = SymAICoreCommand{
+		exec: doActions,
 	}
 	allCoreCommands["property"] = SymAICoreCommand{
 		exec: doProperty,
