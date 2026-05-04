@@ -212,9 +212,9 @@ func doShutdown(c *Client, params string) (string, error) {
 		config.GetConfig().GetLogger().Error("cnf is nil")
 		return "", errors.New("cnf is nil")
 	}
-	cnf.GetLogger().Info("client " + c.UUID.String() + " shutdown command received")	
-	
-	stopChan <- syscall.SIGQUIT	
+	cnf.GetLogger().Info("client " + c.UUID.String() + " shutdown command received")
+
+	stopChan <- syscall.SIGQUIT
 	// TODO: stop expression and frontend services here as well!!!
 
 	return "", nil
@@ -491,10 +491,160 @@ func doActions(c *Client, params string) (string, error) {
 						fn = "actions.act"
 					}
 					c.setActionsFilename(fn)
-					res = ""
-					
-					c.setActionsContent(r.(string))
+					s := strings.TrimSpace(r.(string))
+					res = s
+
+					c.setActionsContent(s)
 					//err = c.saveActionsContent() // Will be uncommented, if we'll need to keep actions permanently
+				}
+			}
+		}
+	}
+
+	return res, err
+}
+
+func (b *BehaviorsProcessingContext) GetBehavior(beh string) (parser.BehaviorBody, bool) {	
+	r, exists := b.behaviors[beh]
+	return r, exists
+}
+
+func (c *Client) newBehaviorsCtx() {
+	c.ctx["behaviors"] = BehaviorsProcessingContext{
+		FileBaseData: FileBaseData{
+			Filename: "behaviors.beh",
+			Content:  "",
+			Filepath: filepath.Join(c.getBaseTempDir(), "behaviors.beh"),
+		},
+		behaviors: make(map[string]parser.BehaviorBody, 0),
+	}
+}
+
+func (c *Client) getBehaviorsCtx() BehaviorsProcessingContext {
+	r, ok := c.ctx["behaviors"]
+	if !ok {
+		c.newBehaviorsCtx()
+		r, _ = c.ctx["behaviors"]
+	}
+	e := r.(BehaviorsProcessingContext)
+
+	return e
+}
+
+func (c *Client) setBehaviorsCtx(ec BehaviorsProcessingContext) {
+	c.ctx["behaviors"] = ec
+}
+
+func (c *Client) getBehaviorsFilename() string {
+	return c.getBehaviorsCtx().Filename
+}
+
+func (c *Client) setBehaviorsFilename(fn string) {
+	e := c.getBehaviorsCtx()
+	e.Filename = fn
+	c.setBehaviorsCtx(e)
+}
+
+func (c *Client) getBehaviorsFilepath() string {
+	return c.getBehaviorsCtx().Filepath
+}
+
+func (c *Client) setBehaviorsFilepath(fn string) {
+	e := c.getBehaviorsCtx()
+	e.Filepath = fn
+	c.setBehaviorsCtx(e)
+}
+
+func (c *Client) getBehaviorsContent() string {
+	return c.getBehaviorsCtx().Content
+}
+
+func (c *Client) setBehaviorsContent(fn string) {
+	e := c.getBehaviorsCtx()
+	e.Content = fn
+	c.setBehaviorsCtx(e)
+}
+
+func (c *Client) saveBehaviorsContent() error {
+	err := WriteToFile(c.getBehaviorsFilepath(), c.getBehaviorsContent())
+
+	if err != nil {
+		err = errors.New("client " + c.UUID.String() + " error saving behaviors to the file '" + c.getBehaviorsFilepath() + "' " + err.Error())
+	}
+
+	return err
+}
+
+func (c *Client) getBehaviors() map[string]parser.BehaviorBody {
+	return c.getBehaviorsCtx().behaviors
+}
+
+func (c *Client) setBehaviors(m map[string]parser.BehaviorBody) {
+	ac := c.getBehaviorsCtx()
+	ac.behaviors = m
+	c.setBehaviorsCtx(ac)
+}
+
+func doBehaviors(c *Client, params string) (string, error) {
+
+	var (
+		res       = ""
+		err error = nil
+		fd        = FileData{}
+	)
+	cnf.GetLogger().Info("client " + c.UUID.String() + " behaviors " + params + " command received")
+
+	if len(params) <= 0 {
+		fs := JsonFile{
+			Filename: c.getBehaviorsCtx().Filename,
+			Content:  c.getBehaviorsCtx().Content,
+		}
+
+		r := make([]byte, 0)
+		r, err = json.Marshal(fs)
+		res = string(r)
+	} else {
+		fd, err = processFile(params)
+		if err == nil {
+			p, l := InitParser(fd.Content)
+			tree := p.Behaviors()
+			if len(l.GetErrorList()) > 0 {
+				errMsg := ""
+				for _, e := range l.GetErrorList() {
+					if len(errMsg) > 0 {
+						errMsg = errMsg + "\n"
+					}
+					errMsg = errMsg + e
+				}
+				err = errors.New(errMsg)
+			} else {
+				visitor := parser.NewBehaviorsVisitor()
+
+				r := tree.Accept(visitor)
+				if r == nil || len(visitor.GetErrorList()) > 0 {
+					errMsg := ""
+					for _, e := range visitor.GetErrorList() {
+						if len(errMsg) > 0 {
+							errMsg = errMsg + "\n"
+						}
+						errMsg = errMsg + e
+					}
+					if len(errMsg) <= 0 {
+						errMsg = "behaviors parsing error"
+					}
+					err = errors.New(errMsg)
+				} else {
+					c.setBehaviors(visitor.GetBehaviors())
+					fn := strings.TrimSpace(fd.Filename)
+					if len(fn) <= 0 {
+						fn = "behaviors.beh"
+					}
+					c.setBehaviorsFilename(fn)
+					s := strings.TrimSpace(r.(string))
+					res = s
+
+					c.setBehaviorsContent(s)
+					//err = c.saveBehaviorsContent() // Will be uncommented, if we'll need to keep behaviors permanently
 				}
 			}
 		}
@@ -516,11 +666,11 @@ func initCoreCommands(c *config.SymAIConfig) *map[string]SymAICoreCommand {
 	allCoreCommands["environment"] = SymAICoreCommand{
 		exec: doEnvironment,
 	}
-	allCoreCommands["actions"] = SymAICoreCommand{
-		exec: doActions,
-	}
 	allCoreCommands["property"] = SymAICoreCommand{
 		exec: doProperty,
+	}
+		allCoreCommands["behaviors"] = SymAICoreCommand{
+		exec: doBehaviors,
 	}
 	allCoreCommands["help"] = SymAICoreCommand{
 		exec:  doHelp,

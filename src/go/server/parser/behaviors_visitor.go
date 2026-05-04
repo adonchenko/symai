@@ -52,6 +52,14 @@ func (v *BehaviorsVisitor) SetBehaviors(t map[string]BehaviorBody) {
 	v.Terminals = t
 }
 
+func (v *BehaviorsVisitor) GetTerminals() map[string]BehaviorBody {
+	return v.Terminals
+}
+
+func (v *BehaviorsVisitor) SetTerminals(t map[string]BehaviorBody) {
+	v.Terminals = t
+}	
+
 // Visit a parse tree produced by ExpressionGrammarParser#behaviors.
 func (v *BehaviorsVisitor) VisitBehaviors(ctx *BehaviorsGrammar.BehaviorsContext) interface{} {
 	res := ""
