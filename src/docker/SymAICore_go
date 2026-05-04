@@ -28,6 +28,7 @@ COPY ./src/go/server/symaicorecontroller/symaicoreservercontroller.go /app/src/g
 COPY ./src/go/server/symaicorecontroller/symaisymaicoreserver.go /app/src/go/server/symaicorecontroller/symaisymaicoreserver.go
 COPY ./src/go/server/symaicorecontroller/symaicorecommands.go /app/src/go/server/symaicorecontroller/symaicorecommands.go
 COPY ./src/go/server/symaicorecontroller/symaicoretools.go /app/src/go/server/symaicorecontroller/symaicoretools.go
+COPY ./src/go/server/symaicorecontroller/symaicoretypes.go /app/src/go/server/symaicorecontroller/symaicoretypes.go
 
 COPY ./src/go/server/parser/error_processing.go /app/src/go/server/parser/error_processing.go
 COPY ./src/go/server/parser/error_listener.go /app/src/go/server/parser/error_listener.go

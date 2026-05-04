@@ -3,25 +3,10 @@ package symaicorecontroller
 import (
 	"fmt"
 
-	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
-
 	"src/server/config"
 )
 
-type (
-	// Client represents a single WebSocket connection
-	Client struct {
-		ctx map[string]interface{} // Context fields:
-		// "symaiconfig" a SymAISection value @config for details
-		// "environment" a FileBaseData value
-		// "properties" a PropertyProcessingContext value
-		// "actions" an ActionsProcessingContext value
-		conn *websocket.Conn
-		UUID uuid.UUID
-		send chan []byte
-	}
-
+type (	
 	// Hub maintains the set of active clients
 	Hub struct {
 		// Registered clients - using a map for O(1) lookups
