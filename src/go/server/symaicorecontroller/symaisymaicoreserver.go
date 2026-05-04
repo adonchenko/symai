@@ -48,9 +48,9 @@ func (c *Client) readPump() {
 			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
 				cfg.Logger.Info(fmt.Sprintf("Client %s closed connection normally", c.UUID))
 			} else if websocket.IsUnexpectedCloseError(err) {
-				//cfg.Logger.Info(fmt.Sprintf("Client %s unexpected close: %v", c.UUID, err))
+				cfg.Logger.Info(fmt.Sprintf("Client %s unexpected close: %v", c.UUID, err))
 			} else {
-				//cfg.Logger.Info(fmt.Sprintf("Client %s read error: %v", c.UUID, err))
+				cfg.Logger.Info(fmt.Sprintf("Client %s read error: %v", c.UUID, err))
 			}
 			return
 		}

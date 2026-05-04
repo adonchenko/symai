@@ -95,27 +95,32 @@ func RunCoreServer(cfg *config.SymAIConfig) error {
 		<-stopChan
 
 		cfg.Logger.Info("Shutting down SymAI Core server...")
-
+		err = ShutdownExpression()
+		if err != nil {
+			cfg.Logger.Warning("SymAI shutdown: Error shutting down SymAI Expression Server: " + err.Error())
+		} else {
+			cfg.Logger.Info("SymAI shutdown:SymAI Expression Server shutdown successfully")
+		}
 		// Create a deadline for shutdown
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second) // TODO: Make timeout configurable
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second) // TODO: Make timeout configurable
 		defer cancel()
 
 		// Close all WebSocket connections gracefully
 		for client := range hub.clients {
 			hub.unregister <- client
 			// Send close message to each client
-//			if len(client.send) <= 0 {
-//			client.send <- []byte(strconv.Itoa(websocket.CloseMessage))
-//			client.send <- websocket.FormatCloseMessage(websocket.CloseNormalClosure, "SymAI Core Server shutting down")
-//			client.conn.WriteMessage(websocket.CloseMessage,
-//				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "SymAI Core Server shutting down"))
-//			client.conn.Close()
+			//			if len(client.send) <= 0 {
+			//			client.send <- []byte(strconv.Itoa(websocket.CloseMessage))
+			//			client.send <- websocket.FormatCloseMessage(websocket.CloseNormalClosure, "SymAI Core Server shutting down")
+			//			client.conn.WriteMessage(websocket.CloseMessage,
+			//				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "SymAI Core Server shutting down"))
+			//			client.conn.Close()
 		}
 
 		// Shutdown HTTP server
-		if err := server.Shutdown(ctx); err != nil {
+		if err = server.Shutdown(ctx); err != nil {
 			cfg.Logger.Error("SymAI Core Server shutdown error: " + err.Error())
-		}
+		} 
 
 		cfg.Logger.Info("SymAI Core Server stopped")
 

@@ -69,6 +69,14 @@ func initActionTestInputData() []ActionsVisitorTestData {
 	testData[4].has_logical = append(testData[4].has_logical, NameBooleanTestPair{"a(2)", false})
 	testData[4].has_logical = append(testData[4].has_logical, NameBooleanTestPair{"a(3)", false})
 	testData[4].has_logical = append(testData[4].has_logical, NameBooleanTestPair{"a(4)", false})
+	
+	testData = append(testData,
+		ActionsVisitorTestData{
+			source:      "a1: 1-> 1,",
+			result:      "a1:0<1->1,",
+			n_actions:   1,
+			has_logical: make([]NameBooleanTestPair, 0),
+		})
 
 	return testData
 }

@@ -15,6 +15,8 @@ type (
 		ctx map[string]interface{} // Context fields:
 		// "symaiconfig" a SymAISection value @config for details
 		// "environment" a FileBaseData value
+		// "properties" a PropertyProcessingContext value
+		// "actions" an ActionsProcessingContext value
 		conn *websocket.Conn
 		UUID uuid.UUID
 		send chan []byte

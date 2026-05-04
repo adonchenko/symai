@@ -444,9 +444,9 @@ func (cfg *SymAIConfig) adjustWSSSettings() error {
 			HandshakeTimeout:  60,
 			EntryPoint:        "/",
 			EnableCompression: true,
-			WriteWait:         10,
-			PingPeriod:        60,
-			PongWait:          54,
+			WriteWait:         20,
+			PingPeriod:        70,
+			PongWait:          100000, //64,
 			MaxMessageSize:    512 * 1024,
 		}
 		if cfg.WSSConfigsFromConfig == nil {

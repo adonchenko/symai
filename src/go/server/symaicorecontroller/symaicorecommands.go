@@ -28,8 +28,13 @@ type (
 
 	ActionsProcessingContext struct {
 		FileBaseData
-		actions          map[string]parser.ActionBody
-	}	
+		actions map[string]parser.ActionBody
+	}
+
+	BehaviorsProcessingContext struct {
+		FileBaseData
+		behaviors map[string]parser.BehaviorBody
+	}
 
 	SymAICoreCommandProcessing func(c *Client, params string) (string, error)
 
@@ -188,7 +193,7 @@ func doEnvironment(c *Client, params string) (string, error) {
 				} else {
 					fn := strings.TrimSpace(fd.Filename)
 					if len(fn) <= 0 {
-						c.setEnvFilename("environment.env")
+						fn = "environment.env"
 					}
 					c.setEnvFilename(fn)
 					res = r.(string)
@@ -207,8 +212,9 @@ func doShutdown(c *Client, params string) (string, error) {
 		config.GetConfig().GetLogger().Error("cnf is nil")
 		return "", errors.New("cnf is nil")
 	}
-	cnf.GetLogger().Info("client " + c.UUID.String() + " shutdown command received")
-	stopChan <- syscall.SIGQUIT
+	cnf.GetLogger().Info("client " + c.UUID.String() + " shutdown command received")	
+	
+	stopChan <- syscall.SIGQUIT	
 	// TODO: stop expression and frontend services here as well!!!
 
 	return "", nil
@@ -340,7 +346,7 @@ func doProperty(c *Client, params string) (string, error) {
 				} else {
 					fn := strings.TrimSpace(fd.Filename)
 					if len(fn) <= 0 {
-						c.setPropFilename("property.prop")
+						fn = "property.prop"
 					}
 					c.setPropFilename(fn)
 					res = r.(string)
@@ -452,7 +458,7 @@ func doActions(c *Client, params string) (string, error) {
 		fd, err = processFile(params)
 		if err == nil {
 			p, l := InitParser(fd.Content)
-			tree := p.Expression()
+			tree := p.Actions()
 			if len(l.GetErrorList()) > 0 {
 				errMsg := ""
 				for _, e := range l.GetErrorList() {
@@ -482,11 +488,12 @@ func doActions(c *Client, params string) (string, error) {
 					c.setActions(visitor.GetActions())
 					fn := strings.TrimSpace(fd.Filename)
 					if len(fn) <= 0 {
-						c.setActionsFilename("actions.act")
+						fn = "actions.act"
 					}
 					c.setActionsFilename(fn)
-					res = r.(string)
-					c.setActionsContent(res)
+					res = ""
+					
+					c.setActionsContent(r.(string))
 					//err = c.saveActionsContent() // Will be uncommented, if we'll need to keep actions permanently
 				}
 			}
@@ -495,7 +502,6 @@ func doActions(c *Client, params string) (string, error) {
 
 	return res, err
 }
-
 
 func initCoreCommands(c *config.SymAIConfig) *map[string]SymAICoreCommand {
 	cnf = c
@@ -535,7 +541,7 @@ func doHelp(c *Client, params string) (string, error) {
 		if !ok {
 			err = errors.New("help: unknown command '" + strings.TrimSpace(params) + "'")
 		} else {
-            res = "command " + strings.TrimSpace(params) + "\n" + cmd.descr
+			res = "command " + strings.TrimSpace(params) + "\n" + cmd.descr
 		}
 	} else {
 		for k, v := range allCoreCommands {

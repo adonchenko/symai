@@ -13,7 +13,21 @@ type (
 		n_terms   int
 		test_data []NameTerminalsTestPair
 	}
+	BehaviorBodyTestData struct {
+		terminals []string
+		result    string
+	}
 )
+
+func initBehaviorBodyTestInputData() []BehaviorBodyTestData {
+	testData := make([]BehaviorBodyTestData, 0)
+	testData = append(testData,
+		BehaviorBodyTestData{
+			terminals: []string{"a(1)", ".", "B(1)", "+", "a(2)", ".", "B(2)", "+", "a(5)", ".", "B(3)"},
+			result:    "a(1).B(1)+a(2).B(2)+a(5).B(3)",
+		})
+	return testData
+}
 
 func initBehaviorsTestInputData() []BehaviorsVisitorTestData {
 	testData := make([]BehaviorsVisitorTestData, 0)
@@ -106,4 +120,15 @@ func TestBehaviorsVisitor(t *testing.T) {
 			assert.NotEqual(t, false, b, "Expected and processed terminals sequences are not equal")
 		}
 	}
+}
+
+func TestBehaviorGetText(t *testing.T) {
+	testData := initBehaviorBodyTestInputData()
+
+	for _, d := range testData {
+		b := NewBehaviorBody()
+		b.Terminals = d.terminals
+		result := b.GetText()
+		assert.Equal(t, d.result, result, "Incorrect behavior body text")
+	}	
 }

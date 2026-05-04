@@ -2,8 +2,12 @@ package symaicorecontroller
 
 import (
 	"encoding/json"
+	"errors"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"time"
 
 	"github.com/antlr4-go/antlr/v4"
 
@@ -68,4 +72,22 @@ func InitParser(inputStr string) (*BehaviorsGrammar.BehaviorsGrammarParser, *par
 	p.AddErrorListener(&listener)
 
 	return p, &listener
+}
+
+func ShutdownExpression() error {
+	if cnf != nil {
+		sc := cnf.SymAISection
+		conn := http.Client{Timeout: time.Duration(1) * time.Second}
+		req, err := http.NewRequest("GET", "http://"+sc.ExpressionHost+":"+strconv.FormatInt(int64(sc.ExpressionPort), 10)+"/shutdown", nil)
+		if err != nil {
+			return err
+		} 
+		_, err = conn.Do(req)
+		if err != nil {
+			return err
+		}
+		return nil
+	} else {
+		return errors.New("cnf is nil or symaiconfig value is missing in client context")
+	}
 }

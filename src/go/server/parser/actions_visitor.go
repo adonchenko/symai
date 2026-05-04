@@ -151,9 +151,11 @@ func (v *ActionsVisitor) VisitActions(ctx *BehaviorsGrammar.ActionsContext) inte
 
 	    lg := ""
 		l := len(v.actionExpression)
-		if 	v.hasLogical {
+		if 	v.hasLogical && l > 0 {
 			l = l - 1
 			lg = v.actionExpression[l]			
+		} else {
+			v.hasLogical = false
 		}
 		act := make([]string, l)
 		for j := 0; j < l; j++ {

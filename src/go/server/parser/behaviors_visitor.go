@@ -23,6 +23,14 @@ type (
 	}
 )
 
+func (v *BehaviorBody) GetText() string {
+	res := ""
+	for i := 0; i < len(v.Terminals); i++ {
+		res = res + v.Terminals[i]
+	}
+	return res
+}
+
 func NewBehaviorBody() *BehaviorBody {
 	return &BehaviorBody{
 		Terminals: make([]string, 0),
