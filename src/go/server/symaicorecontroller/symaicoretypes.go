@@ -21,7 +21,6 @@ type(
 		// "properties" a PropertyProcessingContext value
 		// "actions" an ActionsProcessingContext value
 		// "behaviors" a BehaviorsProcessingContext value
-		// "solver" a solver name value	(string)
 		conn *websocket.Conn
 		UUID uuid.UUID
 		send chan []byte
@@ -32,7 +31,7 @@ type(
 		Content  string `json:"content"`
 	}
 
-		EnvironmentProcessingContext struct {
+	EnvironmentProcessingContext struct {
 		FileBaseData
 	}
 
