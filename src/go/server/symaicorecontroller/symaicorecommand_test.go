@@ -19,6 +19,16 @@ type (
 		response   string
 		is_error   bool
 	}
+
+		DoPropertyTestData struct {
+		source     string
+		result     string
+		ctx_key    string
+		ctx_result PropertyProcessingContext
+		response   string
+		is_error   bool
+	}
+
 )
 
 func InitTestConfig(t *testing.T) *Client {
@@ -114,7 +124,7 @@ func InitDoEnvironmentData(clnt *Client) []DoEnvironmentTestData {
 							Filepath: filepath.Join(clnt.getBaseTempDir(), "environment.env"),
 						},
 					},
-	//	response: "{\"content\":\"v==d\", "filename\":\"environment.env\"}",			
+		response: "{\"content\":\"v==d\", \"filename\":\"environment.env\"}",			
 		is_error: true,
 	})
 	return testData
@@ -144,6 +154,95 @@ func TestDoEnvironment(t *testing.T) {
 			err = json.Unmarshal([]byte(d.response), &r2)
 			assert.Nil(t, err, "canot unmarshal expected response for environment command with empty source: %v", err)	
 			assert.True(t, r1.Content == r2.Content && r1.Filename == r2.Filename, "unexpected response for environment command with empty source. Content and/or Filename fields do not match expected values")
+		}
+	}
+}
+
+func InitDoPropertyData(clnt *Client) []DoPropertyTestData {
+	testData := make([]DoPropertyTestData, 0)
+	testData = append(testData, DoPropertyTestData{
+		source:  "{\"content\":\"v==d\"}",
+		result:  "v==d",
+		ctx_key: "property",
+		ctx_result: PropertyProcessingContext{
+						FileBaseData: FileBaseData{
+							Filename: "property.prop",
+							Content:  "v==d",
+							Filepath: filepath.Join(clnt.getBaseTempDir(), "property.prop"),
+						},
+					},
+        response: "{\"content\":\"v==d\", \"filename\":\"property.prop\"}",
+		is_error: false,
+	})
+	testData = append(testData, DoPropertyTestData{
+		source:  "{\"content\":\"v==d\",\"filename\":\"ttt.ggg\"}",
+		result:  "v==d",
+		ctx_key: "property",
+		ctx_result: PropertyProcessingContext{
+						FileBaseData: FileBaseData{
+							Filename: "ttt.ggg",
+							Content:  "v==d",
+							Filepath: filepath.Join(clnt.getBaseTempDir(), "property.prop"),
+						},
+					},
+		response: "{\"content\":\"v==d\", \"filename\":\"ttt.ggg\"}",			
+		is_error: false,
+	})
+	testData = append(testData, DoPropertyTestData{
+		source:  "",
+		result:  "{\"filename\":\"property.prop\",\"content\":\"\"}",
+		ctx_key: "property",
+		ctx_result: PropertyProcessingContext{
+						FileBaseData: FileBaseData{
+							Filename: "property.prop",
+							Content:  "",
+							Filepath: filepath.Join(clnt.getBaseTempDir(), "property.prop"),
+						},
+					},
+		response: "{\"content\":\"\", \"filename\":\"property.prop\"}",			
+		is_error: false,
+	})
+	testData = append(testData, DoPropertyTestData{
+		source:  ",,v==d",
+		result:  "",
+		ctx_key: "property",
+		ctx_result: PropertyProcessingContext{
+						FileBaseData: FileBaseData{
+							Filename: "property.prop",
+							Content:  "",
+							Filepath: filepath.Join(clnt.getBaseTempDir(), "property.prop"),
+						},
+					},
+		response: "{\"content\":\"v==d\", \"filename\":\"property.prop\"}",			
+		is_error: true,
+	})
+	return testData
+}
+
+func TestDoProperty(t *testing.T) {
+	var (
+		r1, r2 JsonFile		
+	)
+	clnt := InitTestConfig(t)
+	cnf.GetLogger().Info("TestDoProperty started")
+	testData := InitDoPropertyData(clnt)
+
+	for _, d := range testData {
+		ReinitClientTest(clnt)
+		res, err := doProperty(clnt, d.source)
+		if d.is_error {
+			assert.NotNil(t, err, "expected error for property command")
+		} else {			
+			assert.Equal(t, res, d.result, "unexpected response for property command")
+			assert.Equal(t, clnt.ctx[d.ctx_key].(PropertyProcessingContext), d.ctx_result, "unexpected property context value")
+			res, err = doProperty(clnt, "")
+			assert.Nil(t, err, "error processing property command with empty source")
+
+			err = json.Unmarshal([]byte(res), &r1)
+			assert.Nil(t, err, "canot unmarshal response for property command with empty source: %v", err)
+			err = json.Unmarshal([]byte(d.response), &r2)
+			assert.Nil(t, err, "canot unmarshal expected response for property command with empty source: %v", err)	
+			assert.True(t, r1.Content == r2.Content && r1.Filename == r2.Filename, "unexpected response for property command with empty source. Content and/or Filename fields do not match expected values")
 		}
 	}
 }
