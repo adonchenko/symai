@@ -37,6 +37,25 @@ func NewActionBody() ActionBody {
 	}
 }
 
+func (a *ActionBody) IsEqual(cmp ActionBody) bool {
+	if a.Logical != cmp.Logical {
+		return false
+	}
+	if a.Condition != cmp.Condition {
+		return false
+	}
+	if len(a.Actions) != len(cmp.Actions) {
+		return false
+	}
+	for i := 0; i < len(a.Actions); i++ {
+		if a.Actions[i] != cmp.Actions[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (a *ActionBody) hasLogical() bool {
 	return a.Logical != ""
 }

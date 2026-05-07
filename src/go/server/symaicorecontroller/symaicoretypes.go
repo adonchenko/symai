@@ -51,6 +51,31 @@ type(
 
 )
 
+//      ** FileBaseData methods **
+func (f *FileBaseData) IsEqual(cmp FileBaseData) bool {
+	return f.Filename == cmp.Filename && f.Content == cmp.Content
+}
+
+//	    ** ActionsProcessingContext methods **
+func (a *ActionsProcessingContext) IsEqual(cmp ActionsProcessingContext) bool {
+	if !a.FileBaseData.IsEqual(cmp.FileBaseData) {
+		return false
+	}
+
+	if len(a.actions) != len(cmp.actions) {
+		return false
+	}
+
+	for k, v := range a.actions {
+		cv, ok := cmp.actions[k]
+		if !ok || !v.IsEqual(cv) {
+			return false
+		}
+	}
+
+	return true
+}
+
 //      ** Client methods **
 func (c *Client) getExpressionModuleURL() (string, int, error) {
 	sc, ok := c.ctx["symaiconfig"].(config.SymAISectionConfig)
