@@ -48,7 +48,6 @@ type(
 		FileBaseData
 		behaviors map[string]parser.BehaviorBody
 	}
-
 )
 
 //      ** FileBaseData methods **
