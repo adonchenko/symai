@@ -31,6 +31,22 @@ func (v *BehaviorBody) GetText() string {
 	return res
 }
 
+func (a *BehaviorBody) IsEqual(cmp BehaviorBody) bool {
+	b := false
+	if len(a.Terminals) == len(cmp.Terminals) {
+		b = true
+
+		for i := 0; i < len(a.Terminals); i++ {
+			if a.Terminals[i] != cmp.Terminals[i] {
+				b = false
+				break
+			}
+		}
+	}
+
+	return b
+}
+
 func NewBehaviorBody() *BehaviorBody {
 	return &BehaviorBody{
 		Terminals: make([]string, 0),

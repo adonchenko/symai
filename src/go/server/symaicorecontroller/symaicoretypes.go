@@ -4,14 +4,15 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	
-	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
+
 	"src/server/config"
 	"src/server/parser"
+
+	"github.com/google/uuid"
+	"github.com/gorilla/websocket"
 )
 
-type(
+type (
 	// Client represents a single WebSocket connection
 	Client struct {
 		ctx map[string]interface{} // Context fields:
@@ -50,12 +51,12 @@ type(
 	}
 )
 
-//      ** FileBaseData methods **
+// ** FileBaseData methods **
 func (f *FileBaseData) IsEqual(cmp FileBaseData) bool {
 	return f.Filename == cmp.Filename && f.Content == cmp.Content
 }
 
-//	    ** ActionsProcessingContext methods **
+// ** ActionsProcessingContext methods **
 func (a *ActionsProcessingContext) IsEqual(cmp ActionsProcessingContext) bool {
 	if !a.FileBaseData.IsEqual(cmp.FileBaseData) {
 		return false
@@ -75,7 +76,27 @@ func (a *ActionsProcessingContext) IsEqual(cmp ActionsProcessingContext) bool {
 	return true
 }
 
-//      ** Client methods **
+// ** BehaviorsProcessingContext methods **
+func (a *BehaviorsProcessingContext) IsEqual(cmp BehaviorsProcessingContext) bool {
+	if !a.FileBaseData.IsEqual(cmp.FileBaseData) {
+		return false
+	}
+
+	if len(a.behaviors) != len(cmp.behaviors) {
+		return false
+	}
+
+	for k, v := range a.behaviors {
+		cv, ok := cmp.behaviors[k]
+		if !ok || !v.IsEqual(cv) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// ** Client methods **
 func (c *Client) getExpressionModuleURL() (string, int, error) {
 	sc, ok := c.ctx["symaiconfig"].(config.SymAISectionConfig)
 	if ok {
@@ -168,7 +189,6 @@ func (c *Client) saveEnvContent() error {
 func (c *Client) removeAllTempData() error {
 	return os.RemoveAll(c.getBaseTempDir())
 }
-
 
 func (c *Client) newPropCtx() {
 	c.ctx["property"] = PropertyProcessingContext{
@@ -311,7 +331,7 @@ func (c *Client) setActions(m map[string]parser.ActionBody) {
 	c.setActionsCtx(ac)
 }
 
-func (b *BehaviorsProcessingContext) GetBehavior(beh string) (parser.BehaviorBody, bool) {	
+func (b *BehaviorsProcessingContext) GetBehavior(beh string) (parser.BehaviorBody, bool) {
 	r, exists := b.behaviors[beh]
 	return r, exists
 }
@@ -391,4 +411,3 @@ func (c *Client) setBehaviors(m map[string]parser.BehaviorBody) {
 	ac.behaviors = m
 	c.setBehaviorsCtx(ac)
 }
-
