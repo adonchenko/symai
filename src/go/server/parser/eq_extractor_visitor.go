@@ -355,7 +355,6 @@ func (v *EQExtractorVisitor) QExtractEQ(first string, second string, op string, 
 		if b {
 			is_add = false
 			if v.IsInVarList(second) {
-				// second -> cvals, first is constant
 				f, err := strconv.ParseFloat(first, 64)
 				if err == nil {
 					v.cvals[second] = f
@@ -364,7 +363,6 @@ func (v *EQExtractorVisitor) QExtractEQ(first string, second string, op string, 
 				}
 			} else {
 				if v.IsInVarList(first) {
-					// first -> cvals, second is constant
 					f, err := strconv.ParseFloat(second, 64)
 					if err == nil {
 						v.cvals[first] = f

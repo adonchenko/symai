@@ -36,6 +36,8 @@ COPY ./src/go/server/parser/eq_extractor_visitor.go /app/src/go/server/parser/eq
 COPY ./src/go/server/parser/actions_visitor.go /app/src/go/server/parser/actions_visitor.go
 COPY ./src/go/server/parser/behaviors_visitor.go /app/src/go/server/parser/behaviors_visitor.go
 COPY ./src/go/server/parser/parser_common.go /app/src/go/server/parser/parser_common.go
+COPY ./src/go/server/parser/eval_visitor.go /app/src/go/server/parser/eval_visitor.go
+COPY ./src/go/server/parser/eval_visitor_supp.go /app/src/go/server/parser/eval_visitor_supp.go
 
 # Build an executable
 RUN mkdir /app/build
