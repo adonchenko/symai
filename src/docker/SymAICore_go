@@ -20,6 +20,7 @@ COPY ./src/go/server/config/config.go /app/src/go/server/config/config.go
 COPY ./src/go/server/config/symaiformatter.go /app/src/go/server/config/symaiformatter.go
 
 COPY ./src/go/server/utils/utils.go /app/src/go/server/utils/utils.go
+COPY ./src/go/server/utils/mathutils.go /app/src/go/server/utils/mathutils.go
 
 COPY ./src/go/server/symaicore/symaicore.go /app/src/go/server/symaicore/symaicore.go
 
