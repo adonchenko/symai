@@ -28,6 +28,12 @@ func initEvalVisitorTestInputData() []EvalVisitorTestData {
 			result:    float64(7),
 			is_error:  true,
 		})
+	testData = append(testData,
+		EvalVisitorTestData{
+			source:    "3**2 - pow(3,2)",
+			result:    float64(0),
+			is_error:  false,
+		})	
 	return testData
 }
 
