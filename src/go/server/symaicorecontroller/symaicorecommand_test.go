@@ -4,6 +4,7 @@ import (
 	"encoding/json"	
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"os"
     "path/filepath"	
 	"testing"
 
@@ -35,6 +36,7 @@ func InitTestConfig(t *testing.T) *Client {
 		lgr config.LoggerConfigStruct = config.LoggerConfigStruct{}
 	)
 	config.Config.InitDefaults()
+	config.Config.SetPath("./symai.ini")
 
 	lgr.Handlers = "consoleHandler"
 	lgr.Level = "DEBUG"
@@ -244,4 +246,29 @@ func TestDoProperty(t *testing.T) {
 			assert.True(t, r1.Content == r2.Content && r1.Filename == r2.Filename, "unexpected response for property command with empty source. Content and/or Filename fields do not match expected values")
 		}
 	}
+}
+
+func TestSolverCtx(t *testing.T) {
+	var (
+		cfg *config.SymAIConfig 
+		err error
+	)
+	defer func() {
+		os.Remove("./symai.ini")
+		if r := recover(); r != nil {
+			assert.Fail(t, "panic occurred in TestSolverCtx: %v", r)
+		}
+	}()
+	clnt := InitTestConfig(t)
+	cnf.GetLogger().Info("TestSolverCtx started")
+	sctx := clnt.getSolverCtx()
+	assert.NotNil(t, sctx, "solver context should not be nil")
+	sctx.SetSolver("test_solver")
+	assert.Equal(t, sctx.GetSolver(), "test_solver", "unexpected solver name in context")
+    clnt.setSolverCtx(sctx)
+	err = clnt.flushSolverCtx()
+	assert.Nil(t, err, "error flushing solver: %v", err)
+    cfg, err = config.Load("./symai.ini")
+	assert.Nil(t, err, "error loading config: %v", err)
+	assert.Equal(t, cfg.ExpressionSection.ExpressionSolver, "test_solver", "unexpected solver name in config after flush")
 }

@@ -22,6 +22,10 @@ type (
 		// "properties" a PropertyProcessingContext value
 		// "actions" an ActionsProcessingContext value
 		// "behaviors" a BehaviorsProcessingContext value
+		// "traversalbeh" a TraversalbehProcessingContext value for traversal behavior definitions
+		// "debug" a DebugProcessingContext value for debugging purposes TODO
+		// "reentercount" a ReenterCountProcessingContext value for defining reenter count values TODO
+		// "solver" a SolverProcessingContext value for defining solver values TODO
 		conn *websocket.Conn
 		UUID uuid.UUID
 		send chan []byte
@@ -48,6 +52,22 @@ type (
 	BehaviorsProcessingContext struct {
 		FileBaseData
 		behaviors map[string]parser.BehaviorBody
+	}
+
+	TraversalbehProcessingContext struct {
+		TraversalbehParam		
+	}
+
+	SolverProcessingContext struct {
+	Solver string
+	}
+
+	ReenterCountProcessingContext struct {
+		ReenterCount int
+	}
+
+	DebugProcessingContext struct {
+		Debug bool
 	}
 )
 
@@ -76,6 +96,11 @@ func (a *ActionsProcessingContext) IsEqual(cmp ActionsProcessingContext) bool {
 	return true
 }
 
+func (a *ActionsProcessingContext) GetAction(act string) (parser.ActionBody, bool) {
+	r, exists := a.actions[act]
+	return r, exists
+}
+
 // ** BehaviorsProcessingContext methods **
 func (a *BehaviorsProcessingContext) IsEqual(cmp BehaviorsProcessingContext) bool {
 	if !a.FileBaseData.IsEqual(cmp.FileBaseData) {
@@ -94,6 +119,18 @@ func (a *BehaviorsProcessingContext) IsEqual(cmp BehaviorsProcessingContext) boo
 	}
 
 	return true
+}
+
+// ** SolverProcessingContext methods **
+func (s *SolverProcessingContext) GetSolver() string {
+	if s.Solver == "" {
+		s.Solver = cnf.GetDefaultSolver()
+	}
+	return s.Solver
+}
+
+func (s *SolverProcessingContext) SetSolver(solver string) {
+	s.Solver = solver
 }
 
 // ** Client methods **
@@ -331,8 +368,8 @@ func (c *Client) setActions(m map[string]parser.ActionBody) {
 	c.setActionsCtx(ac)
 }
 
-func (b *BehaviorsProcessingContext) GetBehavior(beh string) (parser.BehaviorBody, bool) {
-	r, exists := b.behaviors[beh]
+func (c *Client) getBehavior(beh string) (parser.BehaviorBody, bool) {
+	r, exists := c.getAllBehaviors() [beh]
 	return r, exists
 }
 
@@ -402,12 +439,120 @@ func (c *Client) saveBehaviorsContent() error {
 	return err
 }
 
-func (c *Client) getBehaviors() map[string]parser.BehaviorBody {
+func (c *Client) getAllBehaviors() map[string]parser.BehaviorBody {
 	return c.getBehaviorsCtx().behaviors
 }
 
-func (c *Client) setBehaviors(m map[string]parser.BehaviorBody) {
+func (c *Client) setAllBehaviors(m map[string]parser.BehaviorBody) {
 	ac := c.getBehaviorsCtx()
 	ac.behaviors = m
 	c.setBehaviorsCtx(ac)
 }
+
+func (c *Client) setTraversalbehParam(cmd TraversalbehParam) {
+	tb := c.getTraversalbehCtx()
+	tb.TraversalbehParam = cmd
+	c.setTraversalbehCtx(tb)		
+}
+
+func (c *Client) getTraversalbehParam() TraversalbehParam {
+	return c.getTraversalbehCtx().TraversalbehParam	
+}
+
+func (c *Client) setTraversalbehSolver(solver string) {
+	tb := c.getTraversalbehCtx()
+	tb.TraversalbehParam.Solver = solver
+	c.setTraversalbehCtx(tb)
+}
+
+func (c *Client) getTraversalbehSolver() string {
+	return c.getTraversalbehCtx().TraversalbehParam.Solver
+}
+
+func (c *Client) setTraversalbehBehavior(behavior string) {
+	tb := c.getTraversalbehCtx()
+	tb.TraversalbehParam.Behavior = behavior
+	c.setTraversalbehCtx(tb)
+}
+
+func (c *Client) getTraversalbehBehavior() string {
+	return c.getTraversalbehCtx().TraversalbehParam.Behavior
+}
+
+func (c *Client) setTraversalbehReenterCount(reenterCount int) {
+	tb := c.getTraversalbehCtx()
+	tb.TraversalbehParam.ReenterCount = reenterCount
+	c.setTraversalbehCtx(tb)
+}
+
+func (c *Client) getTraversalbehReenterCount() int	{
+	return c.getTraversalbehCtx().TraversalbehParam.ReenterCount
+}
+
+func (c *Client) setTraversalbehDebug(debug bool) {
+	tb := c.getTraversalbehCtx()
+	tb.TraversalbehParam.Debug = debug
+	c.setTraversalbehCtx(tb)
+}
+
+func (c *Client) getTraversalbehDebug() bool{
+	return c.getTraversalbehCtx().TraversalbehParam.Debug
+}
+
+func (c *Client) newTraversalbehCtx() {
+	sc := c.getSolverCtx()
+	c.ctx["traversalbeh"] = TraversalbehProcessingContext{
+		TraversalbehParam: TraversalbehParam{
+			Solver: sc.GetSolver(),
+			Behavior: "",
+			ReenterCount: cnf.GetDefaultReenterCount(),
+			Debug: cnf.GetDefaultDebug(),
+			IsAI:  cnf.GetDefaultAI(),
+		},
+	}
+}
+
+func (c *Client) getTraversalbehCtx() TraversalbehProcessingContext {
+	r, ok := c.ctx["traversalbeh"]
+	if !ok {
+		c.newTraversalbehCtx()
+		r, _ = c.ctx["traversalbeh"]
+	}
+	e := r.(TraversalbehProcessingContext)
+
+	return e
+}
+
+func (c *Client) setTraversalbehCtx(ec TraversalbehProcessingContext) {
+	c.ctx["traversalbeh"] = ec
+}
+
+func (c *Client) newSolverCtx() {
+	c.ctx["solver"] = SolverProcessingContext{
+		Solver: cnf.GetDefaultSolver(),
+	}
+}
+
+func (c *Client) getSolverCtx() SolverProcessingContext {
+	r, ok := c.ctx["solver"]
+	if !ok {
+		c.newSolverCtx()
+		r, _ = c.ctx["solver"]
+	}
+	e := r.(SolverProcessingContext)
+
+	return e
+}
+
+func (c *Client) setSolverCtx(ec SolverProcessingContext) {
+	c.ctx["solver"] = ec
+}
+
+func (c *Client) flushSolverCtx() error{
+	sctx := c.getSolverCtx()
+	sc := sctx.GetSolver()
+    cf := config.GetConfig()
+    cf.SetDefaultSolver(sc)
+	return config.Save(cf, cf.GetPath())
+}
+

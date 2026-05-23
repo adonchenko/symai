@@ -246,7 +246,6 @@ func doActions(c *Client, params string) (string, error) {
 }
 
 func doBehaviors(c *Client, params string) (string, error) {
-
 	var (
 		res       = ""
 		err error = nil
@@ -294,7 +293,7 @@ func doBehaviors(c *Client, params string) (string, error) {
 					}
 					err = errors.New(errMsg)
 				} else {
-					c.setBehaviors(visitor.GetBehaviors())
+					c.setAllBehaviors(visitor.GetBehaviors())
 					fn := strings.TrimSpace(fd.Filename)
 					if len(fn) <= 0 {
 						fn = "behaviors.beh"
@@ -310,6 +309,62 @@ func doBehaviors(c *Client, params string) (string, error) {
 		}
 	}
 
+	return res, err
+}
+
+func doSolver(c *Client, params string) (string, error) {
+	var (
+		res       = ""
+		err error = nil
+		isFlush bool = false
+		val string = ""
+	)
+	cnf.GetLogger().Info("client " + c.UUID.String() + " solver " + params + " command received")
+	sctx := c.getSolverCtx()
+	params = strings.TrimSpace(params)
+	if len(params) <= 0 {
+		res = sctx.GetSolver()
+	} else {
+		sctx.SetSolver(params)
+		c.setSolverCtx(sctx)
+		flds := strings.Fields(params)
+		if len(flds) > 2 {
+			err = errors.New("solver command syntax error: too many parameters")
+		} else {
+			for _, f := range flds {
+				if strings.EqualFold(f, "flush") {
+					if isFlush {
+						err = errors.New("solver command syntax error: 'flush' parameter is duplicated")
+						break
+					}
+					isFlush = true
+				} else {
+					if len(val) > 0 {
+						err = errors.New("solver command syntax error: too many parameters")
+						break
+					}
+					val = f
+				}
+			}
+			if err == nil {
+				if len(val) > 0 {
+					sctx.SetSolver(val)
+					c.setSolverCtx(sctx)
+					cnf.GetLogger().Info("client " + c.UUID.String() + "solver set to '" + val + "' successfully")
+				}
+				if isFlush {
+					err = c.flushSolverCtx()
+					if err != nil {
+						err = errors.New("error flushing solver context: " + err.Error())
+						cnf.GetLogger().Error("client " + c.UUID.String() + " error flushing solver context: " + err.Error())
+					} else {						
+						cnf.GetLogger().Info("client " + c.UUID.String() + "solver context flushed successfully")
+					}
+				} 
+			}
+		}
+	}
+	
 	return res, err
 }
 
@@ -329,9 +384,18 @@ func initCoreCommands(c *config.SymAIConfig) *map[string]SymAICoreCommand {
 	allCoreCommands["property"] = SymAICoreCommand{
 		exec: doProperty,
 	}
-		allCoreCommands["behaviors"] = SymAICoreCommand{
+	allCoreCommands["behaviors"] = SymAICoreCommand{
 		exec: doBehaviors,
+	}	
+	allCoreCommands["actions"] = SymAICoreCommand{
+		exec: doActions,
 	}
+	allCoreCommands["solver"] = SymAICoreCommand{
+		exec: doSolver,
+	}	
+	allCoreCommands["traversalbeh"] = SymAICoreCommand{
+		exec: doTraversalbeh,
+	}	
 	allCoreCommands["help"] = SymAICoreCommand{
 		exec:  doHelp,
 		help:  "help [command]",

@@ -33,6 +33,7 @@ type (
 		HTTPConfigsFromConfig map[string]interface{}
 		Logger                *logrus.Logger
 		StopCh                chan os.Signal
+		path                  string
 	}
 
 	LoggerConfig struct {
@@ -134,8 +135,16 @@ type (
 )
 
 var (
-	Config SymAIConfig
+	Config SymAIConfig	
 )
+
+func (c *SymAIConfig) GetPath() string {
+	return c.path
+}
+
+func (c *SymAIConfig) SetPath(path string) {
+	c.path = path
+}
 
 func (c *SymAIConfig) GetLogger() *logrus.Logger {
 	return c.Logger
@@ -143,6 +152,48 @@ func (c *SymAIConfig) GetLogger() *logrus.Logger {
 
 func GetConfig() *SymAIConfig {
 	return &Config
+}
+
+func (c *SymAIConfig) GetDefaultSolver() string {
+	return c.ExpressionSection.ExpressionSolver	
+}
+
+func (c *SymAIConfig) SetDefaultSolver(solver string) {
+	c.ExpressionSection.ExpressionSolver = solver
+}
+
+func (c *SymAIConfig) GetDefaultAI() bool {
+	b, err := strconv.ParseBool(c.SymAISection.AI)
+	if err != nil {
+		c.SetDefaultAI(false)
+		return false
+	}
+	return b
+}
+
+func (c *SymAIConfig) SetDefaultAI(isAI bool) {
+	c.SymAISection.AI = strconv.FormatBool(isAI)
+}
+
+func (c *SymAIConfig) GetDefaultDebug() bool {
+	b, err := strconv.ParseBool(c.SymAISection.Debug)
+	if err != nil {
+		c.SetDefaultDebug(false)
+		return false
+	}
+	return b
+}
+
+func (c *SymAIConfig) SetDefaultDebug(debug bool) {
+	c.SymAISection.Debug = strconv.FormatBool(debug)
+}
+
+func (c *SymAIConfig) GetDefaultReenterCount() int {
+	return c.SymAISection.ReenterCount
+}
+
+func (c *SymAIConfig) SetDefaultReenterCount(reenterCount int) {
+	c.SymAISection.ReenterCount = reenterCount
 }
 
 // Levels returns the levels for which the hook is fired.
@@ -177,6 +228,9 @@ func Create(path string) (cfg *SymAIConfig, err error) {
 		}
 	} else {
 		cfg, err = Load(path)
+	}
+	if err == nil {
+		cfg.path = path
 	}
 	return cfg, err
 }
@@ -315,6 +369,9 @@ func Load(path string) (*SymAIConfig, error) {
 
 	} else {
 		return nil, errors.New("unknown configuration file extension")
+	}
+	if err == nil {
+		Config.path = path
 	}
 	return &Config, err
 }
@@ -473,6 +530,7 @@ func (cfg *SymAIConfig) InitDefaults() {
 		hlndr   HandlerConfigStruct   = HandlerConfigStruct{}
 		httpcfg HTTPConfigStruct      = HTTPConfigStruct{}
 	)
+	cfg.path = "/properties/symai.ini"
 	// SymAI
 	cfg.SymAISection.TempDir = "/tmpdir/temp"
 	cfg.SymAISection.Host = "localhost"
