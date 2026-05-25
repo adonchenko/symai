@@ -24,11 +24,11 @@ type (
 		// "actions" an ActionsProcessingContext value
 		// "behaviors" a BehaviorsProcessingContext value
 		// "traversalbeh" a TraversalbehProcessingContext value for traversal behavior definitions
-		// "ai" a AIProcessingContext value for AI mode definition 
+		// "ai" an AIProcessingContext value for AI mode definition 
 		// "debug" a DebugProcessingContext value for debugging purposes 
-		// "reentercount" a ReenterCountProcessingContext value for defining reenter count values TODO
+		// "reentercount" a ReenterCountProcessingContext value for defining reenter count values 
 		// "solver" a SolverProcessingContext value for defining solver values
-		// "max_models" a MaxModelsProcessingContext value for defining max models values TODO
+		// "maxmodels" a MaxModelsProcessingContext value for defining max models values 
 		conn *websocket.Conn
 		UUID uuid.UUID
 		send chan []byte
@@ -160,6 +160,24 @@ func (s *DebugProcessingContext) GetDebug() bool {
 
 func (s *DebugProcessingContext) SetDebug(isDebug bool) {
 	s.Debug = isDebug
+}
+
+// ** ReenterCountProcessingContext methods **
+func (s *ReenterCountProcessingContext) GetReenterCount() int {
+	return s.ReenterCount
+}
+
+func (s *ReenterCountProcessingContext) SetReenterCount(reenterCount int) {
+	s.ReenterCount = reenterCount
+}
+
+// ** MaxModelsProcessingContext methods **
+func (s *MaxModelsProcessingContext) GetMaxModels() int {
+	return s.MaxModels
+}
+
+func (s *MaxModelsProcessingContext) SetMaxModels(maxModels int) {
+	s.MaxModels = maxModels
 }
 
 // ** Client methods **
@@ -640,5 +658,63 @@ func (c *Client) flushDebugCtx() error{
 	sc := ictx.GetDebug()
     cf := config.GetConfig()
     cf.SetDefaultDebug(sc)
+	return config.Save(cf, cf.GetPath())
+}
+
+func (c *Client) newReenterCountCtx() {
+	c.ctx["reentercount"] = ReenterCountProcessingContext{
+		ReenterCount: cnf.GetDefaultReenterCount(),
+	}
+}
+
+func (c *Client) getReenterCountCtx() ReenterCountProcessingContext {
+	r, ok := c.ctx["reentercount"]
+	if !ok {
+		c.newReenterCountCtx()
+		r, _ = c.ctx["reentercount"]
+	}
+	e := r.(ReenterCountProcessingContext)
+
+	return e
+}
+
+func (c *Client) setReenterCountCtx(ec ReenterCountProcessingContext) {
+	c.ctx["reentercount"] = ec
+}
+
+func (c *Client) flushReenterCountCtx() error{
+	ictx := c.getReenterCountCtx()
+	sc := ictx.GetReenterCount()
+    cf := config.GetConfig()
+    cf.SetDefaultReenterCount(sc)
+	return config.Save(cf, cf.GetPath())
+}
+
+func (c *Client) newMaxModelsCtx() {
+	c.ctx["maxmodels"] = MaxModelsProcessingContext{
+		MaxModels: cnf.GetDefaultMaxModels(),
+	}
+}
+
+func (c *Client) getMaxModelsCtx() MaxModelsProcessingContext {
+	r, ok := c.ctx["maxmodels"]
+	if !ok {
+		c.newMaxModelsCtx()
+		r, _ = c.ctx["maxmodels"]
+	}
+	e := r.(MaxModelsProcessingContext)
+
+	return e
+}
+
+func (c *Client) setMaxModelsCtx(ec MaxModelsProcessingContext) {
+	c.ctx["maxmodels"] = ec
+}
+
+func (c *Client) flushMaxModelsCtx() error{
+	ictx := c.getMaxModelsCtx()
+	sc := ictx.GetMaxModels()
+    cf := config.GetConfig()
+    cf.SetDefaultMaxModels(sc)
 	return config.Save(cf, cf.GetPath())
 }

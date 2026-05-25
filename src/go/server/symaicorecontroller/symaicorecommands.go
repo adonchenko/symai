@@ -489,6 +489,128 @@ func doDebug(c *Client, params string) (string, error) {
 	return res, err
 }
 
+func doMaxModels(c *Client, params string) (string, error) {
+	var (
+		res            = ""
+		err     error  = nil
+		isFlush bool   = false
+		val     string = ""
+	)
+	cnf.GetLogger().Info("client " + c.UUID.String() + " max_models " + params + " command received")
+	sctx := c.getMaxModelsCtx()
+	params = strings.TrimSpace(params)
+	if len(params) <= 0 {
+		res = strconv.FormatInt(int64(sctx.GetMaxModels()), 10)
+	} else {
+		flds := strings.Fields(params)
+		if len(flds) > 2 {
+			err = errors.New("max_models command syntax error: too many parameters")
+		} else {
+			for _, f := range flds {
+				if strings.EqualFold(f, "flush") {
+					if isFlush {
+						err = errors.New("max_models command syntax error: 'flush' parameter is duplicated")
+						break
+					}
+					isFlush = true
+				} else {
+					if len(val) > 0 {
+						err = errors.New("max_models command syntax error: too many parameters")
+						break
+					}
+					val = f
+				}
+			}
+			if err == nil {
+				if len(val) > 0 {
+					maxModelsVal, parseErr := strconv.ParseInt(val, 10, 64)
+					if parseErr != nil {
+						err = errors.New("max_models command syntax error: invalid integer value '" + val + "'")
+						maxModelsVal = 0
+						cnf.GetLogger().Error("client " + c.UUID.String() + " max_models command syntax error: invalid integer value '" + val + "'")
+					} else {
+						sctx.SetMaxModels(int(maxModelsVal))
+						c.setMaxModelsCtx(sctx)
+						cnf.GetLogger().Info("client " + c.UUID.String() + "max_models set to '" + val + "' successfully")
+					}
+				}
+				if isFlush {
+					err = c.flushMaxModelsCtx()
+					if err != nil {
+						err = errors.New("error flushing max_models context: " + err.Error())
+						cnf.GetLogger().Error("client " + c.UUID.String() + " error flushing max_models context: " + err.Error())
+					} else {
+						cnf.GetLogger().Info("client " + c.UUID.String() + "max_models context flushed successfully")
+					}
+				}
+			}
+		}
+	}
+
+	return res, err
+}
+
+func doReenterCount(c *Client, params string) (string, error) {
+	var (
+		res            = ""
+		err     error  = nil
+		isFlush bool   = false
+		val     string = ""
+	)
+	cnf.GetLogger().Info("client " + c.UUID.String() + " reenter_count " + params + " command received")
+	sctx := c.getReenterCountCtx()
+	params = strings.TrimSpace(params)
+	if len(params) <= 0 {
+		res = strconv.FormatInt(int64(sctx.GetReenterCount()), 10)
+	} else {
+		flds := strings.Fields(params)
+		if len(flds) > 2 {
+			err = errors.New("reenter_count command syntax error: too many parameters")
+		} else {
+			for _, f := range flds {
+				if strings.EqualFold(f, "flush") {
+					if isFlush {
+						err = errors.New("reenter_count command syntax error: 'flush' parameter is duplicated")
+						break
+					}
+					isFlush = true
+				} else {
+					if len(val) > 0 {
+						err = errors.New("reenter_count command syntax error: too many parameters")
+						break
+					}
+					val = f
+				}
+			}
+			if err == nil {
+				if len(val) > 0 {
+					reenterCountVal, parseErr := strconv.ParseInt(val, 10, 64)
+					if parseErr != nil {
+						err = errors.New("reenter_count command syntax error: invalid integer value '" + val + "'")
+						reenterCountVal = 0
+						cnf.GetLogger().Error("client " + c.UUID.String() + " reenter_count command syntax error: invalid integer value '" + val + "'")
+					} else {
+						sctx.SetReenterCount(int(reenterCountVal))
+						c.setReenterCountCtx(sctx)
+						cnf.GetLogger().Info("client " + c.UUID.String() + "reenter_count set to '" + val + "' successfully")
+					}
+				}
+				if isFlush {
+					err = c.flushReenterCountCtx()
+					if err != nil {
+						err = errors.New("error flushing reenter_count context: " + err.Error())
+						cnf.GetLogger().Error("client " + c.UUID.String() + " error flushing reenter_count context: " + err.Error())
+					} else {
+						cnf.GetLogger().Info("client " + c.UUID.String() + "reenter_count context flushed successfully")
+					}
+				}
+			}
+		}
+	}
+
+	return res, err
+}
+
 func initCoreCommands(c *config.SymAIConfig) *map[string]SymAICoreCommand {
 	cnf = c
 	allCoreCommands = make(map[string]SymAICoreCommand, 0)
@@ -519,6 +641,12 @@ func initCoreCommands(c *config.SymAIConfig) *map[string]SymAICoreCommand {
 	}
 	allCoreCommands["debug"] = SymAICoreCommand{
 		exec: doDebug,
+	}
+	allCoreCommands["max_models"] = SymAICoreCommand{
+		exec: doMaxModels,
+	}
+	allCoreCommands["reenter_count"] = SymAICoreCommand{
+		exec: doReenterCount,
 	}
 	allCoreCommands["traversalbeh"] = SymAICoreCommand{
 		exec: doTraversalbeh,

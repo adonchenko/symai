@@ -322,3 +322,53 @@ func TestDebugCtx(t *testing.T) {
 	assert.Nil(t, err, "error loading config: %v", err)
 	assert.Equal(t, cfg.SymAISection.Debug, "true", "unexpected debug value in config after flush")
 }
+
+func TestReenterCountCtx(t *testing.T) {
+	var (
+		cfg *config.SymAIConfig 
+		err error
+	)
+	defer func() {
+		os.Remove("./symai.ini")
+		if r := recover(); r != nil {
+			assert.Fail(t, "panic occurred in TestReenterCountCtx: %v", r)
+		}
+	}()
+	clnt := InitTestConfig(t)
+	cnf.GetLogger().Info("TestReenterCountCtx started")
+	ictx := clnt.getReenterCountCtx()
+	assert.NotNil(t, ictx, "ReenterCount context should not be nil")
+	ictx.SetReenterCount(5)
+	assert.Equal(t, ictx.GetReenterCount(), 5, "unexpected reenter count value in context")
+    clnt.setReenterCountCtx(ictx)
+	err = clnt.flushReenterCountCtx()
+	assert.Nil(t, err, "error flushing ReenterCount context: %v", err)
+    cfg, err = config.Load("./symai.ini")
+	assert.Nil(t, err, "error loading config: %v", err)
+	assert.Equal(t, cfg.SymAISection.ReenterCount, 5, "unexpected reenter count value in config after flush")
+}
+
+func TestMaxModelsCtx(t *testing.T) {
+	var (
+		cfg *config.SymAIConfig 
+		err error
+	)
+	defer func() {
+		os.Remove("./symai.ini")
+		if r := recover(); r != nil {
+			assert.Fail(t, "panic occurred in TestMaxModelsCtx: %v", r)
+		}
+	}()
+	clnt := InitTestConfig(t)
+	cnf.GetLogger().Info("TestMaxModelsCtx started")
+	ictx := clnt.getMaxModelsCtx()
+	assert.NotNil(t, ictx, "MaxModels context should not be nil")
+	ictx.SetMaxModels(5)
+	assert.Equal(t, ictx.GetMaxModels(), 5, "unexpected max models value in context")
+    clnt.setMaxModelsCtx(ictx)
+	err = clnt.flushMaxModelsCtx()
+	assert.Nil(t, err, "error flushing MaxModels context: %v", err)
+    cfg, err = config.Load("./symai.ini")
+	assert.Nil(t, err, "error loading config: %v", err)
+	assert.Equal(t, cfg.ExpressionSection.SolverMaxModels, 5, "unexpected max models value in config after flush")
+}
