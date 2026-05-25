@@ -15,7 +15,8 @@ import (
 type (
 	// Client represents a single WebSocket connection
 	Client struct {
-		ctx map[string]interface{} // Context fields:
+		ctx map[string]interface{} 
+		// Context fields:
 		// Possible context fields (to be extended as needed):
 		// "symaiconfig" a SymAISection value @config for details
 		// "environment" a FileBaseData value
@@ -23,10 +24,10 @@ type (
 		// "actions" an ActionsProcessingContext value
 		// "behaviors" a BehaviorsProcessingContext value
 		// "traversalbeh" a TraversalbehProcessingContext value for traversal behavior definitions
-		// "ai" a AIProcessingContext value for AI mode definition TODO
-		// "debug" a DebugProcessingContext value for debugging purposes TODO
+		// "ai" a AIProcessingContext value for AI mode definition 
+		// "debug" a DebugProcessingContext value for debugging purposes 
 		// "reentercount" a ReenterCountProcessingContext value for defining reenter count values TODO
-		// "solver" a SolverProcessingContext value for defining solver values TODO
+		// "solver" a SolverProcessingContext value for defining solver values
 		// "max_models" a MaxModelsProcessingContext value for defining max models values TODO
 		conn *websocket.Conn
 		UUID uuid.UUID
@@ -150,6 +151,15 @@ func (s *AIProcessingContext) GetAI() bool {
 
 func (s *AIProcessingContext) SetAI(isAI bool) {
 	s.IsAI = isAI
+}
+
+// ** DebugProcessingContext methods **
+func (s *DebugProcessingContext) GetDebug() bool {	
+	return s.Debug
+}
+
+func (s *DebugProcessingContext) SetDebug(isDebug bool) {
+	s.Debug = isDebug
 }
 
 // ** Client methods **
@@ -601,5 +611,34 @@ func (c *Client) flushAICtx() error{
 	sc := ictx.GetAI()
     cf := config.GetConfig()
     cf.SetDefaultAI(sc)
+	return config.Save(cf, cf.GetPath())
+}
+
+func (c *Client) newDebugCtx() {
+	c.ctx["debug"] = DebugProcessingContext{
+		Debug: cnf.GetDefaultDebug(),
+	}
+}
+
+func (c *Client) getDebugCtx() DebugProcessingContext {
+	r, ok := c.ctx["debug"]
+	if !ok {
+		c.newDebugCtx()
+		r, _ = c.ctx["debug"]
+	}
+	e := r.(DebugProcessingContext)
+
+	return e
+}
+
+func (c *Client) setDebugCtx(ec DebugProcessingContext) {
+	c.ctx["debug"] = ec
+}
+
+func (c *Client) flushDebugCtx() error{
+	ictx := c.getDebugCtx()
+	sc := ictx.GetDebug()
+    cf := config.GetConfig()
+    cf.SetDefaultDebug(sc)
 	return config.Save(cf, cf.GetPath())
 }

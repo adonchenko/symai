@@ -428,6 +428,67 @@ func doAI(c *Client, params string) (string, error) {
 	return res, err
 }
 
+func doDebug(c *Client, params string) (string, error) {
+	var (
+		res            = ""
+		err     error  = nil
+		isFlush bool   = false
+		val     string = ""
+	)
+	cnf.GetLogger().Info("client " + c.UUID.String() + " debug " + params + " command received")
+	sctx := c.getDebugCtx()
+	params = strings.TrimSpace(params)
+	if len(params) <= 0 {
+		res = strconv.FormatBool(sctx.GetDebug())
+	} else {
+		flds := strings.Fields(params)
+		if len(flds) > 2 {
+			err = errors.New("debug command syntax error: too many parameters")
+		} else {
+			for _, f := range flds {
+				if strings.EqualFold(f, "flush") {
+					if isFlush {
+						err = errors.New("debug command syntax error: 'flush' parameter is duplicated")
+						break
+					}
+					isFlush = true
+				} else {
+					if len(val) > 0 {
+						err = errors.New("debug command syntax error: too many parameters")
+						break
+					}
+					val = f
+				}
+			}
+			if err == nil {
+				if len(val) > 0 {
+					debugVal, parseErr := strconv.ParseBool(val)
+					if parseErr != nil {
+						err = errors.New("debug command syntax error: invalid boolean value '" + val + "'")
+						debugVal = false
+						cnf.GetLogger().Error("client " + c.UUID.String() + " debug command syntax error: invalid boolean value '" + val + "'")
+					} else {
+						sctx.SetDebug(debugVal)
+						c.setDebugCtx(sctx)
+						cnf.GetLogger().Info("client " + c.UUID.String() + "debug set to '" + val + "' successfully")
+					}
+				}
+				if isFlush {
+					err = c.flushDebugCtx()
+					if err != nil {
+						err = errors.New("error flushing debug context: " + err.Error())
+						cnf.GetLogger().Error("client " + c.UUID.String() + " error flushing debug context: " + err.Error())
+					} else {
+						cnf.GetLogger().Info("client " + c.UUID.String() + "debug context flushed successfully")
+					}
+				}
+			}
+		}
+	}
+
+	return res, err
+}
+
 func initCoreCommands(c *config.SymAIConfig) *map[string]SymAICoreCommand {
 	cnf = c
 	allCoreCommands = make(map[string]SymAICoreCommand, 0)
@@ -455,6 +516,9 @@ func initCoreCommands(c *config.SymAIConfig) *map[string]SymAICoreCommand {
 	}
 	allCoreCommands["ai"] = SymAICoreCommand{
 		exec: doAI,
+	}
+	allCoreCommands["debug"] = SymAICoreCommand{
+		exec: doDebug,
 	}
 	allCoreCommands["traversalbeh"] = SymAICoreCommand{
 		exec: doTraversalbeh,

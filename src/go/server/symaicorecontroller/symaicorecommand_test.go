@@ -297,3 +297,28 @@ func TestAICtx(t *testing.T) {
 	assert.Nil(t, err, "error loading config: %v", err)
 	assert.Equal(t, cfg.SymAISection.AI, "true", "unexpected AI value in config after flush")
 }
+
+func TestDebugCtx(t *testing.T) {
+	var (
+		cfg *config.SymAIConfig 
+		err error
+	)
+	defer func() {
+		os.Remove("./symai.ini")
+		if r := recover(); r != nil {
+			assert.Fail(t, "panic occurred in TestDebugCtx: %v", r)
+		}
+	}()
+	clnt := InitTestConfig(t)
+	cnf.GetLogger().Info("TestDebugCtx started")
+	ictx := clnt.getDebugCtx()
+	assert.NotNil(t, ictx, "Debug context should not be nil")
+	ictx.SetDebug(true)
+	assert.Equal(t, ictx.GetDebug(), true, "unexpected debug value in context")
+    clnt.setDebugCtx(ictx)
+	err = clnt.flushDebugCtx()
+	assert.Nil(t, err, "error flushing Debug context: %v", err)
+    cfg, err = config.Load("./symai.ini")
+	assert.Nil(t, err, "error loading config: %v", err)
+	assert.Equal(t, cfg.SymAISection.Debug, "true", "unexpected debug value in config after flush")
+}
