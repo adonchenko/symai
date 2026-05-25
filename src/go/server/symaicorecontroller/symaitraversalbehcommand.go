@@ -14,6 +14,7 @@ type TraversalbehParam struct {
 	ReenterCount int    `json:"reenter_count,omitempty"`
 	Debug        bool   `json:"debug,omitempty"`
 	IsAI         bool   `json:"ai,omitempty"`
+	MaxModels    int    `json:"max_models,omitempty"`
 }
 
 func checkTraversalbehParam(c *Client, cmd TraversalbehParam) error {
@@ -36,6 +37,7 @@ func doTraversalbeh(c *Client, params string) (string, error) {
 			ReenterCount: cnf.GetDefaultReenterCount(),
 			Debug:        cnf.GetDefaultDebug(),
 			IsAI:         cnf.GetDefaultAI(),
+			MaxModels:    cnf.GetDefaultMaxModels(),
 		}
 		res string = ""
 	)

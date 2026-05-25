@@ -272,3 +272,28 @@ func TestSolverCtx(t *testing.T) {
 	assert.Nil(t, err, "error loading config: %v", err)
 	assert.Equal(t, cfg.ExpressionSection.ExpressionSolver, "test_solver", "unexpected solver name in config after flush")
 }
+
+func TestAICtx(t *testing.T) {
+	var (
+		cfg *config.SymAIConfig 
+		err error
+	)
+	defer func() {
+		os.Remove("./symai.ini")
+		if r := recover(); r != nil {
+			assert.Fail(t, "panic occurred in TestAICtx: %v", r)
+		}
+	}()
+	clnt := InitTestConfig(t)
+	cnf.GetLogger().Info("TestAICtx started")
+	ictx := clnt.getAICtx()
+	assert.NotNil(t, ictx, "AI context should not be nil")
+	ictx.SetAI(true)
+	assert.Equal(t, ictx.GetAI(), true, "unexpected AI value in context")
+    clnt.setAICtx(ictx)
+	err = clnt.flushAICtx()
+	assert.Nil(t, err, "error flushing AI context: %v", err)
+    cfg, err = config.Load("./symai.ini")
+	assert.Nil(t, err, "error loading config: %v", err)
+	assert.Equal(t, cfg.SymAISection.AI, "true", "unexpected AI value in config after flush")
+}

@@ -23,9 +23,11 @@ type (
 		// "actions" an ActionsProcessingContext value
 		// "behaviors" a BehaviorsProcessingContext value
 		// "traversalbeh" a TraversalbehProcessingContext value for traversal behavior definitions
+		// "ai" a AIProcessingContext value for AI mode definition TODO
 		// "debug" a DebugProcessingContext value for debugging purposes TODO
 		// "reentercount" a ReenterCountProcessingContext value for defining reenter count values TODO
 		// "solver" a SolverProcessingContext value for defining solver values TODO
+		// "max_models" a MaxModelsProcessingContext value for defining max models values TODO
 		conn *websocket.Conn
 		UUID uuid.UUID
 		send chan []byte
@@ -59,7 +61,7 @@ type (
 	}
 
 	SolverProcessingContext struct {
-	Solver string
+		Solver string
 	}
 
 	ReenterCountProcessingContext struct {
@@ -68,6 +70,14 @@ type (
 
 	DebugProcessingContext struct {
 		Debug bool
+	}
+
+	AIProcessingContext struct {
+		IsAI bool
+	}
+
+	MaxModelsProcessingContext struct {
+		MaxModels int
 	}
 )
 
@@ -131,6 +141,15 @@ func (s *SolverProcessingContext) GetSolver() string {
 
 func (s *SolverProcessingContext) SetSolver(solver string) {
 	s.Solver = solver
+}
+
+// ** AIProcessingContext methods **
+func (s *AIProcessingContext) GetAI() bool {	
+	return s.IsAI
+}
+
+func (s *AIProcessingContext) SetAI(isAI bool) {
+	s.IsAI = isAI
 }
 
 // ** Client methods **
@@ -556,3 +575,31 @@ func (c *Client) flushSolverCtx() error{
 	return config.Save(cf, cf.GetPath())
 }
 
+func (c *Client) newAICtx() {
+	c.ctx["ai"] = AIProcessingContext{
+		IsAI: cnf.GetDefaultAI(),
+	}
+}
+
+func (c *Client) getAICtx() AIProcessingContext {
+	r, ok := c.ctx["ai"]
+	if !ok {
+		c.newAICtx()
+		r, _ = c.ctx["ai"]
+	}
+	e := r.(AIProcessingContext)
+
+	return e
+}
+
+func (c *Client) setAICtx(ec AIProcessingContext) {
+	c.ctx["ai"] = ec
+}
+
+func (c *Client) flushAICtx() error{
+	ictx := c.getAICtx()
+	sc := ictx.GetAI()
+    cf := config.GetConfig()
+    cf.SetDefaultAI(sc)
+	return config.Save(cf, cf.GetPath())
+}

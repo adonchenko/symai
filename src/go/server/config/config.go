@@ -162,6 +162,14 @@ func (c *SymAIConfig) SetDefaultSolver(solver string) {
 	c.ExpressionSection.ExpressionSolver = solver
 }
 
+func (c *SymAIConfig) GetDefaultMaxModels() int {
+	return c.ExpressionSection.SolverMaxModels
+}
+
+func (c *SymAIConfig) SetDefaultMaxModels(maxModels int) {
+	c.ExpressionSection.SolverMaxModels = maxModels
+}
+
 func (c *SymAIConfig) GetDefaultAI() bool {
 	b, err := strconv.ParseBool(c.SymAISection.AI)
 	if err != nil {

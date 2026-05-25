@@ -3,6 +3,7 @@ package symaicorecontroller
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -314,10 +315,10 @@ func doBehaviors(c *Client, params string) (string, error) {
 
 func doSolver(c *Client, params string) (string, error) {
 	var (
-		res       = ""
-		err error = nil
-		isFlush bool = false
-		val string = ""
+		res            = ""
+		err     error  = nil
+		isFlush bool   = false
+		val     string = ""
 	)
 	cnf.GetLogger().Info("client " + c.UUID.String() + " solver " + params + " command received")
 	sctx := c.getSolverCtx()
@@ -325,8 +326,6 @@ func doSolver(c *Client, params string) (string, error) {
 	if len(params) <= 0 {
 		res = sctx.GetSolver()
 	} else {
-		sctx.SetSolver(params)
-		c.setSolverCtx(sctx)
 		flds := strings.Fields(params)
 		if len(flds) > 2 {
 			err = errors.New("solver command syntax error: too many parameters")
@@ -357,14 +356,75 @@ func doSolver(c *Client, params string) (string, error) {
 					if err != nil {
 						err = errors.New("error flushing solver context: " + err.Error())
 						cnf.GetLogger().Error("client " + c.UUID.String() + " error flushing solver context: " + err.Error())
-					} else {						
+					} else {
 						cnf.GetLogger().Info("client " + c.UUID.String() + "solver context flushed successfully")
 					}
-				} 
+				}
 			}
 		}
 	}
-	
+
+	return res, err
+}
+
+func doAI(c *Client, params string) (string, error) {
+	var (
+		res            = ""
+		err     error  = nil
+		isFlush bool   = false
+		val     string = ""
+	)
+	cnf.GetLogger().Info("client " + c.UUID.String() + " ai " + params + " command received")
+	sctx := c.getAICtx()
+	params = strings.TrimSpace(params)
+	if len(params) <= 0 {
+		res = strconv.FormatBool(sctx.GetAI())
+	} else {
+		flds := strings.Fields(params)
+		if len(flds) > 2 {
+			err = errors.New("ai command syntax error: too many parameters")
+		} else {
+			for _, f := range flds {
+				if strings.EqualFold(f, "flush") {
+					if isFlush {
+						err = errors.New("ai command syntax error: 'flush' parameter is duplicated")
+						break
+					}
+					isFlush = true
+				} else {
+					if len(val) > 0 {
+						err = errors.New("ai command syntax error: too many parameters")
+						break
+					}
+					val = f
+				}
+			}
+			if err == nil {
+				if len(val) > 0 {
+					aiVal, parseErr := strconv.ParseBool(val)
+					if parseErr != nil {
+						err = errors.New("ai command syntax error: invalid boolean value '" + val + "'")
+						aiVal = false
+						cnf.GetLogger().Error("client " + c.UUID.String() + " ai command syntax error: invalid boolean value '" + val + "'")
+					} else {
+						sctx.SetAI(aiVal)
+						c.setAICtx(sctx)
+						cnf.GetLogger().Info("client " + c.UUID.String() + "ai set to '" + val + "' successfully")
+					}
+				}
+				if isFlush {
+					err = c.flushAICtx()
+					if err != nil {
+						err = errors.New("error flushing ai context: " + err.Error())
+						cnf.GetLogger().Error("client " + c.UUID.String() + " error flushing ai context: " + err.Error())
+					} else {
+						cnf.GetLogger().Info("client " + c.UUID.String() + "ai context flushed successfully")
+					}
+				}
+			}
+		}
+	}
+
 	return res, err
 }
 
@@ -386,16 +446,19 @@ func initCoreCommands(c *config.SymAIConfig) *map[string]SymAICoreCommand {
 	}
 	allCoreCommands["behaviors"] = SymAICoreCommand{
 		exec: doBehaviors,
-	}	
+	}
 	allCoreCommands["actions"] = SymAICoreCommand{
 		exec: doActions,
 	}
 	allCoreCommands["solver"] = SymAICoreCommand{
 		exec: doSolver,
-	}	
+	}
+	allCoreCommands["ai"] = SymAICoreCommand{
+		exec: doAI,
+	}
 	allCoreCommands["traversalbeh"] = SymAICoreCommand{
 		exec: doTraversalbeh,
-	}	
+	}
 	allCoreCommands["help"] = SymAICoreCommand{
 		exec:  doHelp,
 		help:  "help [command]",
