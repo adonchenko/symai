@@ -547,7 +547,7 @@ func (cfg *SymAIConfig) InitDefaults() {
 	cfg.SymAISection.ExpressionPort = 8080
 	cfg.SymAISection.AI = "False"
 	cfg.SymAISection.ReenterCount = 1
-	cfg.SymAISection.Debug = "True"
+	cfg.SymAISection.Debug = "False"
 	cfg.SymAISection.HostConfig = "symaicore"
 	cfg.SymAISection.ExpressionHostConfig = "expression"
 	// Expression

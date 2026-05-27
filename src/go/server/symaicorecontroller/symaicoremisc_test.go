@@ -9,13 +9,20 @@ import (
 )
 
 type (
-
 	DoSolverTestData struct {
 		source      string
 		result      string
-		response    string
 		ctx_key     string
 		ctx_result  SolverProcessingContext
+		is_error    bool
+		check_ini   bool
+		ini_value   string
+	}
+	DoDebugTestData struct {
+		source      string
+		result      string
+		ctx_key     string
+		ctx_result  DebugProcessingContext
 		is_error    bool
 		check_ini   bool
 		ini_value   string
@@ -56,7 +63,6 @@ func InitDoSolverData(clnt *Client) []DoSolverTestData {
 		ctx_result: SolverProcessingContext{
 						Solver: "Z3",
 					},
-        response: "Z3",
 		is_error: false,
 		check_ini: false,
 		ini_value: "Z3",		
@@ -68,7 +74,6 @@ func InitDoSolverData(clnt *Client) []DoSolverTestData {
 		ctx_result: SolverProcessingContext{
 						Solver: "Z3",
 					},
-        response: "Z3",
 		is_error: false,
 		check_ini: true,
 		ini_value: "Z3",		
@@ -80,7 +85,6 @@ func InitDoSolverData(clnt *Client) []DoSolverTestData {
 		ctx_result: SolverProcessingContext{
 						Solver: "SymPy",
 					},
-        response: "SymPy",
 		is_error: false,
 		check_ini: false,
 		ini_value: "SymPy",		
@@ -92,7 +96,39 @@ func InitDoSolverData(clnt *Client) []DoSolverTestData {
 		ctx_result: SolverProcessingContext{
 						Solver: "SymPy",
 					},
-        response: "SymPy",
+		is_error: false,
+		check_ini: true,
+		ini_value: "SymPy",		
+	})
+	testData = append(testData, DoSolverTestData{
+		source:  "flush flush",
+		result:  "Z3",
+		ctx_key: "solver",
+		ctx_result: SolverProcessingContext{
+						Solver: "Z3",
+					},
+		is_error: true,
+		check_ini: true,
+		ini_value: "Z3",		
+	})
+	testData = append(testData, DoSolverTestData{
+		source:  "SymPy SymPy",
+		result:  "Z3",
+		ctx_key: "solver",
+		ctx_result: SolverProcessingContext{
+						Solver: "Z3",
+					},
+		is_error: true,
+		check_ini: true,
+		ini_value: "Z3",		
+	})
+		testData = append(testData, DoSolverTestData{
+		source:  "SymPy flush",
+		result:  "SymPy",
+		ctx_key: "solver",
+		ctx_result: SolverProcessingContext{
+						Solver: "SymPy",
+					},
 		is_error: false,
 		check_ini: true,
 		ini_value: "SymPy",		
@@ -118,8 +154,10 @@ func TestDoSolver(t *testing.T) {
 	for _, d := range testData {
 		ReinitClientTest(clnt)
 		res, err := doSolver(clnt, d.source)
-		if d.is_error && err == nil {
-			assert.NotNil(t, err, "expected error for solver command")
+		if d.is_error {
+			if err == nil {
+				assert.Fail(t, "expected error for solver command with source: %s", d.source)
+			}		
 		} else {			
 			assert.Equal(t, res, d.result, "unexpected response for solver command")
 			assert.Equal(t, clnt.getSolverCtx(), d.ctx_result, "unexpected solver context value")
@@ -180,6 +218,122 @@ func TestDebugCtx(t *testing.T) {
     cfg, err = config.Load("./symai.ini")
 	assert.Nil(t, err, "error loading config: %v", err)
 	assert.Equal(t, cfg.SymAISection.Debug, "true", "unexpected debug value in config after flush")
+}
+
+func InitDoDebugData(clnt *Client) []DoDebugTestData {
+	testData := make([]DoDebugTestData, 0)
+	testData = append(testData, DoDebugTestData{
+		source:  "",
+		result:  "false",
+		ctx_key: "false",
+		ctx_result: DebugProcessingContext{
+						Debug: false,
+					},
+		is_error: false,
+		check_ini: false,
+		ini_value: "false",		
+	})
+	testData = append(testData, DoDebugTestData{
+		source:  "flush",
+		result:  "",
+		ctx_key: "debug",
+		ctx_result: DebugProcessingContext{
+						Debug: false,
+					},
+		is_error: false,
+		check_ini: true,
+		ini_value: "false",		
+	})
+	testData = append(testData, DoDebugTestData{
+		source:  "true",
+		result:  "true",
+		ctx_key: "debug",
+		ctx_result: DebugProcessingContext{
+						Debug: true,
+					},
+		is_error: false,
+		check_ini: false,
+		ini_value: "true",		
+	})
+	testData = append(testData, DoDebugTestData{
+		source:  "true flush",
+		result:  "true",
+		ctx_key: "debug",
+		ctx_result: DebugProcessingContext{
+						Debug: true,
+					},
+		is_error: false,
+		check_ini: true,
+		ini_value: "true",		
+	})
+	testData = append(testData, DoDebugTestData{
+		source:  "flush flush",
+		result:  "false",
+		ctx_key: "debug",
+		ctx_result: DebugProcessingContext{
+						Debug: false,
+					},
+		is_error: true,
+		check_ini: true,
+		ini_value: "false",		
+	})
+	testData = append(testData, DoDebugTestData{
+		source:  "true true",
+		result:  "false",
+		ctx_key: "debug",
+		ctx_result: DebugProcessingContext{
+						Debug: false,
+					},
+		is_error: true,
+		check_ini: true,
+		ini_value: "false",		
+	})
+	testData = append(testData, DoDebugTestData{
+		source:  "true flush",
+		result:  "true",
+		ctx_key: "debug",
+		ctx_result: DebugProcessingContext{
+						Debug: true,
+					},
+		is_error: false,
+		check_ini: true,
+		ini_value: "true",		
+	})
+	return testData
+}
+
+func TestDoDebug(t *testing.T) {
+ 	var (
+ 		cfg *config.SymAIConfig 
+ 	)
+ 	defer func() {
+ 		os.Remove("./symai.ini")
+ 		if r := recover(); r != nil {
+ 			assert.Fail(t, "panic occurred in TestDoDebug: %v", r)
+		}
+	}()
+	clnt := InitTestConfig(t)
+	testData := InitDoDebugData(clnt)
+
+ 	cnf.GetLogger().Info("TestDoDebug started")
+
+	for _, d := range testData {
+		ReinitClientTest(clnt)
+		res, err := doDebug(clnt, d.source)
+		if d.is_error {
+			if err == nil {
+				assert.Fail(t, "expected error for debug command with source: %s", d.source)
+			}		
+		} else {			
+			assert.Equal(t, res, d.result, "unexpected response for debug command")
+			assert.Equal(t, clnt.getDebugCtx(), d.ctx_result, "unexpected debug context value")
+			if d.check_ini {
+				cfg, err = config.Load("./symai.ini")
+				assert.Nil(t, err, "error loading config: %v", err)
+				assert.Equal(t, cfg.SymAISection.Debug, d.ini_value, "unexpected value in config after flush")
+			}
+		}
+	}
 }
 
 func TestReenterCountCtx(t *testing.T) {
