@@ -349,6 +349,7 @@ func doSolver(c *Client, params string) (string, error) {
 				if len(val) > 0 {
 					sctx.SetSolver(val)
 					c.setSolverCtx(sctx)
+					res = val
 					cnf.GetLogger().Info("client " + c.UUID.String() + "solver set to '" + val + "' successfully")
 				}
 				if isFlush {
@@ -466,12 +467,14 @@ func doDebug(c *Client, params string) (string, error) {
 					if parseErr != nil {
 						err = errors.New("debug command syntax error: invalid boolean value '" + val + "'")
 						debugVal = false
+						val = strconv.FormatBool(debugVal)
 						cnf.GetLogger().Error("client " + c.UUID.String() + " debug command syntax error: invalid boolean value '" + val + "'")
 					} else {
 						sctx.SetDebug(debugVal)
 						c.setDebugCtx(sctx)
 						cnf.GetLogger().Info("client " + c.UUID.String() + "debug set to '" + val + "' successfully")
 					}
+					res = val
 				}
 				if isFlush {
 					err = c.flushDebugCtx()
@@ -527,6 +530,7 @@ func doMaxModels(c *Client, params string) (string, error) {
 					if parseErr != nil {
 						err = errors.New("max_models command syntax error: invalid integer value '" + val + "'")
 						maxModelsVal = 0
+						val = "0"
 						cnf.GetLogger().Error("client " + c.UUID.String() + " max_models command syntax error: invalid integer value '" + val + "'")
 					} else {
 						sctx.SetMaxModels(int(maxModelsVal))
@@ -588,12 +592,14 @@ func doReenterCount(c *Client, params string) (string, error) {
 					if parseErr != nil {
 						err = errors.New("reenter_count command syntax error: invalid integer value '" + val + "'")
 						reenterCountVal = 0
+						val = "0"
 						cnf.GetLogger().Error("client " + c.UUID.String() + " reenter_count command syntax error: invalid integer value '" + val + "'")
 					} else {
 						sctx.SetReenterCount(int(reenterCountVal))
 						c.setReenterCountCtx(sctx)
 						cnf.GetLogger().Info("client " + c.UUID.String() + "reenter_count set to '" + val + "' successfully")
 					}
+					res = val
 				}
 				if isFlush {
 					err = c.flushReenterCountCtx()

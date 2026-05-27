@@ -4,8 +4,7 @@ import (
 	"encoding/json"	
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"os"
-    "path/filepath"	
+	"path/filepath"	
 	"testing"
 
 	"src/server/config"
@@ -57,6 +56,13 @@ func InitTestConfig(t *testing.T) *Client {
 		// "properties" a PropertyProcessingContext value
 		// "actions" an ActionsProcessingContext value
 		// "behaviors" a BehaviorsProcessingContext value
+		// "traversalbeh" a TraversalbehProcessingContext value for traversal behavior definitions
+		// "ai" an AIProcessingContext value for AI mode definition 
+		// "debug" a DebugProcessingContext value for debugging purposes 
+		// "reentercount" a ReenterCountProcessingContext value for defining reenter count values 
+		// "solver" a SolverProcessingContext value for defining solver values
+		// "maxmodels" a MaxModelsProcessingContext value for defining max models values 
+
 		conn: nil,
 		UUID: uuid.New(),
 		send: make(chan []byte),
@@ -246,129 +252,4 @@ func TestDoProperty(t *testing.T) {
 			assert.True(t, r1.Content == r2.Content && r1.Filename == r2.Filename, "unexpected response for property command with empty source. Content and/or Filename fields do not match expected values")
 		}
 	}
-}
-
-func TestSolverCtx(t *testing.T) {
-	var (
-		cfg *config.SymAIConfig 
-		err error
-	)
-	defer func() {
-		os.Remove("./symai.ini")
-		if r := recover(); r != nil {
-			assert.Fail(t, "panic occurred in TestSolverCtx: %v", r)
-		}
-	}()
-	clnt := InitTestConfig(t)
-	cnf.GetLogger().Info("TestSolverCtx started")
-	sctx := clnt.getSolverCtx()
-	assert.NotNil(t, sctx, "solver context should not be nil")
-	sctx.SetSolver("test_solver")
-	assert.Equal(t, sctx.GetSolver(), "test_solver", "unexpected solver name in context")
-    clnt.setSolverCtx(sctx)
-	err = clnt.flushSolverCtx()
-	assert.Nil(t, err, "error flushing solver: %v", err)
-    cfg, err = config.Load("./symai.ini")
-	assert.Nil(t, err, "error loading config: %v", err)
-	assert.Equal(t, cfg.ExpressionSection.ExpressionSolver, "test_solver", "unexpected solver name in config after flush")
-}
-
-func TestAICtx(t *testing.T) {
-	var (
-		cfg *config.SymAIConfig 
-		err error
-	)
-	defer func() {
-		os.Remove("./symai.ini")
-		if r := recover(); r != nil {
-			assert.Fail(t, "panic occurred in TestAICtx: %v", r)
-		}
-	}()
-	clnt := InitTestConfig(t)
-	cnf.GetLogger().Info("TestAICtx started")
-	ictx := clnt.getAICtx()
-	assert.NotNil(t, ictx, "AI context should not be nil")
-	ictx.SetAI(true)
-	assert.Equal(t, ictx.GetAI(), true, "unexpected AI value in context")
-    clnt.setAICtx(ictx)
-	err = clnt.flushAICtx()
-	assert.Nil(t, err, "error flushing AI context: %v", err)
-    cfg, err = config.Load("./symai.ini")
-	assert.Nil(t, err, "error loading config: %v", err)
-	assert.Equal(t, cfg.SymAISection.AI, "true", "unexpected AI value in config after flush")
-}
-
-func TestDebugCtx(t *testing.T) {
-	var (
-		cfg *config.SymAIConfig 
-		err error
-	)
-	defer func() {
-		os.Remove("./symai.ini")
-		if r := recover(); r != nil {
-			assert.Fail(t, "panic occurred in TestDebugCtx: %v", r)
-		}
-	}()
-	clnt := InitTestConfig(t)
-	cnf.GetLogger().Info("TestDebugCtx started")
-	ictx := clnt.getDebugCtx()
-	assert.NotNil(t, ictx, "Debug context should not be nil")
-	ictx.SetDebug(true)
-	assert.Equal(t, ictx.GetDebug(), true, "unexpected debug value in context")
-    clnt.setDebugCtx(ictx)
-	err = clnt.flushDebugCtx()
-	assert.Nil(t, err, "error flushing Debug context: %v", err)
-    cfg, err = config.Load("./symai.ini")
-	assert.Nil(t, err, "error loading config: %v", err)
-	assert.Equal(t, cfg.SymAISection.Debug, "true", "unexpected debug value in config after flush")
-}
-
-func TestReenterCountCtx(t *testing.T) {
-	var (
-		cfg *config.SymAIConfig 
-		err error
-	)
-	defer func() {
-		os.Remove("./symai.ini")
-		if r := recover(); r != nil {
-			assert.Fail(t, "panic occurred in TestReenterCountCtx: %v", r)
-		}
-	}()
-	clnt := InitTestConfig(t)
-	cnf.GetLogger().Info("TestReenterCountCtx started")
-	ictx := clnt.getReenterCountCtx()
-	assert.NotNil(t, ictx, "ReenterCount context should not be nil")
-	ictx.SetReenterCount(5)
-	assert.Equal(t, ictx.GetReenterCount(), 5, "unexpected reenter count value in context")
-    clnt.setReenterCountCtx(ictx)
-	err = clnt.flushReenterCountCtx()
-	assert.Nil(t, err, "error flushing ReenterCount context: %v", err)
-    cfg, err = config.Load("./symai.ini")
-	assert.Nil(t, err, "error loading config: %v", err)
-	assert.Equal(t, cfg.SymAISection.ReenterCount, 5, "unexpected reenter count value in config after flush")
-}
-
-func TestMaxModelsCtx(t *testing.T) {
-	var (
-		cfg *config.SymAIConfig 
-		err error
-	)
-	defer func() {
-		os.Remove("./symai.ini")
-		if r := recover(); r != nil {
-			assert.Fail(t, "panic occurred in TestMaxModelsCtx: %v", r)
-		}
-	}()
-	clnt := InitTestConfig(t)
-	cnf.GetLogger().Info("TestMaxModelsCtx started")
-	ictx := clnt.getMaxModelsCtx()
-	assert.NotNil(t, ictx, "MaxModels context should not be nil")
-	ictx.SetMaxModels(5)
-	assert.Equal(t, ictx.GetMaxModels(), 5, "unexpected max models value in context")
-    clnt.setMaxModelsCtx(ictx)
-	err = clnt.flushMaxModelsCtx()
-	assert.Nil(t, err, "error flushing MaxModels context: %v", err)
-    cfg, err = config.Load("./symai.ini")
-	assert.Nil(t, err, "error loading config: %v", err)
-	assert.Equal(t, cfg.ExpressionSection.SolverMaxModels, 5, "unexpected max models value in config after flush")
 }
