@@ -18,11 +18,22 @@ type (
 		check_ini   bool
 		ini_value   string
 	}
+
 	DoDebugTestData struct {
 		source      string
 		result      string
 		ctx_key     string
 		ctx_result  DebugProcessingContext
+		is_error    bool
+		check_ini   bool
+		ini_value   string
+	}
+
+	DoAITestData struct {
+		source      string
+		result      string
+		ctx_key     string
+		ctx_result  AIProcessingContext
 		is_error    bool
 		check_ini   bool
 		ini_value   string
@@ -193,6 +204,122 @@ func TestAICtx(t *testing.T) {
     cfg, err = config.Load("./symai.ini")
 	assert.Nil(t, err, "error loading config: %v", err)
 	assert.Equal(t, cfg.SymAISection.AI, "true", "unexpected AI value in config after flush")
+}
+
+func InitDoAIData(clnt *Client) []DoAITestData {
+	testData := make([]DoAITestData, 0)
+	testData = append(testData, DoAITestData{
+		source:  "",
+		result:  "false",
+		ctx_key: "ai",
+		ctx_result: AIProcessingContext{
+						IsAI: false,
+					},
+		is_error: false,
+		check_ini: false,
+		ini_value: "false",		
+	})
+	testData = append(testData, DoAITestData{
+		source:  "flush",
+		result:  "",
+		ctx_key: "ai",
+		ctx_result: AIProcessingContext{
+						IsAI: false,
+					},
+		is_error: false,
+		check_ini: true,
+		ini_value: "false",		
+	})
+	testData = append(testData, DoAITestData{
+		source:  "true",
+		result:  "true",
+		ctx_key: "ai",
+		ctx_result: AIProcessingContext{
+						IsAI: true,
+					},
+		is_error: false,
+		check_ini: false,
+		ini_value: "true",		
+	})
+	testData = append(testData, DoAITestData{
+		source:  "true flush",
+		result:  "true",
+		ctx_key: "ai",
+		ctx_result: AIProcessingContext{
+						IsAI: true,
+					},
+		is_error: false,
+		check_ini: true,
+		ini_value: "true",		
+	})
+	testData = append(testData, DoAITestData{
+		source:  "flush flush",
+		result:  "false",
+		ctx_key: "ai",
+		ctx_result: AIProcessingContext{
+						IsAI: false,
+					},
+		is_error: true,
+		check_ini: true,
+		ini_value: "false",		
+	})
+	testData = append(testData, DoAITestData{
+		source:  "true true",
+		result:  "false",
+		ctx_key: "ai",
+		ctx_result: AIProcessingContext{
+						IsAI: false,
+					},
+		is_error: true,
+		check_ini: true,
+		ini_value: "false",		
+	})
+	testData = append(testData, DoAITestData{
+		source:  "true flush",
+		result:  "true",
+		ctx_key: "ai",
+		ctx_result: AIProcessingContext{
+						IsAI: true,
+					},
+		is_error: false,
+		check_ini: true,
+		ini_value: "true",		
+	})
+	return testData
+}
+
+func TestDoAI(t *testing.T) {
+ 	var (
+ 		cfg *config.SymAIConfig 
+ 	)
+ 	defer func() {
+ 		os.Remove("./symai.ini")
+ 		if r := recover(); r != nil {
+ 			assert.Fail(t, "panic occurred in TestDoAI: %v", r)
+		}
+	}()
+	clnt := InitTestConfig(t)
+	testData := InitDoAIData(clnt)
+
+ 	cnf.GetLogger().Info("TestDoAI started")
+
+	for _, d := range testData {
+		ReinitClientTest(clnt)
+		res, err := doAI(clnt, d.source)
+		if d.is_error {
+			if err == nil {
+				assert.Fail(t, "expected error for ai command with source: %s", d.source)
+			}		
+		} else {			
+			assert.Equal(t, res, d.result, "unexpected response for ai command")
+			assert.Equal(t, clnt.getAICtx(), d.ctx_result, "unexpected ai context value")
+			if d.check_ini {
+				cfg, err = config.Load("./symai.ini")
+				assert.Nil(t, err, "error loading config: %v", err)
+				assert.Equal(t, cfg.SymAISection.AI, d.ini_value, "unexpected value in config after flush")
+			}
+		}
+	}
 }
 
 func TestDebugCtx(t *testing.T) {

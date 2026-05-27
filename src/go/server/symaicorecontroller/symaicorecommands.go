@@ -412,6 +412,7 @@ func doAI(c *Client, params string) (string, error) {
 						c.setAICtx(sctx)
 						cnf.GetLogger().Info("client " + c.UUID.String() + "ai set to '" + val + "' successfully")
 					}
+					res = val
 				}
 				if isFlush {
 					err = c.flushAICtx()
@@ -537,6 +538,7 @@ func doMaxModels(c *Client, params string) (string, error) {
 						c.setMaxModelsCtx(sctx)
 						cnf.GetLogger().Info("client " + c.UUID.String() + "max_models set to '" + val + "' successfully")
 					}
+					res = val
 				}
 				if isFlush {
 					err = c.flushMaxModelsCtx()
