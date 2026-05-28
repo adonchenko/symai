@@ -1,48 +1,69 @@
 package symaicorecontroller
 
 import (
-	"github.com/stretchr/testify/assert"
 	"os"
-    "testing"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"src/server/config"
 )
 
 type (
 	DoSolverTestData struct {
-		source      string
-		result      string
-		ctx_key     string
-		ctx_result  SolverProcessingContext
-		is_error    bool
-		check_ini   bool
-		ini_value   string
+		source     string
+		result     string
+		ctx_key    string
+		ctx_result SolverProcessingContext
+		is_error   bool
+		check_ini  bool
+		ini_value  string
 	}
 
 	DoDebugTestData struct {
-		source      string
-		result      string
-		ctx_key     string
-		ctx_result  DebugProcessingContext
-		is_error    bool
-		check_ini   bool
-		ini_value   string
+		source     string
+		result     string
+		ctx_key    string
+		ctx_result DebugProcessingContext
+		is_error   bool
+		check_ini  bool
+		ini_value  string
 	}
 
 	DoAITestData struct {
-		source      string
-		result      string
-		ctx_key     string
-		ctx_result  AIProcessingContext
-		is_error    bool
-		check_ini   bool
-		ini_value   string
+		source     string
+		result     string
+		ctx_key    string
+		ctx_result AIProcessingContext
+		is_error   bool
+		check_ini  bool
+		ini_value  string
+	}
+
+	DoReenterCountTestData struct {
+		source     string
+		result     string
+		ctx_key    string
+		ctx_result ReenterCountProcessingContext
+		is_error   bool
+		check_ini  bool
+		ini_value  int
+	}
+
+	DoMaxModelsTestData struct {
+		source     string
+		result     string
+		ctx_key    string
+		ctx_result MaxModelsProcessingContext
+		is_error   bool
+		check_ini  bool
+		ini_value  int
 	}
 )
 
 func TestSolverCtx(t *testing.T) {
 	var (
-		cfg *config.SymAIConfig 
+		cfg *config.SymAIConfig
 		err error
 	)
 	defer func() {
@@ -57,10 +78,10 @@ func TestSolverCtx(t *testing.T) {
 	assert.NotNil(t, sctx, "solver context should not be nil")
 	sctx.SetSolver("test_solver")
 	assert.Equal(t, sctx.GetSolver(), "test_solver", "unexpected solver name in context")
-    clnt.setSolverCtx(sctx)
+	clnt.setSolverCtx(sctx)
 	err = clnt.flushSolverCtx()
 	assert.Nil(t, err, "error flushing solver: %v", err)
-    cfg, err = config.Load("./symai.ini")
+	cfg, err = config.Load("./symai.ini")
 	assert.Nil(t, err, "error loading config: %v", err)
 	assert.Equal(t, cfg.ExpressionSection.ExpressionSolver, "test_solver", "unexpected solver name in config after flush")
 }
@@ -72,95 +93,95 @@ func InitDoSolverData(clnt *Client) []DoSolverTestData {
 		result:  "Z3",
 		ctx_key: "solver",
 		ctx_result: SolverProcessingContext{
-						Solver: "Z3",
-					},
-		is_error: false,
+			Solver: "Z3",
+		},
+		is_error:  false,
 		check_ini: false,
-		ini_value: "Z3",		
+		ini_value: "Z3",
 	})
 	testData = append(testData, DoSolverTestData{
 		source:  "flush",
 		result:  "",
 		ctx_key: "solver",
 		ctx_result: SolverProcessingContext{
-						Solver: "Z3",
-					},
-		is_error: false,
+			Solver: "Z3",
+		},
+		is_error:  false,
 		check_ini: true,
-		ini_value: "Z3",		
+		ini_value: "Z3",
 	})
 	testData = append(testData, DoSolverTestData{
 		source:  "SymPy",
 		result:  "SymPy",
 		ctx_key: "solver",
 		ctx_result: SolverProcessingContext{
-						Solver: "SymPy",
-					},
-		is_error: false,
+			Solver: "SymPy",
+		},
+		is_error:  false,
 		check_ini: false,
-		ini_value: "SymPy",		
+		ini_value: "SymPy",
 	})
 	testData = append(testData, DoSolverTestData{
 		source:  "SymPy flush",
 		result:  "SymPy",
 		ctx_key: "solver",
 		ctx_result: SolverProcessingContext{
-						Solver: "SymPy",
-					},
-		is_error: false,
+			Solver: "SymPy",
+		},
+		is_error:  false,
 		check_ini: true,
-		ini_value: "SymPy",		
+		ini_value: "SymPy",
 	})
 	testData = append(testData, DoSolverTestData{
 		source:  "flush flush",
 		result:  "Z3",
 		ctx_key: "solver",
 		ctx_result: SolverProcessingContext{
-						Solver: "Z3",
-					},
-		is_error: true,
+			Solver: "Z3",
+		},
+		is_error:  true,
 		check_ini: true,
-		ini_value: "Z3",		
+		ini_value: "Z3",
 	})
 	testData = append(testData, DoSolverTestData{
 		source:  "SymPy SymPy",
 		result:  "Z3",
 		ctx_key: "solver",
 		ctx_result: SolverProcessingContext{
-						Solver: "Z3",
-					},
-		is_error: true,
+			Solver: "Z3",
+		},
+		is_error:  true,
 		check_ini: true,
-		ini_value: "Z3",		
+		ini_value: "Z3",
 	})
-		testData = append(testData, DoSolverTestData{
+	testData = append(testData, DoSolverTestData{
 		source:  "SymPy flush",
 		result:  "SymPy",
 		ctx_key: "solver",
 		ctx_result: SolverProcessingContext{
-						Solver: "SymPy",
-					},
-		is_error: false,
+			Solver: "SymPy",
+		},
+		is_error:  false,
 		check_ini: true,
-		ini_value: "SymPy",		
+		ini_value: "SymPy",
 	})
 	return testData
 }
 
 func TestDoSolver(t *testing.T) {
- 	var (
- 		cfg *config.SymAIConfig 
- 	)
- 	defer func() {
- 		os.Remove("./symai.ini")
- 		if r := recover(); r != nil {
- 			assert.Fail(t, "panic occurred in TestDoSolver: %v", r)
+	var (
+		cfg *config.SymAIConfig
+	)
+	defer func() {
+		os.Remove("./symai.ini")
+		if r := recover(); r != nil {
+			assert.Fail(t, "panic occurred in TestDoSolver: %v", r)
 		}
 	}()
 	clnt := InitTestConfig(t)
 	testData := InitDoSolverData(clnt)
 
- 	cnf.GetLogger().Info("TestDoSolver started")
+	cnf.GetLogger().Info("TestDoSolver started")
 
 	for _, d := range testData {
 		ReinitClientTest(clnt)
@@ -168,8 +189,8 @@ func TestDoSolver(t *testing.T) {
 		if d.is_error {
 			if err == nil {
 				assert.Fail(t, "expected error for solver command with source: %s", d.source)
-			}		
-		} else {			
+			}
+		} else {
 			assert.Equal(t, res, d.result, "unexpected response for solver command")
 			assert.Equal(t, clnt.getSolverCtx(), d.ctx_result, "unexpected solver context value")
 			if d.check_ini {
@@ -183,7 +204,7 @@ func TestDoSolver(t *testing.T) {
 
 func TestAICtx(t *testing.T) {
 	var (
-		cfg *config.SymAIConfig 
+		cfg *config.SymAIConfig
 		err error
 	)
 	defer func() {
@@ -198,10 +219,10 @@ func TestAICtx(t *testing.T) {
 	assert.NotNil(t, ictx, "AI context should not be nil")
 	ictx.SetAI(true)
 	assert.Equal(t, ictx.GetAI(), true, "unexpected AI value in context")
-    clnt.setAICtx(ictx)
+	clnt.setAICtx(ictx)
 	err = clnt.flushAICtx()
 	assert.Nil(t, err, "error flushing AI context: %v", err)
-    cfg, err = config.Load("./symai.ini")
+	cfg, err = config.Load("./symai.ini")
 	assert.Nil(t, err, "error loading config: %v", err)
 	assert.Equal(t, cfg.SymAISection.AI, "true", "unexpected AI value in config after flush")
 }
@@ -213,95 +234,95 @@ func InitDoAIData(clnt *Client) []DoAITestData {
 		result:  "false",
 		ctx_key: "ai",
 		ctx_result: AIProcessingContext{
-						IsAI: false,
-					},
-		is_error: false,
+			IsAI: false,
+		},
+		is_error:  false,
 		check_ini: false,
-		ini_value: "false",		
+		ini_value: "false",
 	})
 	testData = append(testData, DoAITestData{
 		source:  "flush",
 		result:  "",
 		ctx_key: "ai",
 		ctx_result: AIProcessingContext{
-						IsAI: false,
-					},
-		is_error: false,
+			IsAI: false,
+		},
+		is_error:  false,
 		check_ini: true,
-		ini_value: "false",		
+		ini_value: "false",
 	})
 	testData = append(testData, DoAITestData{
 		source:  "true",
 		result:  "true",
 		ctx_key: "ai",
 		ctx_result: AIProcessingContext{
-						IsAI: true,
-					},
-		is_error: false,
+			IsAI: true,
+		},
+		is_error:  false,
 		check_ini: false,
-		ini_value: "true",		
+		ini_value: "true",
 	})
 	testData = append(testData, DoAITestData{
 		source:  "true flush",
 		result:  "true",
 		ctx_key: "ai",
 		ctx_result: AIProcessingContext{
-						IsAI: true,
-					},
-		is_error: false,
+			IsAI: true,
+		},
+		is_error:  false,
 		check_ini: true,
-		ini_value: "true",		
+		ini_value: "true",
 	})
 	testData = append(testData, DoAITestData{
 		source:  "flush flush",
 		result:  "false",
 		ctx_key: "ai",
 		ctx_result: AIProcessingContext{
-						IsAI: false,
-					},
-		is_error: true,
+			IsAI: false,
+		},
+		is_error:  true,
 		check_ini: true,
-		ini_value: "false",		
+		ini_value: "false",
 	})
 	testData = append(testData, DoAITestData{
 		source:  "true true",
 		result:  "false",
 		ctx_key: "ai",
 		ctx_result: AIProcessingContext{
-						IsAI: false,
-					},
-		is_error: true,
+			IsAI: false,
+		},
+		is_error:  true,
 		check_ini: true,
-		ini_value: "false",		
+		ini_value: "false",
 	})
 	testData = append(testData, DoAITestData{
 		source:  "true flush",
 		result:  "true",
 		ctx_key: "ai",
 		ctx_result: AIProcessingContext{
-						IsAI: true,
-					},
-		is_error: false,
+			IsAI: true,
+		},
+		is_error:  false,
 		check_ini: true,
-		ini_value: "true",		
+		ini_value: "true",
 	})
 	return testData
 }
 
 func TestDoAI(t *testing.T) {
- 	var (
- 		cfg *config.SymAIConfig 
- 	)
- 	defer func() {
- 		os.Remove("./symai.ini")
- 		if r := recover(); r != nil {
- 			assert.Fail(t, "panic occurred in TestDoAI: %v", r)
+	var (
+		cfg *config.SymAIConfig
+	)
+	defer func() {
+		os.Remove("./symai.ini")
+		if r := recover(); r != nil {
+			assert.Fail(t, "panic occurred in TestDoAI: %v", r)
 		}
 	}()
 	clnt := InitTestConfig(t)
 	testData := InitDoAIData(clnt)
 
- 	cnf.GetLogger().Info("TestDoAI started")
+	cnf.GetLogger().Info("TestDoAI started")
 
 	for _, d := range testData {
 		ReinitClientTest(clnt)
@@ -309,8 +330,8 @@ func TestDoAI(t *testing.T) {
 		if d.is_error {
 			if err == nil {
 				assert.Fail(t, "expected error for ai command with source: %s", d.source)
-			}		
-		} else {			
+			}
+		} else {
 			assert.Equal(t, res, d.result, "unexpected response for ai command")
 			assert.Equal(t, clnt.getAICtx(), d.ctx_result, "unexpected ai context value")
 			if d.check_ini {
@@ -324,7 +345,7 @@ func TestDoAI(t *testing.T) {
 
 func TestDebugCtx(t *testing.T) {
 	var (
-		cfg *config.SymAIConfig 
+		cfg *config.SymAIConfig
 		err error
 	)
 	defer func() {
@@ -339,10 +360,10 @@ func TestDebugCtx(t *testing.T) {
 	assert.NotNil(t, ictx, "Debug context should not be nil")
 	ictx.SetDebug(true)
 	assert.Equal(t, ictx.GetDebug(), true, "unexpected debug value in context")
-    clnt.setDebugCtx(ictx)
+	clnt.setDebugCtx(ictx)
 	err = clnt.flushDebugCtx()
 	assert.Nil(t, err, "error flushing Debug context: %v", err)
-    cfg, err = config.Load("./symai.ini")
+	cfg, err = config.Load("./symai.ini")
 	assert.Nil(t, err, "error loading config: %v", err)
 	assert.Equal(t, cfg.SymAISection.Debug, "true", "unexpected debug value in config after flush")
 }
@@ -352,97 +373,97 @@ func InitDoDebugData(clnt *Client) []DoDebugTestData {
 	testData = append(testData, DoDebugTestData{
 		source:  "",
 		result:  "false",
-		ctx_key: "false",
+		ctx_key: "debug",
 		ctx_result: DebugProcessingContext{
-						Debug: false,
-					},
-		is_error: false,
+			Debug: false,
+		},
+		is_error:  false,
 		check_ini: false,
-		ini_value: "false",		
+		ini_value: "false",
 	})
 	testData = append(testData, DoDebugTestData{
 		source:  "flush",
 		result:  "",
 		ctx_key: "debug",
 		ctx_result: DebugProcessingContext{
-						Debug: false,
-					},
-		is_error: false,
+			Debug: false,
+		},
+		is_error:  false,
 		check_ini: true,
-		ini_value: "false",		
+		ini_value: "false",
 	})
 	testData = append(testData, DoDebugTestData{
 		source:  "true",
 		result:  "true",
 		ctx_key: "debug",
 		ctx_result: DebugProcessingContext{
-						Debug: true,
-					},
-		is_error: false,
+			Debug: true,
+		},
+		is_error:  false,
 		check_ini: false,
-		ini_value: "true",		
+		ini_value: "true",
 	})
 	testData = append(testData, DoDebugTestData{
 		source:  "true flush",
 		result:  "true",
 		ctx_key: "debug",
 		ctx_result: DebugProcessingContext{
-						Debug: true,
-					},
-		is_error: false,
+			Debug: true,
+		},
+		is_error:  false,
 		check_ini: true,
-		ini_value: "true",		
+		ini_value: "true",
 	})
 	testData = append(testData, DoDebugTestData{
 		source:  "flush flush",
 		result:  "false",
 		ctx_key: "debug",
 		ctx_result: DebugProcessingContext{
-						Debug: false,
-					},
-		is_error: true,
+			Debug: false,
+		},
+		is_error:  true,
 		check_ini: true,
-		ini_value: "false",		
+		ini_value: "false",
 	})
 	testData = append(testData, DoDebugTestData{
 		source:  "true true",
 		result:  "false",
 		ctx_key: "debug",
 		ctx_result: DebugProcessingContext{
-						Debug: false,
-					},
-		is_error: true,
+			Debug: false,
+		},
+		is_error:  true,
 		check_ini: true,
-		ini_value: "false",		
+		ini_value: "false",
 	})
 	testData = append(testData, DoDebugTestData{
 		source:  "true flush",
 		result:  "true",
 		ctx_key: "debug",
 		ctx_result: DebugProcessingContext{
-						Debug: true,
-					},
-		is_error: false,
+			Debug: true,
+		},
+		is_error:  false,
 		check_ini: true,
-		ini_value: "true",		
+		ini_value: "true",
 	})
 	return testData
 }
 
 func TestDoDebug(t *testing.T) {
- 	var (
- 		cfg *config.SymAIConfig 
- 	)
- 	defer func() {
- 		os.Remove("./symai.ini")
- 		if r := recover(); r != nil {
- 			assert.Fail(t, "panic occurred in TestDoDebug: %v", r)
+	var (
+		cfg *config.SymAIConfig
+	)
+	defer func() {
+		os.Remove("./symai.ini")
+		if r := recover(); r != nil {
+			assert.Fail(t, "panic occurred in TestDoDebug: %v", r)
 		}
 	}()
 	clnt := InitTestConfig(t)
 	testData := InitDoDebugData(clnt)
 
- 	cnf.GetLogger().Info("TestDoDebug started")
+	cnf.GetLogger().Info("TestDoDebug started")
 
 	for _, d := range testData {
 		ReinitClientTest(clnt)
@@ -450,8 +471,8 @@ func TestDoDebug(t *testing.T) {
 		if d.is_error {
 			if err == nil {
 				assert.Fail(t, "expected error for debug command with source: %s", d.source)
-			}		
-		} else {			
+			}
+		} else {
 			assert.Equal(t, res, d.result, "unexpected response for debug command")
 			assert.Equal(t, clnt.getDebugCtx(), d.ctx_result, "unexpected debug context value")
 			if d.check_ini {
@@ -465,7 +486,7 @@ func TestDoDebug(t *testing.T) {
 
 func TestReenterCountCtx(t *testing.T) {
 	var (
-		cfg *config.SymAIConfig 
+		cfg *config.SymAIConfig
 		err error
 	)
 	defer func() {
@@ -480,17 +501,133 @@ func TestReenterCountCtx(t *testing.T) {
 	assert.NotNil(t, ictx, "ReenterCount context should not be nil")
 	ictx.SetReenterCount(5)
 	assert.Equal(t, ictx.GetReenterCount(), 5, "unexpected reenter count value in context")
-    clnt.setReenterCountCtx(ictx)
+	clnt.setReenterCountCtx(ictx)
 	err = clnt.flushReenterCountCtx()
 	assert.Nil(t, err, "error flushing ReenterCount context: %v", err)
-    cfg, err = config.Load("./symai.ini")
+	cfg, err = config.Load("./symai.ini")
 	assert.Nil(t, err, "error loading config: %v", err)
 	assert.Equal(t, cfg.SymAISection.ReenterCount, 5, "unexpected reenter count value in config after flush")
 }
 
+func InitDoReenterCountData(clnt *Client) []DoReenterCountTestData {
+	testData := make([]DoReenterCountTestData, 0)
+	testData = append(testData, DoReenterCountTestData{
+		source:  "",
+		result:  "1",
+		ctx_key: "reentercount",
+		ctx_result: ReenterCountProcessingContext{
+			ReenterCount: 1,
+		},
+		is_error:  false,
+		check_ini: false,
+		ini_value: 1,
+	})
+	testData = append(testData, DoReenterCountTestData{
+		source:  "flush",
+		result:  "",
+		ctx_key: "reentercount",
+		ctx_result: ReenterCountProcessingContext{
+			ReenterCount: 1,
+		},
+		is_error:  false,
+		check_ini: true,
+		ini_value: 1,
+	})
+	testData = append(testData, DoReenterCountTestData{
+		source:  "12",
+		result:  "12",
+		ctx_key: "reentercount",
+		ctx_result: ReenterCountProcessingContext{
+			ReenterCount: 12,
+		},
+		is_error:  false,
+		check_ini: false,
+		ini_value: 12,
+	})
+	testData = append(testData, DoReenterCountTestData{
+		source:  "12 flush",
+		result:  "12",
+		ctx_key: "reentercount",
+		ctx_result: ReenterCountProcessingContext{
+			ReenterCount: 12,
+		},
+		is_error:  false,
+		check_ini: true,
+		ini_value: 12,
+	})
+	testData = append(testData, DoReenterCountTestData{
+		source:  "flush flush",
+		result:  "false",
+		ctx_key: "reentercount",
+		ctx_result: ReenterCountProcessingContext{
+			ReenterCount: 1,
+		},
+		is_error:  true,
+		check_ini: true,
+		ini_value: 1,
+	})
+	testData = append(testData, DoReenterCountTestData{
+		source:  "true true",
+		result:  "false",
+		ctx_key: "reentercount",
+		ctx_result: ReenterCountProcessingContext{
+			ReenterCount: 1,
+		},
+		is_error:  true,
+		check_ini: true,
+		ini_value: 1,
+	})
+	testData = append(testData, DoReenterCountTestData{
+		source:  "12 flush",
+		result:  "12",
+		ctx_key: "reentercount",
+		ctx_result: ReenterCountProcessingContext{
+			ReenterCount: 12,
+		},
+		is_error:  false,
+		check_ini: true,
+		ini_value: 12,
+	})
+	return testData
+}
+
+func TestDoReenterCount(t *testing.T) {
+	var (
+		cfg *config.SymAIConfig
+	)
+	defer func() {
+		os.Remove("./symai.ini")
+		if r := recover(); r != nil {
+			assert.Fail(t, "panic occurred in TestDoReenterCount: %v", r)
+		}
+	}()
+	clnt := InitTestConfig(t)
+	testData := InitDoReenterCountData(clnt)
+
+	cnf.GetLogger().Info("TestDoReenterCount started")
+
+	for _, d := range testData {
+		ReinitClientTest(clnt)
+		res, err := doReenterCount(clnt, d.source)
+		if d.is_error {
+			if err == nil {
+				assert.Fail(t, "expected error for reenter count command with source: %s", d.source)
+			}
+		} else {
+			assert.Equal(t, res, d.result, "unexpected response for reenter count command")
+			assert.Equal(t, clnt.getReenterCountCtx(), d.ctx_result, "unexpected reenter count context value")
+			if d.check_ini {
+				cfg, err = config.Load("./symai.ini")
+				assert.Nil(t, err, "error loading config: %v", err)
+				assert.Equal(t, cfg.SymAISection.ReenterCount, d.ini_value, "unexpected value in config after flush")
+			}
+		}
+	}
+}
+
 func TestMaxModelsCtx(t *testing.T) {
 	var (
-		cfg *config.SymAIConfig 
+		cfg *config.SymAIConfig
 		err error
 	)
 	defer func() {
@@ -505,10 +642,126 @@ func TestMaxModelsCtx(t *testing.T) {
 	assert.NotNil(t, ictx, "MaxModels context should not be nil")
 	ictx.SetMaxModels(5)
 	assert.Equal(t, ictx.GetMaxModels(), 5, "unexpected max models value in context")
-    clnt.setMaxModelsCtx(ictx)
+	clnt.setMaxModelsCtx(ictx)
 	err = clnt.flushMaxModelsCtx()
 	assert.Nil(t, err, "error flushing MaxModels context: %v", err)
-    cfg, err = config.Load("./symai.ini")
+	cfg, err = config.Load("./symai.ini")
 	assert.Nil(t, err, "error loading config: %v", err)
 	assert.Equal(t, cfg.ExpressionSection.SolverMaxModels, 5, "unexpected max models value in config after flush")
+}
+
+func InitDoMaxModelsData(clnt *Client) []DoMaxModelsTestData {
+	testData := make([]DoMaxModelsTestData, 0)
+	testData = append(testData, DoMaxModelsTestData{
+		source:  "",
+		result:  "10",
+		ctx_key: "maxmodels",
+		ctx_result: MaxModelsProcessingContext{
+			MaxModels: 10,
+		},
+		is_error:  false,
+		check_ini: false,
+		ini_value: 10,
+	})
+	testData = append(testData, DoMaxModelsTestData{
+		source:  "flush",
+		result:  "",
+		ctx_key: "maxmodels",
+		ctx_result: MaxModelsProcessingContext{
+			MaxModels: 10,
+		},
+		is_error:  false,
+		check_ini: true,
+		ini_value: 10,
+	})
+	testData = append(testData, DoMaxModelsTestData{
+		source:  "12",
+		result:  "12",
+		ctx_key: "maxmodels",
+		ctx_result: MaxModelsProcessingContext{
+			MaxModels: 12,
+		},
+		is_error:  false,
+		check_ini: false,
+		ini_value: 12,
+	})
+	testData = append(testData, DoMaxModelsTestData{
+		source:  "12 flush",
+		result:  "12",
+		ctx_key: "maxmodels",
+		ctx_result: MaxModelsProcessingContext{
+			MaxModels: 12,
+		},
+		is_error:  false,
+		check_ini: true,
+		ini_value: 12,
+	})
+	testData = append(testData, DoMaxModelsTestData{
+		source:  "flush flush",
+		result:  "false",
+		ctx_key: "maxmodels",
+		ctx_result: MaxModelsProcessingContext{
+			MaxModels: 1,
+		},
+		is_error:  true,
+		check_ini: true,
+		ini_value: 1,
+	})
+	testData = append(testData, DoMaxModelsTestData{
+		source:  "true true",
+		result:  "false",
+		ctx_key: "maxmodels",
+		ctx_result: MaxModelsProcessingContext{
+			MaxModels: 1,
+		},
+		is_error:  true,
+		check_ini: true,
+		ini_value: 1,
+	})
+	testData = append(testData, DoMaxModelsTestData{
+		source:  "12 flush",
+		result:  "12",
+		ctx_key: "maxmodels",
+		ctx_result: MaxModelsProcessingContext{
+			MaxModels: 12,
+		},
+		is_error:  false,
+		check_ini: true,
+		ini_value: 12,
+	})
+	return testData
+}
+
+func TestDoMaxModels(t *testing.T) {
+	var (
+		cfg *config.SymAIConfig
+	)
+	defer func() {
+		os.Remove("./symai.ini")
+		if r := recover(); r != nil {
+			assert.Fail(t, "panic occurred in TestDoMaxModels: %v", r)
+		}
+	}()
+	clnt := InitTestConfig(t)
+	testData := InitDoMaxModelsData(clnt)
+
+	cnf.GetLogger().Info("TestDoMaxModels started")
+
+	for _, d := range testData {
+		ReinitClientTest(clnt)
+		res, err := doMaxModels(clnt, d.source)
+		if d.is_error {
+			if err == nil {
+				assert.Fail(t, "expected error for max models command with source: %s", d.source)
+			}
+		} else {
+			assert.Equal(t, res, d.result, "unexpected response for max models command")
+			assert.Equal(t, clnt.getMaxModelsCtx(), d.ctx_result, "unexpected max models context value")
+			if d.check_ini {
+				cfg, err = config.Load("./symai.ini")
+				assert.Nil(t, err, "error loading config: %v", err)
+				assert.Equal(t, cfg.ExpressionSection.SolverMaxModels, d.ini_value, "unexpected value in config after flush")
+			}
+		}
+	}
 }

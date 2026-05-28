@@ -718,3 +718,11 @@ func (c *Client) flushMaxModelsCtx() error{
     cf.SetDefaultMaxModels(sc)
 	return config.Save(cf, cf.GetPath())
 }
+
+func (c *Client) getCtx(name string) interface{} {
+	return c.ctx[name]
+}
+
+func (c *Client) setCtx(name string, ctx interface {}) {
+	c.ctx[name] = ctx
+}
