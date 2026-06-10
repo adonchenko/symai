@@ -15,7 +15,7 @@ import (
 type (
 	// Client represents a single WebSocket connection
 	Client struct {
-		ctx map[string]interface{} 
+		ctx map[string]interface{}
 		// Context fields:
 		// Possible context fields (to be extended as needed):
 		// "symaiconfig" a SymAISection value @config for details
@@ -24,11 +24,11 @@ type (
 		// "actions" an ActionsProcessingContext value
 		// "behaviors" a BehaviorsProcessingContext value
 		// "traversalbeh" a TraversalbehProcessingContext value for traversal behavior definitions
-		// "ai" an AIProcessingContext value for AI mode definition 
-		// "debug" a DebugProcessingContext value for debugging purposes 
-		// "reentercount" a ReenterCountProcessingContext value for defining reenter count values 
+		// "ai" an AIProcessingContext value for AI mode definition
+		// "debug" a DebugProcessingContext value for debugging purposes
+		// "reentercount" a ReenterCountProcessingContext value for defining reenter count values
 		// "solver" a SolverProcessingContext value for defining solver values
-		// "maxmodels" a MaxModelsProcessingContext value for defining max models values 
+		// "maxmodels" a MaxModelsProcessingContext value for defining max models values
 		conn *websocket.Conn
 		UUID uuid.UUID
 		send chan []byte
@@ -57,8 +57,41 @@ type (
 		behaviors map[string]parser.BehaviorBody
 	}
 
+	StringStack struct {
+		Stack[string]
+	}
+
+	TraceItem struct {
+		Item string
+		Env  string
+	}
+
+	Trace struct {
+		Stack[TraceItem]
+	}
+
+	ExecItem struct {
+		Item StringStack
+		Env  string
+	}
+
+	TraceSet struct {
+		Traces Stack[Trace]
+	}
+
+	TraversalbehTrace struct {
+		CurTrace Trace
+		Traces   TraceSet
+		Exec     Stack[ExecItem] // stack of current behavior terminals for each trace level, used for processing traversal behavior execution
+	}
+
 	TraversalbehProcessingContext struct {
-		TraversalbehParam		
+		TraversalbehParam
+		Properties  string
+		Environment string
+		Actions     map[string]parser.ActionBody
+		Behaviors   map[string]parser.BehaviorBody
+		TraversalbehTrace
 	}
 
 	SolverProcessingContext struct {
@@ -145,7 +178,7 @@ func (s *SolverProcessingContext) SetSolver(solver string) {
 }
 
 // ** AIProcessingContext methods **
-func (s *AIProcessingContext) GetAI() bool {	
+func (s *AIProcessingContext) GetAI() bool {
 	return s.IsAI
 }
 
@@ -154,7 +187,7 @@ func (s *AIProcessingContext) SetAI(isAI bool) {
 }
 
 // ** DebugProcessingContext methods **
-func (s *DebugProcessingContext) GetDebug() bool {	
+func (s *DebugProcessingContext) GetDebug() bool {
 	return s.Debug
 }
 
@@ -416,7 +449,7 @@ func (c *Client) setActions(m map[string]parser.ActionBody) {
 }
 
 func (c *Client) getBehavior(beh string) (parser.BehaviorBody, bool) {
-	r, exists := c.getAllBehaviors() [beh]
+	r, exists := c.getAllBehaviors()[beh]
 	return r, exists
 }
 
@@ -499,11 +532,11 @@ func (c *Client) setAllBehaviors(m map[string]parser.BehaviorBody) {
 func (c *Client) setTraversalbehParam(cmd TraversalbehParam) {
 	tb := c.getTraversalbehCtx()
 	tb.TraversalbehParam = cmd
-	c.setTraversalbehCtx(tb)		
+	c.setTraversalbehCtx(tb)
 }
 
 func (c *Client) getTraversalbehParam() TraversalbehParam {
-	return c.getTraversalbehCtx().TraversalbehParam	
+	return c.getTraversalbehCtx().TraversalbehParam
 }
 
 func (c *Client) setTraversalbehSolver(solver string) {
@@ -532,7 +565,7 @@ func (c *Client) setTraversalbehReenterCount(reenterCount int) {
 	c.setTraversalbehCtx(tb)
 }
 
-func (c *Client) getTraversalbehReenterCount() int	{
+func (c *Client) getTraversalbehReenterCount() int {
 	return c.getTraversalbehCtx().TraversalbehParam.ReenterCount
 }
 
@@ -542,20 +575,24 @@ func (c *Client) setTraversalbehDebug(debug bool) {
 	c.setTraversalbehCtx(tb)
 }
 
-func (c *Client) getTraversalbehDebug() bool{
+func (c *Client) getTraversalbehDebug() bool {
 	return c.getTraversalbehCtx().TraversalbehParam.Debug
 }
 
 func (c *Client) newTraversalbehCtx() {
 	sc := c.getSolverCtx()
+	rc := c.getReenterCountCtx()
+	db := c.getDebugCtx()
+	ai := c.getAICtx()
 	c.ctx["traversalbeh"] = TraversalbehProcessingContext{
 		TraversalbehParam: TraversalbehParam{
-			Solver: sc.GetSolver(),
-			Behavior: "",
-			ReenterCount: cnf.GetDefaultReenterCount(),
-			Debug: cnf.GetDefaultDebug(),
-			IsAI:  cnf.GetDefaultAI(),
+			Solver:       sc.GetSolver(),
+			Behavior:     "",
+			ReenterCount: rc.GetReenterCount(),
+			Debug:        db.GetDebug(),
+			IsAI:         ai.GetAI(),
 		},
+		TraversalbehTrace: *(c.newTraversalbehTrace()),
 	}
 }
 
@@ -595,11 +632,11 @@ func (c *Client) setSolverCtx(ec SolverProcessingContext) {
 	c.ctx["solver"] = ec
 }
 
-func (c *Client) flushSolverCtx() error{
+func (c *Client) flushSolverCtx() error {
 	sctx := c.getSolverCtx()
 	sc := sctx.GetSolver()
-    cf := config.GetConfig()
-    cf.SetDefaultSolver(sc)
+	cf := config.GetConfig()
+	cf.SetDefaultSolver(sc)
 	return config.Save(cf, cf.GetPath())
 }
 
@@ -624,11 +661,11 @@ func (c *Client) setAICtx(ec AIProcessingContext) {
 	c.ctx["ai"] = ec
 }
 
-func (c *Client) flushAICtx() error{
+func (c *Client) flushAICtx() error {
 	ictx := c.getAICtx()
 	sc := ictx.GetAI()
-    cf := config.GetConfig()
-    cf.SetDefaultAI(sc)
+	cf := config.GetConfig()
+	cf.SetDefaultAI(sc)
 	return config.Save(cf, cf.GetPath())
 }
 
@@ -653,11 +690,11 @@ func (c *Client) setDebugCtx(ec DebugProcessingContext) {
 	c.ctx["debug"] = ec
 }
 
-func (c *Client) flushDebugCtx() error{
+func (c *Client) flushDebugCtx() error {
 	ictx := c.getDebugCtx()
 	sc := ictx.GetDebug()
-    cf := config.GetConfig()
-    cf.SetDefaultDebug(sc)
+	cf := config.GetConfig()
+	cf.SetDefaultDebug(sc)
 	return config.Save(cf, cf.GetPath())
 }
 
@@ -682,11 +719,11 @@ func (c *Client) setReenterCountCtx(ec ReenterCountProcessingContext) {
 	c.ctx["reentercount"] = ec
 }
 
-func (c *Client) flushReenterCountCtx() error{
+func (c *Client) flushReenterCountCtx() error {
 	ictx := c.getReenterCountCtx()
 	sc := ictx.GetReenterCount()
-    cf := config.GetConfig()
-    cf.SetDefaultReenterCount(sc)
+	cf := config.GetConfig()
+	cf.SetDefaultReenterCount(sc)
 	return config.Save(cf, cf.GetPath())
 }
 
@@ -711,11 +748,11 @@ func (c *Client) setMaxModelsCtx(ec MaxModelsProcessingContext) {
 	c.ctx["maxmodels"] = ec
 }
 
-func (c *Client) flushMaxModelsCtx() error{
+func (c *Client) flushMaxModelsCtx() error {
 	ictx := c.getMaxModelsCtx()
 	sc := ictx.GetMaxModels()
-    cf := config.GetConfig()
-    cf.SetDefaultMaxModels(sc)
+	cf := config.GetConfig()
+	cf.SetDefaultMaxModels(sc)
 	return config.Save(cf, cf.GetPath())
 }
 
@@ -723,6 +760,117 @@ func (c *Client) getCtx(name string) interface{} {
 	return c.ctx[name]
 }
 
-func (c *Client) setCtx(name string, ctx interface {}) {
+func (c *Client) setCtx(name string, ctx interface{}) {
 	c.ctx[name] = ctx
+}
+
+func (c *Client) newTraversalbehTrace() *TraversalbehTrace {
+	return &TraversalbehTrace{
+		CurTrace: *NewTrace(),
+		Traces:   *NewTraceSet(),
+		Exec:     *NewStack[ExecItem](),
+	}
+}
+
+func (c *Client) setTraversalbehTrace(trace TraversalbehTrace) {
+	trctx := c.getTraversalbehCtx()
+	trctx.TraversalbehTrace = trace
+	c.setTraversalbehCtx(trctx)
+}
+
+func (c *Client) getTraversalbehTrace() TraversalbehTrace {
+	return c.getTraversalbehCtx().TraversalbehTrace
+}
+
+func NewTrace() *Trace {
+	return &Trace{
+		Stack: *NewStack[TraceItem](),
+	}
+}
+
+func (t *Trace) Push(item string, env string) {
+	t.Stack.Push(TraceItem{
+		Item: item,
+		Env:  env,
+	})
+}
+
+func (t *Trace) PushL(item string, env string) {
+	t.Stack.PushL(TraceItem{
+		Item: item,
+		Env:  env,
+	})
+}
+
+
+func NewTraceSet() *TraceSet {
+	return &TraceSet{
+		Traces: *NewStack[Trace](),
+	}
+}
+
+func (ts *TraceSet) appendTrace(trace Trace) {
+	if !ts.hasTrace(trace) {
+		ts.Traces.Push(trace)
+	}
+}
+
+func (ts *TraceSet) hasTrace(trace Trace) bool {
+	for _, t := range ts.Traces.GetAll() {
+		if isEqualTrace(t, trace) {
+			return true
+		}
+	}
+	return false
+}
+
+func isEqualTrace(t1 Trace, t2 Trace) bool {
+	if t1.Length() != t2.Length() {
+		return false
+	}
+
+	for i := 0; i < t1.Length(); i++ {
+		ti1, _ := t1.Get(i)
+		ti2, _ := t2.Get(i)
+		if ti1.Item != ti2.Item || ti1.Env != ti2.Env {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (t *TraversalbehTrace) AppendCurTrace(item string, env string) {
+	t.CurTrace.PushL(item, env)
+}
+
+func (t *TraversalbehTrace) SaveCurTrace() {
+	t.Traces.Traces.Push(t.CurTrace)
+	t.CurTrace = *NewTrace()
+}
+
+func (t *TraversalbehTrace) AppendExec(item []string, env string) {
+	s := StringStack{
+		Stack: *NewStack[string](),
+	}
+	s.PushLN(item)
+	t.Exec.Push(ExecItem{
+		Item: s,
+		Env:  env,
+	})
+}
+
+func (e *ExecItem) Dup() *ExecItem {
+	return &ExecItem{
+		Item: *e.Item.Dup(),
+		Env:  e.Env,
+	}
+}
+
+func (s *StringStack) Dup() *StringStack {
+	newStack := NewStack[string]()
+	newStack.items = append(newStack.items, s.Stack.items...)
+	return &StringStack{
+		Stack: *newStack,
+	}
 }
