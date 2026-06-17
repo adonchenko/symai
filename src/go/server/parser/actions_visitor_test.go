@@ -87,7 +87,7 @@ func TestActionsVisitor(t *testing.T) {
 	testData := initActionTestInputData()
 
 	for _, d := range testData {
-		p, listener := initParser(d.source)
+		p, listener := InitParser(d.source)
 
 		tree := p.Actions()
 

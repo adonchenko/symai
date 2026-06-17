@@ -84,7 +84,7 @@ func TestBehaviorsVisitor(t *testing.T) {
 	testData := initBehaviorsTestInputData()
 
 	for _, d := range testData {
-		p, listener := initParser(d.source)
+		p, listener := InitParser(d.source)
 
 		tree := p.Behaviors()
 

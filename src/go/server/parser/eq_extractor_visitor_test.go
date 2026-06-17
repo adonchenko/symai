@@ -61,7 +61,7 @@ func TestEQExtractorVisitor(t *testing.T) {
 	testData := initEQExtractorTestInputData()
 
 	for _, d := range testData {
-		p, listener := initParser(d.source)
+		p, listener := InitParser(d.source)
 
 		tree := p.Expression()
 

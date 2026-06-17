@@ -22,7 +22,7 @@ type EQExtractorVisitor struct {
 	varList          []string
 	substitutionMap  map[string]string
 	ExtractEQ        bool
-	cvals            map[string]float64
+	cvals            map[string]interface{}
 	vals             map[string]string
 	vnames           []string // list of variables to remove from the result when they are placed in vvnames list
 }
@@ -56,16 +56,16 @@ func NewEQExtractorVisitor(args ...interface{}) *EQExtractorVisitor {
 			}
 			return res
 		}(),
-		cvals: make(map[string]float64),
-		vals:  make(map[string]string),
+		cvals: make(map[string]interface{}, 0),
+		vals:  make(map[string]string, 0),
 	}
 }
 
-func (v *EQExtractorVisitor) GetCvals() map[string]float64 {
+func (v *EQExtractorVisitor) GetCvals() map[string]interface{} {
 	return v.cvals
 }
 
-func (v *EQExtractorVisitor) SetCvals(m map[string]float64) {
+func (v *EQExtractorVisitor) SetCvals(m map[string]interface{}) {
 	v.cvals = m
 }
 
@@ -462,18 +462,18 @@ func (v *EQExtractorVisitor) QAppend(res string, app interface{}, op string) str
 	is_skip := false
 	if app != nil && len(app.(string)) > 0 {
 		if v.IsProcessExtractByVar() {
-			p, _ := initParser(app.(string))
+			p, _ := InitParser(app.(string))
 			visitor := NewEQExtractorVisitor()
 			tr := p.Expression()
 			s := tr.Accept(visitor)
 
 			if strings.Contains(s.(string), "&&") || strings.Contains(s.(string), "||") {
-				p1, _ := initParser(s.(string))
+				p1, _ := InitParser(s.(string))
 				visitor1 := NewEQExtractorVisitor(v.vnames, v.ExtractEQ)
 				tr1 := p1.Expression()
 				s1 := tr1.Accept(visitor1)
 				app = s1
-				p, _ = initParser(app.(string))
+				p, _ = InitParser(app.(string))
 				visitor = NewEQExtractorVisitor()
 				tr = p.Expression()
 				tr.Accept(visitor)

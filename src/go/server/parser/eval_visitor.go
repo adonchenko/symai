@@ -23,7 +23,7 @@ type EvalVisitor struct {
 	hasTrigonometric bool
 	hasNonLinear     bool
 	varList          []string
-	substitutionMap  map[string]string
+	substitutionMap  map[string]interface{}
 }
 
 func NewEvalVisitor(args ...interface{}) *EvalVisitor {
@@ -31,16 +31,16 @@ func NewEvalVisitor(args ...interface{}) *EvalVisitor {
 		hasTrigonometric: false,
 		hasNonLinear:     false,
 		varList:          []string{},
-		substitutionMap:  map[string]string{},
+		substitutionMap:  make(map[string]interface{}, 0),
 		ErrorProcessing:  *NewErrorProcessing(),
 	}
 }
 
-func (v *EvalVisitor) GetSubstitutionMap() map[string]string {
+func (v *EvalVisitor) GetSubstitutionMap() map[string]interface{} {
 	return v.substitutionMap
 }
 
-func (v *EvalVisitor) SetSubstitutionMap(m map[string]string) {
+func (v *EvalVisitor) SetSubstitutionMap(m map[string]interface{}) {
 	v.substitutionMap = m
 }
 
@@ -192,7 +192,7 @@ func (v *EvalVisitor) VisitPostfixExpression(ctx *BehaviorsGrammar.PostfixExpres
 		}
 		val, ok := v.substitutionMap[s]
 		if ok {
-			s = val
+			return val
 		}
 	}
 

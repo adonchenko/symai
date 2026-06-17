@@ -6,7 +6,7 @@ import (
 	"github.com/antlr4-go/antlr/v4"
 )
 
-func initParser(inputStr string) (*BehaviorsGrammar.BehaviorsGrammarParser, *SymAIErrorListener) {
+func InitParser(inputStr string) (*BehaviorsGrammar.BehaviorsGrammarParser, *SymAIErrorListener) {
 	listener := SymAIErrorListener{}
 	input := antlr.NewInputStream(inputStr)
 	lexer := BehaviorsGrammar.NewBehaviorsGrammarLexer(input)

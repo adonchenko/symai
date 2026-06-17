@@ -42,7 +42,7 @@ func initEvalVisitorTestInputData() []EvalVisitorTestData {
 testData := initEvalVisitorTestInputData()
 
 	for _, d := range testData {
-		p, listener := initParser(d.source)
+		p, listener := InitParser(d.source)
 
 		tree := p.Expression()
 		visitor := NewEvalVisitor()
