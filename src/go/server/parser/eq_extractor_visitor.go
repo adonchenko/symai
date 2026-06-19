@@ -24,7 +24,7 @@ type EQExtractorVisitor struct {
 	ExtractEQ        bool
 	cvals            map[string]interface{}
 	vals             map[string]string
-	vnames           []string // list of variables to remove from the result when they are placed in vvnames list
+	vnames           []string // list of variables to remove from the result when they are placed in 'vnames' list
 }
 
 func NewEQExtractorVisitor(args ...interface{}) *EQExtractorVisitor {

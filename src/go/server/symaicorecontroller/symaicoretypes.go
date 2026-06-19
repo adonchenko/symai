@@ -383,6 +383,16 @@ func (c *Client) newActionsCtx() {
 	}
 }
 
+func (c *Client) getAllActions() map[string]parser.ActionBody {
+	return c.getActionsCtx().actions
+}
+
+func (c *Client) getAction(act string) (parser.ActionBody, bool) {
+	r, exists := c.getAllActions()[act]
+	return r, exists
+}
+
+
 func (c *Client) getActionsCtx() ActionsProcessingContext {
 	r, ok := c.ctx["actions"]
 	if !ok {

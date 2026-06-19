@@ -80,7 +80,7 @@ func TestExpressionVisitor(t *testing.T) {
 				}
 			}
 			if !b {
-				assert.Fail(t, "Variable '"+v+"' in absent in the result")
+				assert.Fail(t, "Variable '"+v+"' is absent in the result")
 			}
 
 		}
